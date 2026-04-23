@@ -582,6 +582,8 @@ async function checkSession() {
 
   // If Supabase not configured yet → bypass auth (dev mode)
   if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+    setCurrentUserContext(null);
+    initializePersistentState();
     console.warn('Supabase non configuré — mode développement (auth désactivé)');
     if (screen) screen.classList.add('hidden');
     if (logoutBtn) logoutBtn.style.display = 'block';
@@ -589,6 +591,8 @@ async function checkSession() {
   }
   try {
     const { data: { session } } = await _sb.auth.getSession();
+    setCurrentUserContext(session?.user || null);
+    initializePersistentState();
     if (session) {
       if (screen)    screen.classList.add('hidden');
       if (logoutBtn) logoutBtn.style.display = 'block';
@@ -597,6 +601,8 @@ async function checkSession() {
       if (logoutBtn) logoutBtn.style.display = 'none';
     }
   } catch(e) {
+    setCurrentUserContext(null);
+    initializePersistentState();
     console.error('Supabase error:', e);
     // Fallback: show app if Supabase unreachable
     if (screen) screen.classList.add('hidden');
@@ -621,6 +627,8 @@ async function doLogin() {
     }
     const { data, error } = await _sb.auth.signInWithPassword({ email, password });
     if (error) throw error;
+    setCurrentUserContext(data?.user || data?.session?.user || { email });
+    initializePersistentState();
     document.getElementById('login-screen')?.classList.add('hidden');
     document.getElementById('logout-btn').style.display = 'block';
     toast('✅ Bienvenue Dr. Kherbache !');
@@ -635,6 +643,8 @@ async function doLogout() {
   if (_sb && SUPA_URL !== 'VOTRE_SUPABASE_URL') {
     await _sb.auth.signOut();
   }
+  setCurrentUserContext(null);
+  initializePersistentState();
   document.getElementById('login-screen')?.classList.remove('hidden');
   document.getElementById('logout-btn').style.display = 'none';
   toast('Déconnecté avec succès 👋');
@@ -3007,7 +3017,10 @@ function nav(id){
   if(id==='ai'&&!aiInited){initAI();aiInited=true;}
   if(id==='statistics'&&!statsRendered){renderStatistics();statsRendered=true;}
   if(id==='maladies'&&!maladiesRendered){renderMaladies('','');maladiesRendered=true;}
+  if(id==='clients'){renderClientsPage();}
+  if(id==='rdv'){renderRdvPage();}
   if(id==='vaccinations'){setVaccTab(document.querySelector('#page-vaccinations .fchip.on')||document.querySelector('#page-vaccinations .fchip'),'chien');}
+  if(id==='ordonnances'){populatePatientSelects();}
   if(id==='ordonnances'&&!ordosRendered){renderOrdos();ordosRendered=true;}
   if(id==='historique'){renderHist('');}
   if(id==='preop'){renderChecklist();}
@@ -3023,6 +3036,527 @@ document.querySelectorAll('.overlay').forEach(m=>m.addEventListener('click',e=>{
 function toast(msg,dur=3200){
   const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+let currentUserStorageKey = 'guest';
+let persistentStateReady = false;
+let PATIENTS = [];
+let CLIENTS = [];
+let APPOINTMENTS = [];
+let clientSearch = '';
+let defaultStateCache = null;
+
+function deepClone(v){return JSON.parse(JSON.stringify(v));}
+function setCurrentUserContext(user){
+  currentUserStorageKey = user?.id || user?.email || 'guest';
+}
+function getUserStateStorageKey(){
+  return 'veterinapp-state:' + currentUserStorageKey;
+}
+function getDefaultState(){
+  if (!defaultStateCache) {
+    defaultStateCache = {
+      cages: deepClone(CAGES),
+      drugs: deepClone(DRUGS),
+      ordos: deepClone(ORDOS),
+      historique: deepClone(HISTORIQUE_DATA),
+      suivi: deepClone(SUIVI_HISTORY),
+      appointments: getDefaultAppointments(),
+      patients: derivePatientsFromData(deepClone(HISTORIQUE_DATA), deepClone(ORDOS)),
+      clients: deriveClientsFromPatients(derivePatientsFromData(deepClone(HISTORIQUE_DATA), deepClone(ORDOS))),
+    };
+  }
+  return deepClone(defaultStateCache);
+}
+function replaceArrayContents(target, source){
+  target.splice(0, target.length, ...deepClone(source || []));
+}
+function replaceObjectContents(target, source){
+  Object.keys(target).forEach(k => delete target[k]);
+  Object.assign(target, deepClone(source || {}));
+}
+function slugify(text){
+  return (text || '')
+    .toString()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'') || 'item';
+}
+function stripAnimalEmoji(name){
+  return (name || '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
+}
+function animalEmoji(species){
+  return (species || '').toLowerCase().includes('chat') ? '🐈' : '🐕';
+}
+function displayAnimalName(name, species){
+  const clean = stripAnimalEmoji(name);
+  if (!clean) return '';
+  return `${animalEmoji(species)} ${clean}`;
+}
+function parsePatientOptionLabel(label){
+  const clean = (label || '').replace(/\s+/g,' ').trim();
+  const ownerMatch = clean.match(/\(([^)]+)\)\s*$/);
+  const owner = ownerMatch ? ownerMatch[1].trim() : 'Client non précisé';
+  const base = ownerMatch ? clean.slice(0, ownerMatch.index).trim() : clean;
+  const parts = base.split('·').map(p => p.trim()).filter(Boolean);
+  const first = parts[0] || '';
+  const name = stripAnimalEmoji(first);
+  let species = first.toLowerCase().includes('chat') ? 'Chat' : 'Chien';
+  if (first.includes('🐈') || base.toLowerCase().includes('chat')) species = 'Chat';
+  if (first.includes('🐕') || base.toLowerCase().includes('chien')) species = 'Chien';
+  return {
+    name,
+    owner,
+    species,
+    race: parts[1] || '',
+    weight: (parts.find(p => /kg/i.test(p)) || '').replace(/[()]/g,'').trim(),
+    age: (parts.find(p => /an/i.test(p)) || '').trim(),
+  };
+}
+function todayFr(){
+  return new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function getDefaultAppointments(){
+  return [
+    {id:'rdv-1', date:'2026-04-21', time:'10:00', animal:'🐕 Rex', owner:'Benali Ahmed', phone:'0550 123 456', type:'Contrôle', motif:'Contrôle post-traitement parvovirose · Prise de sang', status:'urgent'},
+    {id:'rdv-2', date:'2026-04-21', time:'11:30', animal:'🐕 Titan', owner:'Merzouk Rachid', phone:'0661 234 567', type:'Vaccination', motif:'Vaccination CHPPiL + Rage annuelle · Vermifugation', status:'confirmed'},
+    {id:'rdv-3', date:'2026-04-21', time:'15:00', animal:'🐈 Misty', owner:'Kaci Fatima', phone:'0699 567 890', type:'Suivi', motif:'Bilan IRC mensuel · SDMA + créatinine + UPC', status:'long'},
+    {id:'rdv-4', date:'2026-04-22', time:'09:00', animal:'🐈 Nala', owner:'Boukhechem Lina', phone:'0550 987 654', type:'Contrôle', motif:'Retrait fils OVH', status:'confirmed'},
+    {id:'rdv-5', date:'2026-04-22', time:'10:30', animal:'🐕 Bruno', owner:'Saâdi Omar', phone:'0555 456 789', type:'Contrôle', motif:'Contrôle post-torsion', status:'waiting'},
+    {id:'rdv-6', date:'2026-04-23', time:'14:00', animal:'🐈 Luna', owner:'Hamdi Karim', phone:'0770 345 678', type:'Vaccination', motif:'CHPCH + Rage', status:'confirmed'},
+    {id:'rdv-7', date:'2026-04-24', time:'11:00', animal:'🐕 Fido', owner:'Hamdi Karim', phone:'0770 345 678', type:'Injection', motif:'J14 Imidocarbe', status:'waiting'},
+  ];
+}
+function shortFrDate(value){
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+function getStatusMeta(status){
+  return {
+    urgent: { badge:'bdg-c', label:'Urgent', border:'var(--danger)' },
+    waiting: { badge:'bdg-u', label:'Attente', border:'var(--warning)' },
+    confirmed: { badge:'bdg-n', label:'Confirmé', border:'var(--sage)' },
+    long: { badge:'bdg-b', label:'Suivi long terme', border:'var(--info)' },
+  }[status] || { badge:'bdg-n', label:'Confirmé', border:'var(--sage)' };
+}
+function derivePatientsFromData(histData, ordosData){
+  const map = new Map();
+  histData.forEach(h => {
+    const key = slugify(stripAnimalEmoji(h.animal) + '-' + (h.client || ''));
+    map.set(key, {
+      id: key,
+      name: stripAnimalEmoji(h.animal),
+      displayName: h.animal,
+      species: h.espece ? h.espece.charAt(0).toUpperCase() + h.espece.slice(1) : (h.animal || '').includes('🐈') ? 'Chat' : 'Chien',
+      race: h.race || '',
+      age: h.age || '',
+      weight: h.poids || '',
+      owner: h.client || 'Client non précisé',
+      phone: h.tel || '',
+      email: '',
+      nextRdv: h.rdv || '',
+      sexe: h.sexe || '',
+      notes: h.notesCliniques || '',
+    });
+  });
+  ordosData.forEach(o => {
+    const parsed = parsePatientOptionLabel(o.animal + ' · ' + (o.race || '') + ' · ' + (o.poids || '') + ' (' + (o.proprietaire || 'Client non précisé') + ')');
+    const key = slugify(parsed.name + '-' + parsed.owner);
+    if (!map.has(key)) {
+      map.set(key, {
+        id: key,
+        name: parsed.name,
+        displayName: displayAnimalName(parsed.name, parsed.species),
+        species: parsed.species,
+        race: o.race || parsed.race || '',
+        age: o.age || parsed.age || '',
+        weight: o.poids || parsed.weight || '',
+        owner: o.proprietaire || parsed.owner,
+        phone: '',
+        email: '',
+        nextRdv: o.controle || '',
+        sexe: '',
+        notes: '',
+      });
+    }
+  });
+  return Array.from(map.values()).filter(p => p.name && p.owner);
+}
+function deriveClientsFromPatients(patients){
+  const defaults = {
+    'Benali Ahmed': { phone:'0550 123 456', email:'benali@mail.com', nextRdv:'15/04/2026' },
+    'Hamdi Karim': { phone:'0770 345 678', email:'hamdi@mail.dz', nextRdv:'28/04/2026' },
+    'Kaci Fatima': { phone:'0661 789 012', email:'', nextRdv:'05/04/2026' },
+    'Meziane Ali': { phone:'0550 987 654', email:'', nextRdv:'20/04/2026' },
+    'Merzouk Rachid': { phone:'0661 234 567', email:'', nextRdv:'' },
+    'Boukhechem Lina': { phone:'0550 987 654', email:'', nextRdv:'' },
+    'Saâdi Omar': { phone:'0555 456 789', email:'', nextRdv:'' },
+    'Bensalem Khaled': { phone:'0660 111 222', email:'', nextRdv:'' },
+  };
+  const map = new Map();
+  patients.forEach(patient => {
+    const name = patient.owner || 'Client non précisé';
+    if (!map.has(name)) {
+      const fallback = defaults[name] || {};
+      map.set(name, {
+        id: slugify(name),
+        fullName: name,
+        phone: patient.phone || fallback.phone || '',
+        email: patient.email || fallback.email || '',
+        address: '',
+        animals: [],
+        nextRdv: patient.nextRdv || fallback.nextRdv || '',
+      });
+    }
+    const client = map.get(name);
+    if (patient.phone && !client.phone) client.phone = patient.phone;
+    if (patient.email && !client.email) client.email = patient.email;
+    if (patient.nextRdv && (!client.nextRdv || patient.nextRdv < client.nextRdv)) client.nextRdv = patient.nextRdv;
+    client.animals.push(displayAnimalName(patient.name, patient.species));
+  });
+  return Array.from(map.values());
+}
+function getPatientById(id){
+  return PATIENTS.find(p => p.id === id) || null;
+}
+function upsertPatient(patient){
+  const normalized = {
+    id: patient.id || slugify((patient.name || '') + '-' + (patient.owner || '')),
+    name: stripAnimalEmoji(patient.name || ''),
+    displayName: displayAnimalName(patient.name || '', patient.species || 'Chien'),
+    species: patient.species || 'Chien',
+    race: patient.race || '',
+    age: patient.age || '',
+    weight: patient.weight || '',
+    owner: patient.owner || 'Client non précisé',
+    phone: patient.phone || '',
+    email: patient.email || '',
+    nextRdv: patient.nextRdv || '',
+    sexe: patient.sexe || '',
+    notes: patient.notes || '',
+  };
+  const idx = PATIENTS.findIndex(p => p.id === normalized.id);
+  if (idx >= 0) PATIENTS[idx] = { ...PATIENTS[idx], ...normalized };
+  else PATIENTS.unshift(normalized);
+  return normalized;
+}
+function upsertClientFromPatient(patient){
+  const fullName = patient.owner || 'Client non précisé';
+  let client = CLIENTS.find(c => c.fullName === fullName);
+  if (!client) {
+    client = { id: slugify(fullName), fullName, phone:'', email:'', address:'', animals:[], nextRdv:'' };
+    CLIENTS.unshift(client);
+  }
+  if (patient.phone) client.phone = patient.phone;
+  if (patient.email) client.email = patient.email;
+  if (patient.nextRdv) client.nextRdv = patient.nextRdv;
+  const display = displayAnimalName(patient.name, patient.species);
+  if (display && !client.animals.includes(display)) client.animals.push(display);
+  return client;
+}
+function getCaseFormFields(){
+  const cards = document.querySelectorAll('#page-cas .card');
+  if (cards.length < 3) return null;
+  return {
+    patientCard: cards[0],
+    historyCard: cards[1],
+    examCard: cards[2],
+  };
+}
+function ensureCaseFormEnhancements(){
+  const refs = getCaseFormFields();
+  if (!refs || document.getElementById('case-animal-name')) return;
+  const host = refs.patientCard.querySelector('.card-title');
+  if (!host) return;
+  host.insertAdjacentHTML('afterend', `
+    <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
+      <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
+      <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
+      <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
+    </div>
+  `);
+  const patientRows = refs.patientCard.querySelectorAll('.row3');
+  if (patientRows[0]) {
+    const inputs = patientRows[0].querySelectorAll('select, input');
+    if (inputs[0]) inputs[0].id = 'case-espece';
+    if (inputs[1]) inputs[1].id = 'case-race';
+    if (inputs[2]) inputs[2].id = 'case-color';
+  }
+  if (patientRows[1]) {
+    const inputs = patientRows[1].querySelectorAll('input, select');
+    if (inputs[0]) inputs[0].id = 'case-age';
+    if (inputs[1]) inputs[1].id = 'case-poids';
+    if (inputs[2]) inputs[2].id = 'case-sexe';
+  }
+  const historyChecks = refs.historyCard.querySelectorAll('input[type="checkbox"]');
+  if (historyChecks[0]) historyChecks[0].id = 'case-vaccins';
+  if (historyChecks[1]) historyChecks[1].id = 'case-vermifuge';
+  const historyInputs = refs.historyCard.querySelectorAll('.row2 select, .row2 input, textarea, .fg > select');
+  if (historyInputs[0]) historyInputs[0].id = 'case-mode-vie';
+  if (historyInputs[1]) historyInputs[1].id = 'case-duree-symptomes';
+  const appetite = refs.historyCard.querySelectorAll('.fg > select')[1];
+  if (appetite) appetite.id = 'case-appetit';
+  const historyTexts = refs.historyCard.querySelectorAll('textarea');
+  if (historyTexts[0]) historyTexts[0].id = 'case-history';
+  if (historyTexts[1]) historyTexts[1].id = 'case-symptoms';
+  const examInputs = refs.examCard.querySelectorAll('input, select, textarea');
+  if (examInputs[2]) examInputs[2].id = 'case-fr';
+  if (examInputs[4]) examInputs[4].id = 'case-muqueuses';
+  if (examInputs[6]) examInputs[6].id = 'case-observations';
+  if (examInputs[8]) examInputs[8].id = 'case-exams';
+  if (examInputs[9]) examInputs[9].id = 'case-amount';
+  if (examInputs[10]) examInputs[10].id = 'case-paid';
+  if (examInputs[11]) examInputs[11].id = 'case-next-rdv';
+  if (examInputs[12]) examInputs[12].id = 'case-client-email';
+  const saveButton = document.querySelector('#page-cas .btn.btn-p.btn-full.btn-lg');
+  if (saveButton) saveButton.onclick = saveNewCase;
+}
+function ensureModalBindings(){
+  const clientModal = document.getElementById('modal-client');
+  if (clientModal) {
+    const inputs = clientModal.querySelectorAll('input');
+    if (inputs[0]) inputs[0].id = 'client-last-name';
+    if (inputs[1]) inputs[1].id = 'client-first-name';
+    if (inputs[2]) inputs[2].id = 'client-phone';
+    if (inputs[3]) inputs[3].id = 'client-email';
+    if (inputs[4]) inputs[4].id = 'client-address';
+    const saveBtn = clientModal.querySelector('.btn.btn-p');
+    if (saveBtn) saveBtn.onclick = saveClient;
+  }
+  const drugModal = document.getElementById('modal-drug-new');
+  if (drugModal) {
+    const inputs = drugModal.querySelectorAll('input, select, textarea');
+    ['drug-name','drug-molecule','drug-class','drug-form','drug-route','drug-dose','drug-indications','drug-contra','drug-interactions','drug-stock','drug-stock-min','drug-price'].forEach((id, index) => {
+      if (inputs[index]) inputs[index].id = id;
+    });
+    const saveBtn = drugModal.querySelector('.btn.btn-p');
+    if (saveBtn) saveBtn.onclick = saveDrug;
+  }
+  const cageModal = document.getElementById('modal-cage-new');
+  if (cageModal) {
+    const selects = cageModal.querySelectorAll('select');
+    const inputs = cageModal.querySelectorAll('input, textarea');
+    if (selects[0]) selects[0].id = 'admit-cage-id';
+    if (selects[1]) selects[1].id = 'admit-animal-id';
+    if (inputs[0]) inputs[0].id = 'admit-motif';
+    if (inputs[1]) inputs[1].id = 'admit-entry-date';
+    if (inputs[2]) inputs[2].id = 'admit-exit-date';
+    if (inputs[3]) inputs[3].id = 'admit-notes';
+    const saveBtn = cageModal.querySelector('.btn.btn-p');
+    if (saveBtn) saveBtn.onclick = saveAdmission;
+  }
+  const rdvModal = document.getElementById('modal-rdv');
+  if (rdvModal) {
+    const fields = rdvModal.querySelectorAll('select, input');
+    if (fields[0]) fields[0].id = 'rdv-animal';
+    if (fields[1]) fields[1].id = 'rdv-date';
+    if (fields[2]) fields[2].id = 'rdv-time';
+    if (fields[3]) fields[3].id = 'rdv-type';
+    if (fields[4]) fields[4].id = 'rdv-motif';
+    const saveBtn = rdvModal.querySelector('.btn.btn-p');
+    if (saveBtn) saveBtn.onclick = saveAppointment;
+  }
+  const clientsSearchInput = document.querySelector('#page-clients .search-wrap input');
+  if (clientsSearchInput) clientsSearchInput.oninput = e => filterClients(e.target.value);
+  const rdvButtons = document.querySelectorAll('#page-rdv .btn.btn-ghost.btn-full');
+  if (rdvButtons[1]) rdvButtons[1].onclick = exportRdvPdf;
+}
+function populatePatientSelects(){
+  ensureModalBindings();
+  const patientOptions = PATIENTS
+    .slice()
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .map(patient => {
+      const label = `${displayAnimalName(patient.name, patient.species)} · ${patient.race || patient.species}${patient.weight ? ' · ' + patient.weight : ''} (${patient.owner})`;
+      return `<option value="${patient.id}">${label}</option>`;
+    }).join('');
+  const ordoSelect = document.getElementById('on-animal');
+  if (ordoSelect) {
+    const current = ordoSelect.value;
+    ordoSelect.innerHTML = `<option value="">Select</option>${patientOptions}<option value="nouveau">+ Nouveau patient (saisie libre)</option>`;
+    if (current && ordoSelect.querySelector(`option[value="${current}"]`)) ordoSelect.value = current;
+  }
+  const admitSelect = document.getElementById('admit-animal-id');
+  if (admitSelect) {
+    const current = admitSelect.value;
+    admitSelect.innerHTML = patientOptions || '<option value="">Aucun animal enregistré</option>';
+    if (current && admitSelect.querySelector(`option[value="${current}"]`)) admitSelect.value = current;
+  }
+  const rdvSelect = document.getElementById('rdv-animal');
+  if (rdvSelect) {
+    const current = rdvSelect.value;
+    rdvSelect.innerHTML = PATIENTS
+      .slice()
+      .sort((a,b) => a.name.localeCompare(b.name))
+      .map(patient => `<option value="${patient.id}">${displayAnimalName(patient.name, patient.species)} (${patient.owner})</option>`)
+      .join('') || '<option value="">Aucun animal enregistré</option>';
+    if (current && rdvSelect.querySelector(`option[value="${current}"]`)) rdvSelect.value = current;
+  }
+  const cageSelect = document.getElementById('admit-cage-id');
+  if (cageSelect) {
+    const free = CAGES.filter(c => c.statut !== 'occupée');
+    const current = cageSelect.value;
+    cageSelect.innerHTML = free.map(c => `<option value="${c.id}">${c.id} — ${c.statut === 'nettoyage' ? 'Nettoyage' : 'Libre'}</option>`).join('');
+    if (current && cageSelect.querySelector(`option[value="${current}"]`)) cageSelect.value = current;
+  }
+}
+function renderRdvPage(){
+  const page = document.getElementById('page-rdv');
+  if (!page) return;
+  const upcoming = APPOINTMENTS.slice().sort((a,b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+  const today = '2026-04-21';
+  const todayItems = upcoming.filter(a => a.date === today);
+  const weekBody = page.querySelector('.tbl tbody');
+  const todayColumn = page.querySelector('.g2 > div:first-child > div:last-child');
+  const statsCards = page.querySelectorAll('div[style*="grid-template-columns:repeat(4,1fr)"] .card');
+  if (todayColumn) {
+    todayColumn.innerHTML = todayItems.map(item => {
+      const meta = getStatusMeta(item.status);
+      return `<div class="card" style="border-left:4px solid ${meta.border};cursor:pointer" onclick="toast('${item.animal} - ${item.motif}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-weight:700;font-size:13px">${item.time} - ${item.animal}</div>
+            <div style="font-size:12px;color:var(--muted)">${item.owner} - ${item.phone || '-'}</div>
+            <div style="font-size:12px;margin-top:4px">${item.motif}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <span class="bdg ${meta.badge}">${meta.label}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('') || '<div class="card" style="text-align:center;color:var(--muted)">Aucun rendez-vous aujourd\\'hui</div>';
+  }
+  if (weekBody) {
+    weekBody.innerHTML = upcoming.map(item => {
+      const meta = getStatusMeta(item.status);
+      return `<tr style="cursor:pointer" onclick="toast('${item.animal} - ${item.motif}')"><td>${shortFrDate(item.date)}</td><td>${item.time}</td><td>${item.animal}</td><td>${item.motif}</td><td><span class="bdg ${meta.badge}">${meta.label}</span></td></tr>`;
+    }).join('');
+  }
+  if (statsCards.length >= 4) {
+    statsCards[0].querySelector('div').textContent = String(todayItems.length);
+    statsCards[1].querySelector('div').textContent = String(upcoming.length);
+    statsCards[2].querySelector('div').textContent = String(upcoming.filter(a => a.status === 'waiting').length);
+  }
+}
+function saveAppointment(){
+  const patient = getPatientById(document.getElementById('rdv-animal')?.value);
+  const date = document.getElementById('rdv-date')?.value;
+  const time = document.getElementById('rdv-time')?.value;
+  const type = document.getElementById('rdv-type')?.value || 'Consultation';
+  const motif = document.getElementById('rdv-motif')?.value?.trim();
+  if (!patient || !date || !time || !motif) { toast('⚠️ Animal, date, heure et motif sont requis'); return; }
+  APPOINTMENTS.push({
+    id: 'rdv-' + Date.now(),
+    date,
+    time,
+    animal: displayAnimalName(patient.name, patient.species),
+    owner: patient.owner,
+    phone: patient.phone || '',
+    type,
+    motif,
+    status: type === 'Contrôle' ? 'waiting' : 'confirmed',
+  });
+  patient.nextRdv = shortFrDate(date);
+  upsertClientFromPatient(patient);
+  persistAppState();
+  renderRdvPage();
+  renderClientsPage();
+  closeModal('modal-rdv');
+  toast('✅ RDV créé et sauvegardé');
+}
+function exportRdvPdf(){
+  const items = APPOINTMENTS.slice().sort((a,b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+  const printWin = window.open('', '_blank', 'width=900,height=1100');
+  if (!printWin) { toast('⚠️ Autorisez les popups pour exporter le PDF'); return; }
+  printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Planning RDV</title>
+    <style>
+      body{font-family:Arial,sans-serif;color:#0D1B2A;margin:32px}
+      h1{margin:0 0 6px;font-size:24px}
+      p{margin:0 0 16px;color:#666}
+      table{width:100%;border-collapse:collapse}
+      th,td{border-bottom:1px solid #ddd;padding:10px;text-align:left;font-size:13px;vertical-align:top}
+      th{font-size:11px;text-transform:uppercase;color:#666;letter-spacing:.5px}
+    </style></head><body>
+    <h1>Planning Rendez-vous</h1>
+    <p>VeterinApp Pro - Export du ${todayFr()}</p>
+    <table>
+      <thead><tr><th>Date</th><th>Heure</th><th>Animal</th><th>Client</th><th>Motif</th><th>Statut</th></tr></thead>
+      <tbody>
+        ${items.map(item => `<tr><td>${shortFrDate(item.date)}</td><td>${item.time}</td><td>${item.animal}</td><td>${item.owner}<br>${item.phone || ''}</td><td>${item.motif}</td><td>${getStatusMeta(item.status).label}</td></tr>`).join('')}
+      </tbody>
+    </table>
+  </body></html>`);
+  printWin.document.close();
+  printWin.focus();
+  setTimeout(() => printWin.print(), 250);
+}
+function renderClientsPage(){
+  const container = document.querySelector('#page-clients tbody');
+  const title = document.querySelector('#page-clients .card-title');
+  if (!container || !title) return;
+  const q = (clientSearch || '').toLowerCase();
+  const filtered = CLIENTS.filter(client => {
+    const animals = (client.animals || []).join(' ').toLowerCase();
+    return !q || client.fullName.toLowerCase().includes(q) || (client.phone || '').toLowerCase().includes(q) || (client.email || '').toLowerCase().includes(q) || animals.includes(q);
+  });
+  title.innerHTML = `👥 Clients (${CLIENTS.length}) <span>Actifs ce mois</span>`;
+  container.innerHTML = filtered.map(client => `
+    <tr>
+      <td><strong>${client.fullName}</strong></td>
+      <td>${client.phone || '-'}</td>
+      <td style="font-size:10.5px;${client.email ? '' : 'color:var(--muted)'}">${client.email || '-'}${client.email ? ' 📧' : ''}</td>
+      <td>${(client.animals || []).join(' · ') || '-'}</td>
+      <td>${client.nextRdv || '-'}</td>
+      <td><button class="btn-ico" onclick="toast('Client enregistre localement pour ce compte')">...</button></td>
+    </tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Aucun client trouvé</td></tr>';
+}
+function filterClients(q){
+  clientSearch = q || '';
+  renderClientsPage();
+}
+function persistAppState(){
+  if (!persistentStateReady) return;
+  localStorage.setItem(getUserStateStorageKey(), JSON.stringify({
+    cages: CAGES,
+    drugs: DRUGS,
+    ordos: ORDOS,
+    historique: HISTORIQUE_DATA,
+    suivi: SUIVI_HISTORY,
+    appointments: APPOINTMENTS,
+    patients: PATIENTS,
+    clients: CLIENTS,
+  }));
+}
+function refreshPersistentViews(){
+  ensureCaseFormEnhancements();
+  ensureModalBindings();
+  populatePatientSelects();
+  renderClientsPage();
+  renderRdvPage();
+  if (document.getElementById('page-cages')) renderCages();
+  if (document.getElementById('page-historique')) renderHist(document.getElementById('hist-search')?.value || '');
+  if (document.getElementById('page-ordonnances')) renderOrdos(document.getElementById('ordo-search')?.value || '');
+  if (document.getElementById('page-meds')) renderDrugs(drugFilter || '', drugSearch || '');
+}
+function initializePersistentState(){
+  const defaults = getDefaultState();
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(getUserStateStorageKey()) || 'null'); } catch(e) { saved = null; }
+  replaceArrayContents(CAGES, saved?.cages || defaults.cages);
+  replaceArrayContents(DRUGS, saved?.drugs || defaults.drugs);
+  replaceArrayContents(ORDOS, saved?.ordos || defaults.ordos);
+  replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
+  replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
+  replaceObjectContents(SUIVI_HISTORY, saved?.suivi || defaults.suivi);
+  PATIENTS = deepClone(saved?.patients || defaults.patients);
+  CLIENTS = deepClone(saved?.clients || defaults.clients);
+  persistentStateReady = true;
+  refreshPersistentViews();
 }
 
 // ── URGENCE SCORE ──
@@ -4734,6 +5268,7 @@ function saveSuivi() {
 
   if (!SUIVI_HISTORY[activeCageId]) SUIVI_HISTORY[activeCageId] = [];
   SUIVI_HISTORY[activeCageId].unshift({ date: dateStr, temp: temp + '°C', tempColor, appetit, etat, etatBadge, etatLabel, trait, obs });
+  persistAppState();
   closeModal('modal-suivi-cage');
   selectCage(activeCageId);
   toast('Observation enregistrée ✅');
@@ -4772,6 +5307,7 @@ function libererCage() {
   cage.depuis = etat === 'nettoyage' ? new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit'}) : null;
   cage.notes  = notes || null;
   delete SUIVI_HISTORY[cageId]; // clear history for freed cage
+  persistAppState();
   if (activeCageId === cageId) activeCageId = null;
   closeModal('modal-liberer');
   renderCages();
@@ -4788,15 +5324,15 @@ function marquerLibre(cageId) {
   const cage = CAGES.find(c => c.id === cageId);
   if (!cage) return;
   cage.statut = 'libre'; cage.motif = null; cage.depuis = null;
+  persistAppState();
   renderCages();
   toast(`Cage ${cageId} marquée Libre ✅`);
 }
 
 function openAdmissionForCage(cageId) {
-  const sel = document.querySelector('#modal-cage-new select');
-  if (sel) {
-    Array.from(sel.options).forEach(o => { if (o.value.includes(cageId) || o.text.includes(cageId)) o.selected = true; });
-  }
+  populatePatientSelects();
+  const sel = document.getElementById('admit-cage-id');
+  if (sel && sel.querySelector(`option[value="${cageId}"]`)) sel.value = cageId;
   openModal('modal-cage-new');
 }
 
@@ -6067,21 +6603,212 @@ function checkOrdoEmpty() {
 }
 
 function saveNewOrdo() {
-  const animal = document.getElementById('on-animal')?.value;
-  const diag   = document.getElementById('on-diag')?.value;
-  const lines  = document.getElementById('ordo-lines-new');
-  if (!animal || !diag) { toast('⚠️ Veuillez remplir l\'animal et le diagnostic'); return; }
+  const animalId = document.getElementById('on-animal')?.value;
+  const diag = document.getElementById('on-diag')?.value?.trim();
+  const lines = document.getElementById('ordo-lines-new');
+  if (!animalId || !diag) { toast('⚠️ Veuillez remplir l\'animal et le diagnostic'); return; }
   if (!lines || lines.children.length === 0) { toast('⚠️ Ajoutez au moins un médicament'); return; }
-  // Generate new ordonnance number
-  const newNum = 'ORD-2026-0' + (49 + Math.floor(Math.random()*10));
+  const meds = Array.from(lines.children).map(line => {
+    const select = line.querySelector('select');
+    const inputs = Array.from(line.querySelectorAll('input'));
+    const name = select ? select.value : (inputs[0]?.value || '').trim();
+    const details = select ? (inputs[0]?.value || '').trim() : (inputs[2]?.value || '').trim();
+    const qty = select ? (inputs[1]?.value || '').trim() : (inputs[3]?.value || '').trim();
+    const duration = select ? (inputs[2]?.value || document.getElementById('on-duree')?.value || '').trim() : (inputs[4]?.value || document.getElementById('on-duree')?.value || '').trim();
+    return { n: name, d: details || duration || document.getElementById('on-duree')?.value || '', q: qty || '-' };
+  }).filter(m => m.n);
+  if (!meds.length) { toast('⚠️ Ajoutez au moins un médicament valide'); return; }
+
+  let patient = animalId === 'nouveau' ? null : getPatientById(animalId);
+  if (animalId === 'nouveau') {
+    const fallbackName = (document.getElementById('on-espece')?.value || 'Nouveau patient').trim();
+    patient = upsertPatient({
+      name: fallbackName.split('·')[0].trim(),
+      species: fallbackName.toLowerCase().includes('chat') ? 'Chat' : 'Chien',
+      race: fallbackName,
+      age: '',
+      weight: document.getElementById('on-poids')?.value ? document.getElementById('on-poids').value + ' kg' : '',
+      owner: 'Client non précisé',
+      nextRdv: shortFrDate(document.getElementById('on-controle')?.value || ''),
+    });
+    upsertClientFromPatient(patient);
+  }
+  if (!patient) { toast('⚠️ Patient introuvable'); return; }
+
+  const year = new Date().getFullYear();
+  const seq = String(ORDOS.length + 49).padStart(3, '0');
+  const newNum = `ORD-${year}-${seq}`;
+  const newOrdo = {
+    num: newNum,
+    animal: displayAnimalName(patient.name, patient.species),
+    proprietaire: patient.owner,
+    espece: patient.species,
+    race: patient.race || document.getElementById('on-espece')?.value || patient.species,
+    age: patient.age || '',
+    poids: patient.weight || (document.getElementById('on-poids')?.value ? document.getElementById('on-poids').value + ' kg' : ''),
+    date: shortFrDate(document.getElementById('on-date')?.value || '') || todayFr(),
+    diagnostic: diag,
+    statut: document.getElementById('on-duree')?.value === 'Long terme / Chronique' ? 'Long terme' : 'En cours',
+    meds,
+    controle: shortFrDate(document.getElementById('on-controle')?.value || '') || (document.getElementById('on-instructions')?.value?.trim() || 'Contrôle à planifier'),
+  };
+  ORDOS.unshift(newOrdo);
+  patient.nextRdv = newOrdo.controle;
+  upsertClientFromPatient(patient);
+  persistAppState();
   closeModal('modal-ordo-new');
-  // Reset form
   ordoLineCount = 0;
-  if (lines) lines.innerHTML = '';
+  lines.innerHTML = '';
   const empty = document.getElementById('ordo-lines-empty');
   if (empty) empty.style.display = 'block';
-  toast('✅ Ordonnance ' + newNum + ' créée et ajoutée à la liste');
+  populatePatientSelects();
+  renderOrdos('', true);
+  showOrdo(newNum);
+  toast('✅ Ordonnance ' + newNum + ' créée et enregistrée');
   nav('ordonnances');
+}
+
+function saveClient() {
+  const firstName = document.getElementById('client-first-name')?.value?.trim();
+  const lastName = document.getElementById('client-last-name')?.value?.trim();
+  const phone = document.getElementById('client-phone')?.value?.trim();
+  const email = document.getElementById('client-email')?.value?.trim();
+  const address = document.getElementById('client-address')?.value?.trim();
+  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+  if (!fullName || !phone) { toast('⚠️ Nom, prénom et téléphone sont requis'); return; }
+  let client = CLIENTS.find(c => c.fullName.toLowerCase() === fullName.toLowerCase());
+  if (!client) {
+    client = { id: slugify(fullName), fullName, phone:'', email:'', address:'', animals:[], nextRdv:'' };
+    CLIENTS.unshift(client);
+  }
+  client.phone = phone;
+  client.email = email || client.email;
+  client.address = address || client.address;
+  persistAppState();
+  renderClientsPage();
+  closeModal('modal-client');
+  toast('✅ Client enregistré pour cet utilisateur');
+}
+
+function saveDrug() {
+  const name = document.getElementById('drug-name')?.value?.trim();
+  const molecule = document.getElementById('drug-molecule')?.value?.trim();
+  if (!name) { toast('⚠️ Le nom du médicament est requis'); return; }
+  const drug = {
+    id: slugify(name),
+    n: name,
+    m: molecule || name,
+    g: document.getElementById('drug-class')?.value || 'Antibiotiques',
+    f: document.getElementById('drug-form')?.value || 'Injectable',
+    v: document.getElementById('drug-route')?.value || 'PO',
+    poso: document.getElementById('drug-dose')?.value?.trim() || 'À préciser',
+    ind: document.getElementById('drug-indications')?.value?.trim() || 'À préciser',
+    ci: document.getElementById('drug-contra')?.value?.trim() || 'Aucune renseignée',
+    inter: document.getElementById('drug-interactions')?.value?.trim() || 'Aucune renseignée',
+    eff: 'À surveiller',
+    p: parseInt(document.getElementById('drug-price')?.value || '0', 10) || 0,
+    s: parseInt(document.getElementById('drug-stock')?.value || '0', 10) || 0,
+    smin: parseInt(document.getElementById('drug-stock-min')?.value || '0', 10) || 0,
+    c: '#1462C8',
+  };
+  DRUGS.unshift(drug);
+  persistAppState();
+  closeModal('modal-drug-new');
+  renderDrugs(drugFilter || '', drugSearch || '');
+  toast('✅ Médicament enregistré et sauvegardé');
+}
+
+function saveAdmission() {
+  const cageId = document.getElementById('admit-cage-id')?.value;
+  const patientId = document.getElementById('admit-animal-id')?.value;
+  const motif = document.getElementById('admit-motif')?.value?.trim();
+  if (!cageId || !patientId || !motif) { toast('⚠️ Cage, animal et motif sont requis'); return; }
+  const cage = CAGES.find(c => c.id === cageId);
+  const patient = getPatientById(patientId);
+  if (!cage || !patient) { toast('⚠️ Impossible de trouver la cage ou le patient'); return; }
+  cage.statut = 'occupée';
+  cage.animal = displayAnimalName(patient.name, patient.species);
+  cage.motif = motif;
+  cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
+  cage.notes = document.getElementById('admit-notes')?.value?.trim() || null;
+  if (!SUIVI_HISTORY[cageId]) SUIVI_HISTORY[cageId] = [];
+  patient.nextRdv = shortFrDate(document.getElementById('admit-exit-date')?.value || '') || patient.nextRdv;
+  upsertClientFromPatient(patient);
+  persistAppState();
+  closeModal('modal-cage-new');
+  activeCageId = cageId;
+  renderCages();
+  selectCage(cageId);
+  toast(`✅ ${patient.name} admis en ${cageId}`);
+}
+
+function saveNewCase() {
+  ensureCaseFormEnhancements();
+  const animalName = document.getElementById('case-animal-name')?.value?.trim();
+  const owner = document.getElementById('case-client-name')?.value?.trim();
+  const phone = document.getElementById('case-client-phone')?.value?.trim();
+  const species = document.getElementById('case-espece')?.value || 'Chien';
+  const race = document.getElementById('case-race')?.value?.trim() || '';
+  const age = document.getElementById('case-age')?.value?.trim() || '';
+  const weightValue = document.getElementById('case-poids')?.value?.trim();
+  const diagnosis = document.getElementById('diag-inp')?.value?.trim();
+  if (!animalName || !owner || !diagnosis) { toast('⚠️ Animal, propriétaire et diagnostic sont requis'); return; }
+  const amount = parseInt(document.getElementById('case-amount')?.value || '0', 10) || 0;
+  const paid = parseInt(document.getElementById('case-paid')?.value || '0', 10) || 0;
+  const nextRdv = shortFrDate(document.getElementById('case-next-rdv')?.value || '');
+  const email = document.getElementById('case-client-email')?.value?.trim() || '';
+  const patient = upsertPatient({
+    name: animalName,
+    species,
+    race,
+    age,
+    weight: weightValue ? weightValue + ' kg' : '',
+    owner,
+    phone,
+    email,
+    nextRdv,
+    sexe: document.getElementById('case-sexe')?.value || '',
+    notes: document.getElementById('case-observations')?.value?.trim() || '',
+  });
+  upsertClientFromPatient(patient);
+  const now = new Date();
+  const urgencyScore = parseInt(document.getElementById('urg-score')?.textContent || '0', 10) || 0;
+  const paiement = paid <= 0 ? 'impaye' : paid < amount ? 'partiel' : 'paye';
+  HISTORIQUE_DATA.unshift({
+    id: 'h' + now.getTime(),
+    animal: displayAnimalName(patient.name, patient.species),
+    espece: patient.species.toLowerCase(),
+    race: patient.race || patient.species,
+    age: patient.age || '-',
+    poids: patient.weight || '-',
+    client: patient.owner,
+    tel: patient.phone || '-',
+    date: todayFr(),
+    dateSortie: null,
+    diagnostic: diagnosis,
+    urgence: urgencyScore >= 7 ? 'critique' : urgencyScore >= 4 ? 'urgent' : 'normal',
+    traitements: [],
+    statutTraitement: 'en-cours',
+    resultat: 'stabilisation',
+    notesCliniques: [
+      document.getElementById('case-history')?.value?.trim(),
+      document.getElementById('case-symptoms')?.value?.trim(),
+      document.getElementById('case-observations')?.value?.trim(),
+      document.getElementById('case-exams')?.value?.trim(),
+    ].filter(Boolean).join(' · '),
+    conseilsSortie: nextRdv ? 'Contrôle prévu le ' + nextRdv : 'Contrôle à programmer',
+    montant: amount,
+    paiement,
+    rdv: nextRdv || 'A planifier',
+    vaccAJour: !!document.getElementById('case-vaccins')?.checked,
+    ordonnance: null,
+  });
+  persistAppState();
+  renderClientsPage();
+  renderHist('');
+  populatePatientSelects();
+  toast('✅ Cas clinique enregistré et sauvegardé');
+  nav('historique');
 }
 
 // ── Init historique on nav ──
