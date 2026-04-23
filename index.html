@@ -8656,8 +8656,10 @@ function saveAdmission() {
   const INSTAGRAM_URL = 'https://www.instagram.com/vetpro.dz/';
   const APPROVAL_TABLE = 'vetpro_access_requests';
   const CONTACT_TABLE = 'vetpro_contact_messages';
+  const USER_STATE_TABLE = 'vetpro_user_state';
   const LOCAL_APPROVALS_KEY = 'vetpro-access-fallback-v2';
   const LOGO_PATH = './vetpro-logo.jpg';
+  let remoteStateSaveTimer = null;
 
   function getFallbackState(){
     try {
@@ -8892,6 +8894,60 @@ function saveAdmission() {
         font-size:12px;
         margin-top:6px;
       }
+      .landing-topnav{
+        position:sticky;
+        top:0;
+        z-index:30;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:14px;
+        padding:14px 18px;
+        margin-bottom:18px;
+        border-radius:22px;
+        background:rgba(5,30,20,.72);
+        border:1px solid rgba(255,255,255,.08);
+        backdrop-filter:blur(20px);
+      }
+      .landing-topnav-links{
+        display:flex;
+        flex-wrap:wrap;
+        gap:10px;
+      }
+      .landing-topnav a,.landing-topnav button{
+        background:none;
+        border:none;
+        color:#eaf8ef;
+        text-decoration:none;
+        font:600 13px 'Outfit',sans-serif;
+        cursor:pointer;
+        padding:8px 12px;
+        border-radius:999px;
+      }
+      .landing-topnav a:hover,.landing-topnav button:hover{
+        background:rgba(255,255,255,.08);
+      }
+      .vet-pulse{
+        position:absolute;
+        inset:auto 6% 10% auto;
+        width:280px;
+        height:280px;
+        border-radius:50%;
+        background:radial-gradient(circle, rgba(53,214,124,.22) 0%, rgba(53,214,124,0) 70%);
+        filter:blur(10px);
+        animation:vetPulse 10s ease-in-out infinite;
+        pointer-events:none;
+      }
+      .vet-pulse.alt{
+        inset:12% auto auto -4%;
+        width:220px;
+        height:220px;
+        animation-delay:-4s;
+      }
+      @keyframes vetPulse{
+        0%,100%{transform:translateY(0) scale(1);opacity:.7}
+        50%{transform:translateY(-18px) scale(1.08);opacity:1}
+      }
       @media (max-width: 1080px){
         .module-grid,.terms-preview-grid,.contact-hero-grid,.contacts-layout,.contact-form-grid{
           grid-template-columns:1fr;
@@ -8911,6 +8967,24 @@ function saveAdmission() {
     const rightColumn = landing?.querySelector('.landing-right');
     if (!landing || !rightColumn || !loginCard) return;
 
+    if (!landing.querySelector('.landing-topnav')) {
+      const nav = document.createElement('div');
+      nav.className = 'landing-topnav';
+      nav.innerHTML = `
+        <div style="font-family:'DM Serif Display',serif;font-size:24px;color:#fff">Vet<span style="color:#38d37c">Pro</span></div>
+        <div class="landing-topnav-links">
+          <a href="#landing-functions">Fonctions</a>
+          <a href="#landing-pricing">Tarifs</a>
+          <a href="#landing-contact">Contacts</a>
+          <button type="button" onclick="openTermsFromLanding()">Conditions</button>
+          <button type="button" onclick="openAuthCard('login')">Sign in</button>
+          <button type="button" onclick="openAuthCard('signup')">Sign up</button>
+        </div>
+      `;
+      landing.prepend(nav);
+      landing.insertAdjacentHTML('beforeend', `<div class="vet-pulse"></div><div class="vet-pulse alt"></div>`);
+    }
+
     loginCard.classList.add('vetpro-auth-visible');
     loginCard.style.display = 'block';
     if (loginCard.parentElement !== rightColumn) rightColumn.prepend(loginCard);
@@ -8920,7 +8994,7 @@ function saveAdmission() {
       wrapper.id = 'landing-longform';
       wrapper.className = 'landing-longform';
       wrapper.innerHTML = `
-        <section class="longform-section longform-dark">
+        <section class="longform-section longform-dark" id="landing-functions">
           <div class="card-title" style="color:#fff;margin-bottom:16px">Accueil VetPro</div>
           <div class="module-grid">
             <div class="module-card"><h4>IA clinique</h4><p>Diagnostic assiste, aide a la decision, suggestions de protocoles et support rapide pour les cas cliniques.</p></div>
@@ -8931,19 +9005,20 @@ function saveAdmission() {
             <div class="module-card"><h4>Statistiques</h4><p>Chiffres de la clinique, progression des cas, revenus, clients actifs et remise a zero si besoin.</p></div>
           </div>
         </section>
-        <section class="longform-section">
+        <section class="longform-section" id="landing-conditions">
           <div class="card-title" style="margin-bottom:16px">Lire les conditions avant inscription</div>
           <div class="terms-preview-grid">
-            <div class="terms-card"><h4>Acces reserve</h4><p>VetPro verifie les profils et demande un numero d'ordre veterinaire national pour les praticiens ou une carte d'etudiant pour les stagiaires.</p></div>
+            <div class="terms-card"><h4>Acces reserve</h4><p>VetPro verifie les profils, modere les comptes et garde un controle sur l'acces a la plateforme.</p></div>
             <div class="terms-card"><h4>Validation manuelle</h4><p>Chaque inscription reste en attente jusqu'a approbation. Aucun acces complet n'est accorde avant verification.</p></div>
             <div class="terms-card"><h4>Protection des droits</h4><p>Les contenus, l'interface, le design, les modules et la marque VetPro restent proteges et reserves.</p></div>
           </div>
           <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
             <button class="btn btn-p" onclick="nav('terms');document.getElementById('login-screen')?.classList.add('hidden')">Lire toutes les conditions</button>
+            <button class="btn btn-ghost" onclick="downloadTermsDocument()">Telecharger les conditions</button>
             <button class="btn btn-ghost" onclick="openAuthCard('signup')">Continuer vers l'inscription</button>
           </div>
         </section>
-        <section class="longform-section">
+        <section class="longform-section" id="landing-contact">
           <div class="card-title" style="margin-bottom:16px">Direction</div>
           <div class="contact-hero-grid">
             <div class="contact-highlight"><h4>${OWNER_NAME}</h4><p>Fondateur et responsable VetPro. VetPro est pense pour la pratique veterinaire moderne en Algerie.</p></div>
@@ -8955,6 +9030,9 @@ function saveAdmission() {
       `;
       landing.appendChild(wrapper);
     }
+
+    const pricingWrap = landing.querySelector('.pricing-wrap');
+    if (pricingWrap) pricingWrap.id = 'landing-pricing';
 
     const brandText = landing.querySelector('.landing-brand div div:last-child');
     if (brandText) brandText.innerHTML = `Vet<span style="color:#38d37c">Pro</span><div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">${OWNER_NAME}</div>`;
@@ -9006,6 +9084,126 @@ function saveAdmission() {
   function upgradeTermsPage(){
     const body = document.getElementById('terms-body');
     if (body) body.classList.add('terms-reader');
+    const panel = body?.closest('.vetpro-panel');
+    if (panel && !panel.querySelector('#terms-download-btn')) {
+      const controls = document.createElement('div');
+      controls.style.cssText = 'display:flex;gap:10px;justify-content:flex-end;margin-bottom:12px';
+      controls.innerHTML = `<button class="btn btn-ghost" id="terms-download-btn" onclick="downloadTermsDocument()">Télécharger</button>`;
+      panel.insertBefore(controls, body);
+    }
+  }
+
+  window.downloadTermsDocument = function(){
+    const sections = ['fr','en','ar'].map(lang => {
+      const data = TERMS_TEXT[lang];
+      return `${data.title}\n\n${data.intro}\n\n${data.items.map((item, index) => `${index + 1}. ${item.replace(/<[^>]+>/g,'')}`).join('\n\n')}`;
+    }).join('\n\n-------------------------\n\n');
+    const blob = new Blob([sections], { type:'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'vetpro-conditions.txt';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  window.openTermsFromLanding = function(){
+    document.getElementById('login-screen')?.classList.add('hidden');
+    nav('terms');
+    renderTermsPage('fr');
+  };
+
+  function collectAppStateSnapshot(){
+    return {
+      cages: CAGES,
+      drugs: DRUGS,
+      ordos: ORDOS,
+      historique: HISTORIQUE_DATA,
+      suivi: SUIVI_HISTORY,
+      appointments: APPOINTMENTS,
+      vaccineReminders: VACCINE_REMINDERS,
+      patients: PATIENTS,
+      clients: CLIENTS
+    };
+  }
+
+  function applyAppStateSnapshot(saved, defaults){
+    replaceArrayContents(CAGES, saved?.cages || defaults.cages);
+    replaceArrayContents(DRUGS, saved?.drugs || defaults.drugs);
+    replaceArrayContents(ORDOS, saved?.ordos || defaults.ordos);
+    replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
+    replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
+    replaceArrayContents(VACCINE_REMINDERS, saved?.vaccineReminders || defaults.vaccineReminders);
+    replaceObjectContents(SUIVI_HISTORY, saved?.suivi || defaults.suivi);
+    PATIENTS = deepClone(saved?.patients || defaults.patients);
+    CLIENTS = deepClone(saved?.clients || defaults.clients);
+  }
+
+  async function loadRemoteAppState(){
+    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') return null;
+    if (!(await canReachSupabaseTable(USER_STATE_TABLE))) return null;
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      const email = (session?.user?.email || '').toLowerCase();
+      if (!email) return null;
+      const { data, error } = await _sb
+        .from(USER_STATE_TABLE)
+        .select('state')
+        .ilike('email', email)
+        .order('updated_at', { ascending:false })
+        .limit(1);
+      if (error) return null;
+      return data?.[0]?.state || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function persistAppStateRemote(){
+    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') return;
+    if (!(await canReachSupabaseTable(USER_STATE_TABLE))) return;
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      const email = (session?.user?.email || '').toLowerCase();
+      if (!email) return;
+      await _sb.from(USER_STATE_TABLE).upsert({
+        user_id: session.user.id || null,
+        email,
+        state: collectAppStateSnapshot(),
+        updated_at: new Date().toISOString()
+      }, { onConflict:'email' });
+    } catch (e) {}
+  }
+
+  const originalPersistAppState = persistAppState;
+  persistAppState = window.persistAppState = function(){
+    originalPersistAppState();
+    clearTimeout(remoteStateSaveTimer);
+    remoteStateSaveTimer = setTimeout(() => { persistAppStateRemote(); }, 350);
+  };
+
+  const originalInitializePersistentState = initializePersistentState;
+  initializePersistentState = window.initializePersistentState = function(){
+    const defaults = getDefaultState();
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(getUserStateStorageKey()) || 'null'); } catch(e) { saved = null; }
+    applyAppStateSnapshot(saved, defaults);
+    persistentStateReady = true;
+    refreshPersistentViews();
+    loadRemoteAppState().then(remoteState => {
+      if (!remoteState) return;
+      applyAppStateSnapshot(remoteState, defaults);
+      try { localStorage.setItem(getUserStateStorageKey(), JSON.stringify(collectAppStateSnapshot())); } catch (e) {}
+      refreshPersistentViews();
+    });
+  };
+
+  function removeVetodiagResiduals(){
+    document.querySelectorAll('*').forEach(el => {
+      if (el.children.length) return;
+      if (!el.textContent) return;
+      el.textContent = el.textContent.replace(/vetodiag/ig, 'VetPro');
+    });
   }
 
   async function refreshApprovalsPageV2(){
@@ -9277,6 +9475,7 @@ function saveAdmission() {
     upgradeContactsPage();
     improveBrandingAndSettings();
     installInstagramIcons();
+    removeVetodiagResiduals();
     refreshApprovalsPageV2();
   }
 

@@ -25,8 +25,17 @@ create table if not exists public.vetpro_contact_messages (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.vetpro_user_state (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  email text not null unique,
+  state jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+
 alter table public.vetpro_access_requests enable row level security;
 alter table public.vetpro_contact_messages enable row level security;
+alter table public.vetpro_user_state enable row level security;
 
 drop policy if exists "vetpro access insert" on public.vetpro_access_requests;
 create policy "vetpro access insert"
@@ -66,6 +75,37 @@ on public.vetpro_contact_messages
 for select
 to authenticated
 using (lower(coalesce(auth.jwt() ->> 'email', '')) = lower('__ADMIN_EMAIL__'));
+
+drop policy if exists "vetpro state self select" on public.vetpro_user_state;
+create policy "vetpro state self select"
+on public.vetpro_user_state
+for select
+to authenticated
+using (
+  lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  or lower(coalesce(auth.jwt() ->> 'email', '')) = lower('__ADMIN_EMAIL__')
+);
+
+drop policy if exists "vetpro state self upsert" on public.vetpro_user_state;
+create policy "vetpro state self upsert"
+on public.vetpro_user_state
+for insert
+to authenticated
+with check (lower(email) = lower(coalesce(auth.jwt() ->> 'email', '')));
+
+drop policy if exists "vetpro state self update" on public.vetpro_user_state;
+create policy "vetpro state self update"
+on public.vetpro_user_state
+for update
+to authenticated
+using (
+  lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  or lower(coalesce(auth.jwt() ->> 'email', '')) = lower('__ADMIN_EMAIL__')
+)
+with check (
+  lower(email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+  or lower(coalesce(auth.jwt() ->> 'email', '')) = lower('__ADMIN_EMAIL__')
+);
 
 insert into public.vetpro_access_requests (
   email,

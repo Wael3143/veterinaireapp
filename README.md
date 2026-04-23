@@ -46,6 +46,7 @@ Application veterinaire web pour VetPro Algerie.
 
 - Table `vetpro_access_requests` : stocke les demandes d'acces
 - Table `vetpro_contact_messages` : stocke les messages envoyes depuis la page contacts
+- Table `vetpro_user_state` : stocke tous les cas, clients, rendez-vous, rappels et autres donnees de l'application en JSON par utilisateur
 - Policies RLS : seuls les admins peuvent approuver et lire tous les messages
 
 ## Note importante
