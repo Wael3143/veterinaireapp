@@ -9517,13 +9517,9 @@ function saveAdmission() {
   }
 
   function wireSupabaseAuthEvents(){
-    if (!_sb || window.__vetproAuthEventsBound) return;
-    window.__vetproAuthEventsBound = true;
-    _sb.auth.onAuthStateChange((event) => {
-      if (['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED', 'SIGNED_OUT'].includes(event)) {
-        setTimeout(() => { checkSession(); }, 0);
-      }
-    });
+    // Legacy auth listeners were fighting with the final auth flow and could
+    // sign users back out right after a successful login.
+    return;
   }
 
   window.doSignup = async function(){
@@ -9667,8 +9663,10 @@ function saveAdmission() {
     installInstagramIcons();
     removeVetodiagResiduals();
     refreshApprovalsPageV2();
-    wireSupabaseAuthEvents();
-    recoverOAuthSessionFromHash().finally(() => { checkSession(); });
+    if (!window.__vetproUseFinalAuthOnly) {
+      wireSupabaseAuthEvents();
+      recoverOAuthSessionFromHash().finally(() => { checkSession(); });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', initVetProV2);
