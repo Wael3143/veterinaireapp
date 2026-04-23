@@ -1896,7 +1896,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="page-hero">
     <div class="tag">✉️ Contact & Support</div>
     <h2>Feedback & Assistance</h2>
-    <p>Dr. Kherbache Wail · ENSV Algérie · w.kherbache@etud.ensv.dz · VétérinApp Pro v5.0</p>
+    <p>VetPro · Contact configurable en privé · VétérinApp Pro v5.0</p>
   </div>
   <div class="g2">
     <div class="card">
@@ -1906,13 +1906,13 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="fg"><label class="lbl">Catégorie</label><select class="sel"><option>🐛 Bug / Problème</option><option>💡 Suggestion</option><option>🩺 Question clinique</option><option>💊 Médicaments</option><option>📋 Autre</option></select></div>
       <div class="fg"><label class="lbl">Message *</label><textarea class="tex" rows="4" placeholder="Décrivez votre problème ou suggestion…"></textarea></div>
       <div class="fg"><label class="lbl">Évaluation</label><div style="font-size:28px;cursor:pointer">⭐⭐⭐⭐⭐</div></div>
-      <button class="btn btn-p btn-full btn-lg" onclick="toast('Message envoyé à w.kherbache@etud.ensv.dz ✅')">📨 Envoyer</button>
+      <button class="btn btn-p btn-full btn-lg" onclick="toast('Message préparé ✅')">📨 Envoyer</button>
     </div>
     <div>
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">📞 Contact direct</div>
         <div style="display:flex;flex-direction:column;gap:10px">
-          <div style="background:var(--surface2);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center"><span style="font-size:22px">✉️</span><div><div style="font-weight:700;font-size:13px">Email support</div><a href="mailto:w.kherbache@etud.ensv.dz" style="color:var(--info);font-size:12.5px">w.kherbache@etud.ensv.dz</a></div></div>
+          <div style="background:var(--surface2);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center"><span style="font-size:22px">✉️</span><div><div style="font-weight:700;font-size:13px">Email support</div><span style="color:var(--info);font-size:12.5px">configuré en privé</span></div></div>
           <div style="background:var(--surface2);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center"><span style="font-size:22px">🏫</span><div><div style="font-weight:700;font-size:13px">Institution</div><div style="color:var(--muted);font-size:12.5px">ENSV · École Nationale Supérieure Vétérinaire · Algérie</div></div></div>
           <div style="background:var(--surface2);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center"><span style="font-size:22px">©️</span><div><div style="font-weight:700;font-size:13px">Application</div><div style="color:var(--muted);font-size:12.5px">VétérinApp Pro v5.0 · © 2026 · Tous droits réservés</div></div></div>
         </div>
@@ -2141,7 +2141,7 @@ window.addEventListener('DOMContentLoaded', () => {
         <div class="fg"><label class="lbl">Titre / Grade</label><input class="inp" value="Docteur Vétérinaire · ENSV Algérie"/></div>
         <div class="fg"><label class="lbl">N° Ordre national</label><input class="inp" value="DZ-VET-2026-004782"/></div>
         <div class="row2">
-          <div class="fg"><label class="lbl">Email</label><input class="inp" type="email" value="w.kherbache@etud.ensv.dz"/></div>
+          <div class="fg"><label class="lbl">Email</label><input class="inp" type="email" value="contact@vetpro.local"/></div>
           <div class="fg"><label class="lbl">Téléphone</label><input class="inp" value="0550 000 000"/></div>
         </div>
         <div class="fg"><label class="lbl">Spécialité</label><select class="sel"><option selected>Médecine des carnivores domestiques</option><option>Chirurgie</option><option>Ophtalmologie</option><option>Dermatologie</option><option>Cardiologie</option></select></div>
@@ -7568,7 +7568,7 @@ function saveAdmission() {
     <div style="margin-bottom:14px">
       <label class="login-label">Adresse email</label>
       <input class="login-input" type="email" id="login-email"
-        placeholder="w.kherbache@etud.ensv.dz" autocomplete="email"/>
+        placeholder="admin@vetpro.local" autocomplete="email"/>
     </div>
     <div>
       <label class="login-label">Mot de passe</label>
@@ -7608,9 +7608,9 @@ function saveAdmission() {
 <script>
 (function(){
   const BRAND = 'VetPro';
-  const ADMIN_EMAIL = 'w.kherbache@etud.ensv.dz';
+  const ADMIN_EMAIL = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
   const CONTACT_PHONE = '+213781236686';
-  const CONTACT_EMAIL = 'w.kherbache@etud.ensv.dz';
+  const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'contact@vetpro.local';
   const INSTAGRAM_URL = 'https://www.instagram.com/vetpro.dz/';
   const APP_STORE_URL = '#';
   const PLAY_STORE_URL = '#';
@@ -8416,7 +8416,7 @@ function saveAdmission() {
       '#page-settings input[value="Kherbache"]': s.vetLastName,
       '#page-settings input[value="Docteur Vétérinaire · ENSV Algérie"]': s.title,
       '#page-settings input[value="DZ-VET-2026-004782"]': s.orderNumber,
-      '#page-settings input[type="email"][value="w.kherbache@etud.ensv.dz"]': s.email
+      '#page-settings input[type="email"][value="contact@vetpro.local"]': s.email
     };
     Object.entries(mappings).forEach(([selector, value]) => {
       const el = document.querySelector(selector);
@@ -8627,6 +8627,625 @@ function saveAdmission() {
 
   document.addEventListener('DOMContentLoaded', initVetProEnhancements);
   window.addEventListener('load', initVetProEnhancements);
+})();
+</script>
+
+<script>
+(function(){
+  const ADMIN_EMAIL = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
+  const MASTER_LOGIN_EMAIL = '';
+  const MASTER_LOGIN_PASSWORD = '';
+  const OWNER_NAME = 'Kherbache Wail';
+  const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'contact@vetpro.local';
+  const CONTACT_PHONE = '+213781236686';
+  const INSTAGRAM_URL = 'https://www.instagram.com/vetpro.dz/';
+  const APPROVAL_TABLE = 'vetpro_access_requests';
+  const CONTACT_TABLE = 'vetpro_contact_messages';
+  const LOCAL_APPROVALS_KEY = 'vetpro-access-fallback-v2';
+  const LOGO_PATH = './vetpro-logo.jpg';
+
+  function getFallbackState(){
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOCAL_APPROVALS_KEY) || '{}');
+      return {
+        approved: Array.isArray(parsed.approved) ? parsed.approved : [ADMIN_EMAIL],
+        pending: Array.isArray(parsed.pending) ? parsed.pending : [],
+        rejected: Array.isArray(parsed.rejected) ? parsed.rejected : []
+      };
+    } catch (e) {
+      return { approved:[ADMIN_EMAIL], pending:[], rejected:[] };
+    }
+  }
+
+  function saveFallbackState(state){
+    localStorage.setItem(LOCAL_APPROVALS_KEY, JSON.stringify(state));
+  }
+
+  async function canReachSupabaseTable(table){
+    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') return false;
+    try {
+      const { error } = await _sb.from(table).select('*', { count:'exact', head:true }).limit(1);
+      return !error;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  async function fetchApprovalRow(email){
+    if (!email) return null;
+    if (await canReachSupabaseTable(APPROVAL_TABLE)) {
+      const { data } = await _sb
+        .from(APPROVAL_TABLE)
+        .select('*')
+        .ilike('email', email)
+        .order('requested_at', { ascending:false })
+        .limit(1);
+      return data?.[0] || null;
+    }
+    const fallback = getFallbackState();
+    if (fallback.approved.includes(email.toLowerCase())) return { email, status:'approved' };
+    return fallback.pending.find(item => item.email === email.toLowerCase()) || fallback.rejected.find(item => item.email === email.toLowerCase()) || null;
+  }
+
+  async function fetchPendingApprovals(){
+    if (await canReachSupabaseTable(APPROVAL_TABLE)) {
+      const { data, error } = await _sb
+        .from(APPROVAL_TABLE)
+        .select('*')
+        .eq('status', 'pending')
+        .order('requested_at', { ascending:false });
+      return error ? [] : (data || []);
+    }
+    return getFallbackState().pending;
+  }
+
+  async function upsertApprovalRequest(payload){
+    const normalized = { ...payload, email:(payload.email || '').toLowerCase() };
+    if (await canReachSupabaseTable(APPROVAL_TABLE)) {
+      const { error } = await _sb.from(APPROVAL_TABLE).upsert(normalized, { onConflict:'email' });
+      return !error;
+    }
+    const state = getFallbackState();
+    state.pending = [normalized, ...state.pending.filter(item => item.email !== normalized.email)];
+    state.rejected = state.rejected.filter(item => item.email !== normalized.email);
+    saveFallbackState(state);
+    return true;
+  }
+
+  async function updateApprovalStatus(email, status){
+    const normalizedEmail = (email || '').toLowerCase();
+    if (await canReachSupabaseTable(APPROVAL_TABLE)) {
+      const { error } = await _sb
+        .from(APPROVAL_TABLE)
+        .update({
+          status,
+          reviewed_at: new Date().toISOString(),
+          reviewed_by: ADMIN_EMAIL
+        })
+        .ilike('email', normalizedEmail);
+      return !error;
+    }
+    const state = getFallbackState();
+    const record = state.pending.find(item => item.email === normalizedEmail);
+    state.pending = state.pending.filter(item => item.email !== normalizedEmail);
+      if (status === 'approved') {
+        if (!state.approved.includes(normalizedEmail)) state.approved.push(normalizedEmail);
+        state.rejected = state.rejected.filter(item => item.email !== normalizedEmail);
+    } else if (record) {
+      state.rejected.unshift({ ...record, status:'rejected' });
+      state.approved = state.approved.filter(item => item !== normalizedEmail);
+    }
+    saveFallbackState(state);
+    return true;
+  }
+
+  async function isApprovedEmail(email){
+    const normalizedEmail = (email || '').toLowerCase();
+    if (!normalizedEmail) return false;
+    if (ADMIN_EMAIL && normalizedEmail === ADMIN_EMAIL) return true;
+    const row = await fetchApprovalRow(normalizedEmail);
+    return row?.status === 'approved';
+  }
+
+  function applyLogoEverywhere(){
+    const logoTargets = ['.login-logo', '.landing-logo', '.paw-icon'];
+    logoTargets.forEach(selector => {
+      document.querySelectorAll(selector).forEach(el => {
+        el.textContent = '';
+        el.style.backgroundImage = `url('${LOGO_PATH}')`;
+        el.style.backgroundSize = 'cover';
+        el.style.backgroundPosition = 'center';
+        el.style.backgroundRepeat = 'no-repeat';
+      });
+    });
+  }
+
+  function injectV2Styles(){
+    if (document.getElementById('vetpro-v2-style')) return;
+    const style = document.createElement('style');
+    style.id = 'vetpro-v2-style';
+    style.textContent = `
+      #login-screen.vetpro-landing{
+        background:
+          radial-gradient(circle at 15% 15%, rgba(60,217,125,.22), transparent 30%),
+          radial-gradient(circle at 85% 20%, rgba(45,140,87,.18), transparent 24%),
+          linear-gradient(180deg, #04130d 0%, #0a2f1f 52%, #eae4d7 52.4%, #f7f2e8 100%);
+      }
+      #login-screen .landing-shell{
+        align-items:start;
+        padding-top:24px;
+        min-height:auto;
+      }
+      #login-screen .login-card.vetpro-auth-visible{
+        display:block !important;
+        background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10));
+        border:1px solid rgba(255,255,255,.26);
+        box-shadow:0 28px 70px rgba(0,0,0,.28);
+        position:sticky;
+        top:28px;
+        backdrop-filter:blur(24px);
+      }
+      #login-screen .login-card.vetpro-auth-visible .login-title,
+      #login-screen .login-card.vetpro-auth-visible .login-sub{
+        text-align:left;
+      }
+      .landing-right .login-card{margin:0;max-width:none}
+      .landing-longform{
+        max-width:1240px;
+        margin:28px auto 0;
+        display:flex;
+        flex-direction:column;
+        gap:18px;
+        padding-bottom:48px;
+      }
+      .longform-section{
+        background:rgba(255,255,255,.92);
+        border:1px solid rgba(12,48,31,.08);
+        border-radius:28px;
+        padding:28px;
+        box-shadow:0 18px 60px rgba(7,28,18,.12);
+      }
+      .longform-dark{
+        background:linear-gradient(180deg, rgba(10,49,33,.96), rgba(7,35,24,.92));
+        color:#fff;
+      }
+      .module-grid,.terms-preview-grid,.contact-hero-grid{
+        display:grid;
+        grid-template-columns:repeat(3, minmax(0,1fr));
+        gap:16px;
+      }
+      .module-card,.terms-card,.contact-highlight{
+        border-radius:22px;
+        padding:18px;
+        background:#fff;
+        border:1px solid var(--brd);
+      }
+      .longform-dark .module-card{
+        background:rgba(255,255,255,.06);
+        border-color:rgba(255,255,255,.08);
+        color:#fff;
+      }
+      .module-card h4,.terms-card h4,.contact-highlight h4{
+        font-size:17px;
+        margin-bottom:8px;
+      }
+      .module-card p,.terms-card p,.contact-highlight p{
+        font-size:13px;
+        line-height:1.7;
+        color:inherit;
+        opacity:.82;
+      }
+      .terms-reader{
+        max-height:620px;
+        overflow:auto;
+        padding-right:8px;
+      }
+      .terms-reader::-webkit-scrollbar{width:8px}
+      .terms-reader::-webkit-scrollbar-thumb{background:rgba(26,74,46,.38);border-radius:999px}
+      .insta-link{
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+      }
+      .insta-icon{
+        width:20px;
+        height:20px;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+      }
+      .contacts-layout{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:18px;
+      }
+      .contact-form-card{
+        background:#fff;
+        border:1px solid var(--brd);
+        border-radius:24px;
+        padding:24px;
+        box-shadow:var(--sh);
+      }
+      .contact-form-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:12px;
+      }
+      .contact-footer{
+        text-align:center;
+        color:rgba(255,255,255,.72);
+        font-size:12px;
+        margin-top:6px;
+      }
+      @media (max-width: 1080px){
+        .module-grid,.terms-preview-grid,.contact-hero-grid,.contacts-layout,.contact-form-grid{
+          grid-template-columns:1fr;
+        }
+        #login-screen .login-card.vetpro-auth-visible{
+          position:relative;
+          top:auto;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function makeLandingLongAndReadable(){
+    const landing = document.getElementById('public-landing');
+    const loginCard = document.querySelector('#login-screen .login-card');
+    const rightColumn = landing?.querySelector('.landing-right');
+    if (!landing || !rightColumn || !loginCard) return;
+
+    loginCard.classList.add('vetpro-auth-visible');
+    loginCard.style.display = 'block';
+    if (loginCard.parentElement !== rightColumn) rightColumn.prepend(loginCard);
+
+    if (!document.getElementById('landing-longform')) {
+      const wrapper = document.createElement('div');
+      wrapper.id = 'landing-longform';
+      wrapper.className = 'landing-longform';
+      wrapper.innerHTML = `
+        <section class="longform-section longform-dark">
+          <div class="card-title" style="color:#fff;margin-bottom:16px">Accueil VetPro</div>
+          <div class="module-grid">
+            <div class="module-card"><h4>IA clinique</h4><p>Diagnostic assiste, aide a la decision, suggestions de protocoles et support rapide pour les cas cliniques.</p></div>
+            <div class="module-card"><h4>Clients & animaux</h4><p>Creation de fiches patient, historique, telephone, email, rendez-vous, vaccins et admissions.</p></div>
+            <div class="module-card"><h4>Rendez-vous & rappels</h4><p>Planning de clinique, rappels, vaccinations, nouveaux clients ajoutables directement depuis les modules.</p></div>
+            <div class="module-card"><h4>Hospitalisations</h4><p>Suivi des cages, entrees, sorties, observations et gestion des animaux hospitalises.</p></div>
+            <div class="module-card"><h4>Medicaments & ordonnances</h4><p>Base therapeutique, stocks, creation d'ordonnances et organisation des produits.</p></div>
+            <div class="module-card"><h4>Statistiques</h4><p>Chiffres de la clinique, progression des cas, revenus, clients actifs et remise a zero si besoin.</p></div>
+          </div>
+        </section>
+        <section class="longform-section">
+          <div class="card-title" style="margin-bottom:16px">Lire les conditions avant inscription</div>
+          <div class="terms-preview-grid">
+            <div class="terms-card"><h4>Acces reserve</h4><p>VetPro verifie les profils et demande un numero d'ordre veterinaire national pour les praticiens ou une carte d'etudiant pour les stagiaires.</p></div>
+            <div class="terms-card"><h4>Validation manuelle</h4><p>Chaque inscription reste en attente jusqu'a approbation. Aucun acces complet n'est accorde avant verification.</p></div>
+            <div class="terms-card"><h4>Protection des droits</h4><p>Les contenus, l'interface, le design, les modules et la marque VetPro restent proteges et reserves.</p></div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-p" onclick="nav('terms');document.getElementById('login-screen')?.classList.add('hidden')">Lire toutes les conditions</button>
+            <button class="btn btn-ghost" onclick="openAuthCard('signup')">Continuer vers l'inscription</button>
+          </div>
+        </section>
+        <section class="longform-section">
+          <div class="card-title" style="margin-bottom:16px">Direction</div>
+          <div class="contact-hero-grid">
+            <div class="contact-highlight"><h4>${OWNER_NAME}</h4><p>Fondateur et responsable VetPro. VetPro est pense pour la pratique veterinaire moderne en Algerie.</p></div>
+            <div class="contact-highlight"><h4>Contact direct</h4><p><a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a><br><a href="tel:${CONTACT_PHONE.replace(/\s+/g, '')}">${CONTACT_PHONE}</a></p></div>
+            <div class="contact-highlight"><h4>Instagram</h4><p><a class="insta-link" href="${INSTAGRAM_URL}" target="_blank" rel="noopener"><span class="insta-icon">📷</span><span>@vetpro.dz</span></a></p></div>
+          </div>
+        </section>
+        <div class="contact-footer">© 2026 VetPro. Tous droits reserves</div>
+      `;
+      landing.appendChild(wrapper);
+    }
+
+    const brandText = landing.querySelector('.landing-brand div div:last-child');
+    if (brandText) brandText.innerHTML = `Vet<span style="color:#38d37c">Pro</span><div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">${OWNER_NAME}</div>`;
+  }
+
+  function upgradeContactsPage(){
+    const page = document.getElementById('page-contacts');
+    if (!page) return;
+    page.innerHTML = `
+      <div class="page-hero">
+        <div class="tag">☎️ Contact VetPro</div>
+        <h2>Parler a ${OWNER_NAME}</h2>
+        <p>Coordonnees claires, formulaire de message et acces direct aux reseaux.</p>
+      </div>
+      <div class="contacts-layout">
+        <div>
+          <div class="contact-form-card" style="margin-bottom:18px">
+            <div class="card-title">Coordonnees directes</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="contact-highlight"><h4>Email</h4><p><a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a></p></div>
+              <div class="contact-highlight"><h4>Telephone</h4><p><a href="tel:${CONTACT_PHONE.replace(/\s+/g, '')}">${CONTACT_PHONE}</a></p></div>
+              <div class="contact-highlight"><h4>Instagram</h4><p><a class="insta-link" href="${INSTAGRAM_URL}" target="_blank" rel="noopener"><span class="insta-icon">📷</span><span>vetpro.dz</span></a></p></div>
+            </div>
+          </div>
+          <div class="contact-form-card">
+            <div class="card-title">A propos de VetPro</div>
+            <p style="color:var(--muted);line-height:1.8">VetPro reunit l'accueil, les cas cliniques, l'historique, les hospitalisations, les vaccinations, les rappels, les statistiques, les ordonnances, les references et les outils de calcul dans une seule interface.</p>
+            <div class="inline-note" style="margin-top:14px">© 2026 VetPro. Tous droits reserves</div>
+          </div>
+        </div>
+        <div class="contact-form-card">
+          <div class="card-title">Envoyer un message</div>
+          <div class="contact-form-grid" style="margin-top:8px">
+            <div class="fg"><label class="lbl">Nom</label><input class="inp" id="contact-name" placeholder="Votre nom"/></div>
+            <div class="fg"><label class="lbl">Email</label><input class="inp" id="contact-email" type="email" placeholder="email@exemple.com"/></div>
+          </div>
+          <div class="fg"><label class="lbl">Sujet</label><input class="inp" id="contact-subject" placeholder="Demande VetPro"/></div>
+          <div class="fg"><label class="lbl">Message</label><textarea class="tex" id="contact-message" rows="8" placeholder="Ecrivez votre message ici..."></textarea></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-p" onclick="sendContactMessage()">Envoyer le message</button>
+            <button class="btn btn-ghost" onclick="window.open('${INSTAGRAM_URL}','_blank')">Ouvrir Instagram</button>
+          </div>
+          <div class="inline-note">Le message est enregistre dans Supabase si la table existe. Sinon, un email pre-rempli s'ouvre vers ${CONTACT_EMAIL}.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function upgradeTermsPage(){
+    const body = document.getElementById('terms-body');
+    if (body) body.classList.add('terms-reader');
+  }
+
+  async function refreshApprovalsPageV2(){
+    const host = document.getElementById('approvals-list');
+    if (!host) return;
+    const rows = await fetchPendingApprovals();
+    if (!rows.length) {
+      host.innerHTML = `<div class="ibox ibox-b">Aucune demande en attente. Les nouveaux comptes apparaitront ici apres inscription.</div>`;
+      return;
+    }
+    host.innerHTML = rows.map(item => `
+      <div class="approval-row">
+        <div>
+          <div style="font-weight:700">${item.full_name || item.fullName || item.email}</div>
+          <div class="approval-meta">${(item.email || '').toLowerCase()}<br>${item.phone || 'Telephone non renseigne'}</div>
+        </div>
+        <div class="approval-meta"><strong>Profil</strong><br>${item.role || item.roleLabel || '-'}<br>${item.requested_at || item.createdAt || '-'}</div>
+        <div class="approval-meta"><strong>N ordre</strong><br>${item.order_number || item.orderNumber || 'Non fourni'}</div>
+        <div class="approval-meta"><strong>Carte etudiant</strong><br>${item.student_proof || item.studentProof || 'Non fournie'}</div>
+        <div class="vetpro-inline-actions">
+          <button class="btn btn-p" onclick="approveRegistration('${(item.email || '').toLowerCase()}')">Approuver</button>
+          <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="rejectRegistration('${(item.email || '').toLowerCase()}')">Refuser</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.approveRegistration = async function(email){
+    const ok = await updateApprovalStatus(email, 'approved');
+    if (ok) {
+      toast(`Compte approuve: ${email}`);
+      refreshApprovalsPageV2();
+    } else {
+      toast('Impossible de mettre a jour le compte');
+    }
+  };
+
+  window.rejectRegistration = async function(email){
+    const ok = await updateApprovalStatus(email, 'rejected');
+    if (ok) {
+      toast(`Compte refuse: ${email}`);
+      refreshApprovalsPageV2();
+    } else {
+      toast('Impossible de mettre a jour le compte');
+    }
+  };
+
+  window.renderApprovalsPage = refreshApprovalsPageV2;
+
+  window.sendContactMessage = async function(){
+    const name = document.getElementById('contact-name')?.value?.trim();
+    const email = document.getElementById('contact-email')?.value?.trim();
+    const subject = document.getElementById('contact-subject')?.value?.trim() || 'Message VetPro';
+    const message = document.getElementById('contact-message')?.value?.trim();
+    if (!name || !email || !message) { toast('Nom, email et message sont requis'); return; }
+
+    let saved = false;
+    if (await canReachSupabaseTable(CONTACT_TABLE)) {
+      const { error } = await _sb.from(CONTACT_TABLE).insert({
+        name,
+        email,
+        subject,
+        message
+      });
+      saved = !error;
+    }
+
+    const body = encodeURIComponent(`Nom: ${name}\nEmail: ${email}\n\n${message}`);
+    if (CONTACT_EMAIL && CONTACT_EMAIL !== 'contact@vetpro.local') {
+      window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${body}`;
+      toast(saved ? 'Message enregistre et email prepare' : 'Email prepare vers la boite VetPro');
+    } else {
+      toast(saved ? 'Message enregistre dans Supabase' : 'Configurez vetpro-contact-email dans le navigateur ou dans les parametres');
+    }
+  };
+
+  checkSession = window.checkSession = async function(){
+    const screen = document.getElementById('login-screen');
+    const logoutBtn = document.getElementById('logout-btn');
+    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+      if (screen) screen.classList.remove('hidden');
+      if (logoutBtn) logoutBtn.style.display = 'none';
+      return;
+    }
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      const email = (session?.user?.email || '').toLowerCase();
+      if (session && ((ADMIN_EMAIL && email === ADMIN_EMAIL) || await isApprovedEmail(email))) {
+        setCurrentUserContext(session.user);
+        initializePersistentState();
+        if (screen) screen.classList.add('hidden');
+        if (logoutBtn) logoutBtn.style.display = 'block';
+      } else {
+        if (session) await _sb.auth.signOut();
+        setCurrentUserContext(null);
+        if (screen) screen.classList.remove('hidden');
+        if (logoutBtn) logoutBtn.style.display = 'none';
+      }
+    } catch (e) {
+      if (screen) screen.classList.remove('hidden');
+    }
+  };
+
+  window.doSignup = async function(){
+    const firstName = document.getElementById('signup-first-name')?.value?.trim();
+    const lastName = document.getElementById('signup-last-name')?.value?.trim();
+    const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
+    const phone = document.getElementById('signup-phone')?.value?.trim();
+    const role = document.getElementById('signup-role')?.value || 'veterinaire';
+    const orderNumber = document.getElementById('signup-order-number')?.value?.trim();
+    const studentProof = document.getElementById('signup-student-proof')?.value?.trim();
+    const password = document.getElementById('signup-password')?.value;
+    const confirm = document.getElementById('signup-password-confirm')?.value;
+    const accepted = document.getElementById('signup-terms')?.checked;
+
+    if (!firstName || !lastName || !email || !password) { showLoginError('Veuillez remplir les informations principales.'); return; }
+    if (password !== confirm) { showLoginError('Les mots de passe ne correspondent pas.'); return; }
+    if (!accepted) { showLoginError('Vous devez accepter les conditions VetPro.'); return; }
+    if (role === 'veterinaire' && !orderNumber) { showLoginError('Le numero d ordre veterinaire national est requis.'); return; }
+    if (role === 'stagiaire' && !studentProof) { showLoginError('La carte d etudiant est requise pour un stagiaire.'); return; }
+
+    const payload = {
+      email,
+      full_name: `${firstName} ${lastName}`.trim(),
+      phone,
+      role,
+      order_number: orderNumber || null,
+      student_proof: studentProof || null,
+      status: ADMIN_EMAIL && email === ADMIN_EMAIL ? 'approved' : 'pending',
+      requested_at: new Date().toISOString()
+    };
+
+    try {
+      if (_sb && SUPA_URL !== 'VOTRE_SUPABASE_URL') {
+        const { data, error } = await _sb.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: payload.full_name,
+              role,
+              order_number: orderNumber || '',
+              student_proof: studentProof || '',
+              owner_name: OWNER_NAME
+            }
+          }
+        });
+        if (error) throw error;
+        payload.user_id = data?.user?.id || null;
+      }
+      await upsertApprovalRequest(payload);
+      const fallback = getFallbackState();
+      if (ADMIN_EMAIL && email === ADMIN_EMAIL && !fallback.approved.includes(email)) {
+        fallback.approved.push(email);
+        saveFallbackState(fallback);
+      }
+      showAuthMode('login');
+      const loginEmail = document.getElementById('login-email');
+      if (loginEmail) loginEmail.value = email;
+      toast(ADMIN_EMAIL && email === ADMIN_EMAIL ? 'Compte administrateur pret. Vous pouvez vous connecter.' : 'Inscription enregistree. Le compte attend approbation.');
+      refreshApprovalsPageV2();
+    } catch (err) {
+      showLoginError(err.message || 'Inscription impossible');
+    }
+  };
+
+  window.doLogin = async function(){
+    const email = document.getElementById('login-email')?.value?.trim().toLowerCase();
+    const password = document.getElementById('login-password')?.value;
+    const btn = document.getElementById('login-btn-el');
+    if (!email || !password) { showLoginError('Veuillez remplir tous les champs.'); return; }
+
+    if (MASTER_LOGIN_EMAIL && MASTER_LOGIN_PASSWORD && email === MASTER_LOGIN_EMAIL && password === MASTER_LOGIN_PASSWORD) {
+      setCurrentUserContext({ email, id:'vetpro-master-admin' });
+      initializePersistentState();
+      document.getElementById('login-screen')?.classList.add('hidden');
+      document.getElementById('logout-btn').style.display = 'block';
+      toast('Connexion admin de secours active');
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="login-spinner"></span>Connexion...';
+    }
+
+    try {
+      if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+        showLoginError('Configurez Supabase ou utilisez le compte admin de secours.');
+        return;
+      }
+
+      const { data, error } = await _sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      const approved = ADMIN_EMAIL && email === ADMIN_EMAIL ? true : await isApprovedEmail(email);
+      if (!approved) {
+        await _sb.auth.signOut();
+        showLoginError('Compte non approuve. Demandez validation dans Approbations.');
+        return;
+      }
+
+      setCurrentUserContext(data?.user || data?.session?.user || { email });
+      initializePersistentState();
+      document.getElementById('login-screen')?.classList.add('hidden');
+      document.getElementById('logout-btn').style.display = 'block';
+      toast('Connexion reussie');
+    } catch (err) {
+      showLoginError(err.message || 'Erreur de connexion');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = 'Acceder a la clinique';
+      }
+    }
+  };
+
+  function improveBrandingAndSettings(){
+    document.querySelectorAll('.sb-footer-name, .tb-name-main').forEach(el => el.textContent = OWNER_NAME);
+    const settingsInputs = document.querySelectorAll('#page-settings input');
+    if (settingsInputs[0]) settingsInputs[0].value = 'Wail';
+    if (settingsInputs[1]) settingsInputs[1].value = 'Kherbache';
+    if (settingsInputs[4]) settingsInputs[4].value = CONTACT_EMAIL;
+    if (settingsInputs[5]) settingsInputs[5].value = CONTACT_PHONE;
+    const footer = document.querySelector('#page-settings textarea');
+    if (footer) footer.value = '© 2026 VetPro. Tous droits reserves';
+    const supportHero = document.querySelector('#page-support .page-hero p');
+    if (supportHero) supportHero.textContent = `${OWNER_NAME} · ${CONTACT_EMAIL} · ${CONTACT_PHONE}`;
+    const loginSub = document.querySelector('#login-screen .login-sub');
+    if (loginSub) loginSub.innerHTML = `${OWNER_NAME}<br>${CONTACT_EMAIL}`;
+  }
+
+  function installInstagramIcons(){
+    document.querySelectorAll('a[href="' + INSTAGRAM_URL + '"]').forEach(link => {
+      if (link.querySelector('.insta-icon')) return;
+      if (link.textContent.toLowerCase().includes('instagram') || link.textContent.toLowerCase().includes('vetpro.dz')) {
+        link.classList.add('insta-link');
+        link.innerHTML = `<span class="insta-icon">📷</span><span>${link.textContent.trim()}</span>`;
+      }
+    });
+  }
+
+  function initVetProV2(){
+    injectV2Styles();
+    applyLogoEverywhere();
+    makeLandingLongAndReadable();
+    upgradeTermsPage();
+    upgradeContactsPage();
+    improveBrandingAndSettings();
+    installInstagramIcons();
+    refreshApprovalsPageV2();
+  }
+
+  document.addEventListener('DOMContentLoaded', initVetProV2);
+  window.addEventListener('load', initVetProV2);
 })();
 </script>
 
