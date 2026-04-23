@@ -7605,5 +7605,1030 @@ function saveAdmission() {
 <!-- ══ LOGOUT BUTTON (visible when logged in) ══ -->
 <button id="logout-btn" onclick="doLogout()">🚪 Déconnexion</button>
 
+<script>
+(function(){
+  const BRAND = 'VetPro';
+  const ADMIN_EMAIL = 'w.kherbache@etud.ensv.dz';
+  const CONTACT_PHONE = '+213781236686';
+  const CONTACT_EMAIL = 'w.kherbache@etud.ensv.dz';
+  const INSTAGRAM_URL = 'https://www.instagram.com/vetpro.dz/';
+  const APP_STORE_URL = '#';
+  const PLAY_STORE_URL = '#';
+  const APPROVALS_KEY = 'vetpro-approvals';
+  const SETTINGS_KEY = 'vetpro-settings';
+  const TERMS_TEXT = {
+    fr: {
+      title: 'Conditions d\'utilisation VetPro',
+      intro: 'VetPro est une plateforme professionnelle d\'aide, de gestion clinique et de coordination vétérinaire. L\'accès est conditionné à une validation préalable du profil utilisateur et à l\'acceptation intégrale des présentes conditions.',
+      items: [
+        '<strong>Éligibilité professionnelle.</strong> L\'accès complet à VetPro est réservé aux docteurs vétérinaires et aux structures autorisées. Chaque demande d\'inscription doit fournir un numéro d\'ordre vétérinaire national valide. Les stagiaires et étudiants doivent fournir une carte d\'étudiant ou un justificatif équivalent et restent soumis à une validation manuelle.',
+        '<strong>Approbation manuelle des comptes.</strong> Toute inscription reste en attente tant qu\'elle n\'a pas été approuvée par l\'administration VetPro. VetPro peut refuser, suspendre ou supprimer un accès à tout moment en cas d\'information inexacte, incomplète, trompeuse ou contraire à l\'éthique professionnelle.',
+        '<strong>Usage autorisé.</strong> La plateforme doit être utilisée exclusivement dans un cadre vétérinaire, éducatif, administratif ou clinique licite. Il est interdit de céder son accès, usurper l\'identité d\'un tiers, contourner les contrôles de sécurité, extraire massivement les données ou perturber le service.',
+        '<strong>Données et consentement.</strong> En créant un compte, l\'utilisateur autorise VetPro à traiter ses données professionnelles, coordonnées, documents justificatifs, informations liées aux rendez-vous, rappels et communications par email, téléphone ou SMS pour l\'exploitation, la sécurité, l\'assistance, la facturation, l\'information produit et la conformité.',
+        '<strong>Documents requis.</strong> VetPro peut demander à tout moment un diplôme vétérinaire, un numéro d\'ordre vétérinaire national, une pièce d\'identité, une carte d\'étudiant ou tout document justificatif complémentaire. L\'absence de réponse ou la fourniture de pièces non valides peut entraîner un blocage immédiat du compte.',
+        '<strong>Responsabilité clinique.</strong> Les contenus, suggestions, statistiques, protocoles, rappels et aides affichés dans VetPro restent des outils d\'assistance. Les décisions médicales, diagnostiques, thérapeutiques, juridiques et déontologiques relèvent exclusivement du praticien ou de la structure utilisatrice.',
+        '<strong>Propriété intellectuelle.</strong> Le design, la structure, les textes, bases, interfaces, modules, marques et éléments visuels VetPro demeurent protégés. Toute reproduction, revente, extraction, duplication fonctionnelle ou réutilisation non autorisée est interdite.',
+        '<strong>Droit applicable.</strong> L\'utilisateur s\'engage à respecter les lois et règlements applicables en Algérie, notamment ceux relatifs à l\'exercice vétérinaire, à la santé animale, à la confidentialité et à l\'usage des données professionnelles.'
+      ]
+    },
+    en: {
+      title: 'VetPro Terms of Use',
+      intro: 'VetPro is a professional veterinary assistance, clinic management and coordination platform. Access is subject to prior profile verification and full acceptance of these terms.',
+      items: [
+        '<strong>Professional eligibility.</strong> Full access is reserved for licensed veterinarians and authorized veterinary structures. Every registration request must include a valid national veterinary registration number. Students and trainees must provide a student card or equivalent proof and remain subject to manual approval.',
+        '<strong>Manual account approval.</strong> Every registration remains pending until approved by VetPro administration. VetPro may refuse, suspend or revoke access at any time if submitted information is false, incomplete, misleading or inconsistent with professional ethics.',
+        '<strong>Authorized use.</strong> The platform may only be used for lawful veterinary, educational, administrative or clinical purposes. Sharing credentials, impersonation, bypassing security, scraping data or disrupting the service is prohibited.',
+        '<strong>Data and consent.</strong> By creating an account, the user authorizes VetPro to process professional data, contact details, supporting documents, appointment information, reminders and communications by email, phone or SMS for operations, security, support, billing, product information and compliance.',
+        '<strong>Required documents.</strong> VetPro may request a veterinary diploma, national veterinary registration number, identity document, student card or any supporting record at any time. Missing or invalid documents may lead to immediate account restriction.',
+        '<strong>Clinical responsibility.</strong> All insights, reminders, protocols, statistics and assistance features remain support tools only. Medical, diagnostic, therapeutic, legal and ethical decisions remain the sole responsibility of the practitioner or clinic.',
+        '<strong>Intellectual property.</strong> VetPro design, structure, texts, interfaces, modules, marks and visual assets remain protected. Unauthorized reproduction, resale, extraction, cloning or reuse is prohibited.',
+        '<strong>Applicable law.</strong> Users agree to comply with all laws and regulations applicable in Algeria, especially those governing veterinary practice, animal health, confidentiality and use of professional data.'
+      ]
+    },
+    ar: {
+      title: 'شروط استخدام VetPro',
+      intro: 'VetPro منصة مهنية للمساعدة البيطرية وإدارة العيادة والتنظيم. لا يتم تفعيل الوصول إلا بعد التحقق من الملف المهني وقبول هذه الشروط كاملة.',
+      items: [
+        '<strong>الأهلية المهنية.</strong> الوصول الكامل مخصص للأطباء البيطريين والجهات المرخصة. يجب على كل طلب تسجيل تقديم رقم وطني ساري للتسجيل البيطري. أما الطلبة والمتربصون فعليهم تقديم بطاقة طالب أو وثيقة مماثلة ويخضعون لموافقة يدوية.',
+        '<strong>الموافقة اليدوية.</strong> يبقى كل حساب جديد في حالة انتظار إلى غاية الموافقة عليه من إدارة VetPro. ويحق لـ VetPro رفض أو تعليق أو سحب الوصول عند وجود معلومات ناقصة أو خاطئة أو مضللة أو مخالفة لأخلاقيات المهنة.',
+        '<strong>الاستخدام المسموح.</strong> يجب استعمال المنصة فقط لأغراض بيطرية أو تعليمية أو إدارية أو سريرية مشروعة. يمنع مشاركة الحساب أو انتحال الهوية أو تجاوز وسائل الحماية أو استخراج البيانات جماعيا أو تعطيل الخدمة.',
+        '<strong>البيانات والموافقة.</strong> بإنشاء الحساب يوافق المستخدم على معالجة بياناته المهنية ووسائل الاتصال والوثائق المرفوعة ومعلومات المواعيد والتذكيرات ورسائل البريد والهاتف وSMS لأغراض التشغيل والأمان والدعم والفوترة والإعلام والامتثال.',
+        '<strong>الوثائق المطلوبة.</strong> يمكن لـ VetPro طلب شهادة الطب البيطري أو رقم التسجيل الوطني أو وثيقة الهوية أو بطاقة الطالب أو أي وثيقة داعمة في أي وقت. ويجوز تقييد الحساب فورا عند غياب الوثائق أو عدم صحتها.',
+        '<strong>المسؤولية السريرية.</strong> كل الاقتراحات والإحصاءات والبروتوكولات والتنبيهات أدوات مساعدة فقط. وتبقى القرارات الطبية والتشخيصية والعلاجية والقانونية والأخلاقية مسؤولية الطبيب أو العيادة حصرا.',
+        '<strong>الملكية الفكرية.</strong> يبقى تصميم VetPro وبنيته ونصوصه وواجهاته ووحداته وعلاماته وعناصره البصرية محمية. ويمنع النسخ أو البيع أو الاستنساخ أو إعادة الاستخدام دون ترخيص.',
+        '<strong>القانون الواجب التطبيق.</strong> يلتزم المستخدم باحترام القوانين والتنظيمات المطبقة في الجزائر، خاصة ما يتعلق بممارسة الطب البيطري وصحة الحيوان والسرية واستعمال البيانات المهنية.'
+      ]
+    }
+  };
+
+  function injectEnhancementStyles(){
+    if (document.getElementById('vetpro-enhancement-style')) return;
+    const style = document.createElement('style');
+    style.id = 'vetpro-enhancement-style';
+    style.textContent = `
+      #login-screen{overflow:auto;padding:28px}
+      #login-screen.vetpro-landing{display:block;background:
+        radial-gradient(circle at top, rgba(52,211,123,.22), transparent 35%),
+        linear-gradient(160deg, #04110c 0%, #0a2d1e 52%, #e9e4d8 52.2%, #f5f0e6 100%)}
+      #login-screen .landing-shell{max-width:1240px;margin:0 auto;display:grid;grid-template-columns:1.15fr .85fr;gap:28px;min-height:calc(100vh - 56px);align-items:center}
+      #login-screen .landing-shell[dir="rtl"]{direction:rtl}
+      .landing-panel{color:#fff;padding:18px 8px 18px 8px}
+      .landing-brand{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+      .landing-logo{width:84px;height:84px;border-radius:28px;background:linear-gradient(135deg,#083020,#0c442d);display:flex;align-items:center;justify-content:center;box-shadow:0 28px 60px rgba(0,0,0,.28);font-size:34px}
+      .landing-eyebrow{letter-spacing:.32em;text-transform:uppercase;color:rgba(255,255,255,.58);font-size:11px;margin-bottom:14px}
+      .landing-panel h1{font-family:'DM Serif Display',serif;font-size:76px;line-height:.95;margin-bottom:12px}
+      .landing-panel h1 span{color:#38d37c}
+      .landing-copy{max-width:640px;color:rgba(255,255,255,.74);font-size:17px;line-height:1.7}
+      .landing-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}
+      .landing-btn{border:none;border-radius:999px;padding:14px 22px;font:700 14px 'Outfit',sans-serif;cursor:pointer}
+      .landing-btn.primary{background:#38d37c;color:#083020;box-shadow:0 16px 30px rgba(56,211,124,.26)}
+      .landing-btn.secondary{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#fff}
+      .landing-socials{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+      .landing-socials a{color:#dff5e7;text-decoration:none;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);padding:10px 14px;border-radius:999px;font-size:13px}
+      .landing-grid{display:grid;grid-template-columns:repeat(2, minmax(0,1fr));gap:16px;margin-top:26px}
+      .landing-card,.pricing-card,.feature-card,.mini-card{backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);box-shadow:0 14px 40px rgba(5,15,10,.16)}
+      .landing-card{background:rgba(7,38,24,.92);border-radius:28px;padding:24px}
+      .landing-card.light{background:rgba(255,255,255,.92);color:#0e261a}
+      .hero-stat{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.06);margin-top:14px}
+      .hero-stat strong{font-size:42px;font-weight:800}
+      .hero-badges{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+      .hero-badge{padding:9px 14px;border-radius:999px;background:rgba(255,255,255,.08);color:#d7efe1;font-size:12px}
+      .landing-right{display:flex;flex-direction:column;gap:18px}
+      .pricing-wrap{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+      .pricing-card{border-radius:26px;padding:24px}
+      .pricing-card h3{font-family:'DM Serif Display',serif;font-size:34px;margin-bottom:10px}
+      .pricing-card .price{font-size:52px;font-weight:800;line-height:1;margin:10px 0}
+      .pricing-card ul{list-style:none;display:flex;flex-direction:column;gap:10px;margin-top:18px}
+      .pricing-card li{font-size:13px;line-height:1.5}
+      .pricing-card.dark{background:linear-gradient(180deg,#0c432d,#0a3323);color:#fff}
+      .pricing-card.light{background:rgba(255,255,255,.94);color:#0a2619}
+      .feature-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+      .feature-card{background:rgba(255,255,255,.92);border-radius:20px;padding:16px}
+      .feature-card h4{font-size:16px;margin-bottom:6px}
+      .feature-card p{color:#4b5e56;font-size:12.5px;line-height:1.55}
+      .download-strip{display:flex;gap:12px;flex-wrap:wrap;margin-top:4px}
+      .download-item{flex:1;min-width:180px;background:#fff;border-radius:20px;padding:18px;color:#0d241a}
+      .download-item .status{display:inline-flex;padding:5px 10px;border-radius:999px;background:#eff7f1;color:#2b6846;font-size:11px;font-weight:700;margin-bottom:10px}
+      .lang-switch{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+      .lang-switch button{border:none;border-radius:999px;padding:8px 14px;background:rgba(255,255,255,.08);color:#fff;cursor:pointer;font:600 12px 'Outfit',sans-serif}
+      .lang-switch button.active{background:#38d37c;color:#062015}
+      .auth-card-floating{position:relative}
+      .auth-cta{display:none}
+      .auth-cta.open{display:block}
+      .settings-actions,.vetpro-inline-actions{display:flex;gap:10px;flex-wrap:wrap}
+      .vetpro-panel{background:#fff;border:1px solid var(--brd);border-radius:var(--r2);padding:20px 22px;box-shadow:var(--sh)}
+      .approval-row,.term-row{display:grid;grid-template-columns:1.2fr .9fr .8fr .8fr auto;gap:10px;align-items:start;padding:14px 0;border-bottom:1px solid var(--surface2)}
+      .approval-row:last-child,.term-row:last-child{border-bottom:none}
+      .approval-meta{font-size:11px;color:var(--muted);line-height:1.6}
+      .section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+      .section-tabs button{border:none;border-radius:999px;padding:9px 14px;background:var(--surface2);color:var(--ink);font:600 12px 'Outfit',sans-serif;cursor:pointer}
+      .section-tabs button.active{background:var(--forest);color:#fff}
+      .contact-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+      .contact-card{background:#fff;border:1px solid var(--brd);border-radius:22px;padding:22px;box-shadow:var(--sh)}
+      .contact-card a{color:var(--forest);font-weight:700;text-decoration:none}
+      .inline-note{font-size:11px;color:var(--muted);margin-top:8px}
+      .stats-action-bar{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+      .stats-mini-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+      .stats-card{background:#fff;border:1px solid var(--brd);border-radius:24px;padding:22px;box-shadow:var(--sh)}
+      .stats-card .big{font-size:42px;font-weight:800;line-height:1}
+      @media (max-width: 1080px){
+        #login-screen .landing-shell{grid-template-columns:1fr}
+        .pricing-wrap,.feature-list,.contact-grid,.stats-mini-grid{grid-template-columns:1fr}
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function getApprovalState(){
+    try {
+      const parsed = JSON.parse(localStorage.getItem(APPROVALS_KEY) || '{}');
+      return {
+        approved: parsed.approved || [ADMIN_EMAIL],
+        pending: parsed.pending || [],
+        rejected: parsed.rejected || []
+      };
+    } catch (e) {
+      return { approved:[ADMIN_EMAIL], pending:[], rejected:[] };
+    }
+  }
+
+  function saveApprovalState(state){
+    localStorage.setItem(APPROVALS_KEY, JSON.stringify(state));
+  }
+
+  function getSettings(){
+    const defaults = {
+      vetFirstName: 'Codex',
+      vetLastName: '',
+      title: 'Médecin vétérinaire',
+      orderNumber: 'À compléter',
+      email: CONTACT_EMAIL,
+      phone: CONTACT_PHONE,
+      clinicName: 'VetPro Algérie',
+      clinicAddress: 'Algérie',
+      clinicPhone: CONTACT_PHONE,
+      clinicHours: '08h00 - 18h00',
+      footerText: 'VetPro - Tous droits réservés',
+      notifications: {
+        reminders: true,
+        stock: true,
+        digest: false,
+        hospitalization: true,
+        references: false
+      },
+      display: {
+        language: 'fr',
+        theme: '#1A4A2E',
+        compact: false,
+        reducedMotion: false
+      }
+    };
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || 'null');
+      return {
+        ...defaults,
+        ...(saved || {}),
+        notifications: { ...defaults.notifications, ...(saved?.notifications || {}) },
+        display: { ...defaults.display, ...(saved?.display || {}) }
+      };
+    } catch (e) {
+      return defaults;
+    }
+  }
+
+  function saveSettings(next){
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  }
+
+  function renameBranding(){
+    document.title = 'VetPro - Plateforme vétérinaire';
+    const replacements = [
+      ['.sb-logo h1', 'VetPro'],
+      ['.sb-logo p', 'VetPro Algérie'],
+      ['.sb-footer-name', 'Codex'],
+      ['.tb-name-main', 'Codex'],
+      ['.tb-name-sub', 'Administration VetPro'],
+      ['#page-dashboard .page-hero h2', 'Bonjour, bienvenue sur VetPro'],
+      ['#page-support .page-hero h2', 'Contacts VetPro'],
+      ['#page-support .page-hero p', `${CONTACT_EMAIL} · ${CONTACT_PHONE}`]
+    ];
+    replacements.forEach(([selector, value]) => {
+      const el = document.querySelector(selector);
+      if (el) el.textContent = value;
+    });
+    document.querySelectorAll('*').forEach(el => {
+      if (el.children.length) return;
+      if (!el.textContent) return;
+      el.textContent = el.textContent.replace(/V[ée]t[ée]rinApp Pro/gi, BRAND).replace(/VetoDiag\.com/gi, BRAND).replace(/VetDiag/gi, BRAND);
+    });
+  }
+
+  function ensureSidebarEntries(){
+    const manage = document.querySelectorAll('.sb-section')[2];
+    if (!manage || document.getElementById('sb-approvals')) return;
+    manage.insertAdjacentHTML('beforeend', `
+      <div class="sb-item" id="sb-approvals" onclick="nav('approvals')"><div class="sb-ico-wrap">✅</div><span>Approbations</span></div>
+      <div class="sb-item" id="sb-terms" onclick="nav('terms')"><div class="sb-ico-wrap">📜</div><span>Conditions</span></div>
+      <div class="sb-item" id="sb-contacts" onclick="nav('contacts')"><div class="sb-ico-wrap">☎️</div><span>Contacts</span></div>
+    `);
+  }
+
+  function ensureDynamicPages(){
+    const content = document.querySelector('.content');
+    if (!content) return;
+    if (!document.getElementById('page-approvals')) {
+      const approvals = document.createElement('div');
+      approvals.id = 'page-approvals';
+      approvals.className = 'page';
+      approvals.innerHTML = `
+        <div class="page-hero">
+          <div class="tag">✅ Contrôle d'accès</div>
+          <h2>Demandes d'inscription en attente</h2>
+          <p>Validez ou refusez les inscriptions avant tout accès à l'application.</p>
+        </div>
+        <div class="vetpro-panel">
+          <div class="stats-action-bar">
+            <div>
+              <div class="card-title" style="margin-bottom:4px">Vérification manuelle</div>
+              <div class="inline-note">Les nouveaux comptes restent bloqués tant qu'ils ne sont pas approuvés.</div>
+            </div>
+            <button class="btn btn-ghost" onclick="renderApprovalsPage()">Actualiser</button>
+          </div>
+          <div id="approvals-list"></div>
+        </div>`;
+      content.appendChild(approvals);
+    }
+    if (!document.getElementById('page-terms')) {
+      const terms = document.createElement('div');
+      terms.id = 'page-terms';
+      terms.className = 'page';
+      terms.innerHTML = `
+        <div class="page-hero">
+          <div class="tag">📜 Conformité</div>
+          <h2>Conditions & protection des droits</h2>
+          <p>Version française par défaut avec consultation en anglais et en arabe.</p>
+        </div>
+        <div class="vetpro-panel">
+          <div class="section-tabs" id="terms-tabs">
+            <button class="active" onclick="renderTermsPage('fr', this)">Français</button>
+            <button onclick="renderTermsPage('en', this)">English</button>
+            <button onclick="renderTermsPage('ar', this)">العربية</button>
+          </div>
+          <div id="terms-body"></div>
+        </div>`;
+      content.appendChild(terms);
+    }
+    if (!document.getElementById('page-contacts')) {
+      const contacts = document.createElement('div');
+      contacts.id = 'page-contacts';
+      contacts.className = 'page';
+      contacts.innerHTML = `
+        <div class="page-hero">
+          <div class="tag">☎️ Contact</div>
+          <h2>Coordonnées VetPro</h2>
+          <p>Email, téléphone, Instagram et points de contact directs.</p>
+        </div>
+        <div class="contact-grid">
+          <div class="contact-card">
+            <div class="card-title">✉️ Email</div>
+            <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>
+            <div class="inline-note">Réponse support et demandes d'accès.</div>
+          </div>
+          <div class="contact-card">
+            <div class="card-title">📞 Téléphone</div>
+            <a href="tel:${CONTACT_PHONE.replace(/\s+/g, '')}">${CONTACT_PHONE}</a>
+            <div class="inline-note">Ligne directe VetPro Algérie.</div>
+          </div>
+          <div class="contact-card">
+            <div class="card-title">📸 Instagram</div>
+            <a href="${INSTAGRAM_URL}" target="_blank" rel="noopener">${INSTAGRAM_URL}</a>
+            <div class="inline-note">Actualités et communication sociale officielle.</div>
+          </div>
+        </div>`;
+      content.appendChild(contacts);
+    }
+  }
+
+  function renderTermsPage(lang='fr', btn){
+    const body = document.getElementById('terms-body');
+    if (!body) return;
+    if (btn) {
+      document.querySelectorAll('#terms-tabs button').forEach(item => item.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+    const data = TERMS_TEXT[lang] || TERMS_TEXT.fr;
+    body.innerHTML = `
+      <div dir="${dir}">
+        <div class="card-title">${data.title}</div>
+        <p style="color:var(--muted);line-height:1.8;margin-bottom:18px">${data.intro}</p>
+        ${data.items.map((item, index) => `
+          <div class="term-row">
+            <div><strong>${index + 1}.</strong> ${item}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  function renderApprovalsPage(){
+    const host = document.getElementById('approvals-list');
+    if (!host) return;
+    const state = getApprovalState();
+    if (!state.pending.length) {
+      host.innerHTML = `<div class="ibox ibox-b">Aucune demande en attente pour le moment.</div>`;
+      return;
+    }
+    host.innerHTML = state.pending.map(item => `
+      <div class="approval-row">
+        <div>
+          <div style="font-weight:700">${item.fullName || item.email}</div>
+          <div class="approval-meta">${item.email}<br>${item.phone || 'Téléphone non renseigné'}</div>
+        </div>
+        <div class="approval-meta"><strong>Statut</strong><br>${item.roleLabel || '-'}<br>${item.createdAt || '-'}</div>
+        <div class="approval-meta"><strong>N° ordre</strong><br>${item.orderNumber || 'Non fourni'}</div>
+        <div class="approval-meta"><strong>Pièce</strong><br>${item.studentProof || item.documentLabel || 'Document à vérifier'}</div>
+        <div class="vetpro-inline-actions">
+          <button class="btn btn-p" onclick="approveRegistration('${item.email}')">Approuver</button>
+          <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="rejectRegistration('${item.email}')">Refuser</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  window.approveRegistration = function(email){
+    const state = getApprovalState();
+    const item = state.pending.find(entry => entry.email === email);
+    state.pending = state.pending.filter(entry => entry.email !== email);
+    if (!state.approved.includes(email)) state.approved.push(email);
+    saveApprovalState(state);
+    renderApprovalsPage();
+    toast(`Compte approuvé: ${email}`);
+  };
+
+  window.rejectRegistration = function(email){
+    const state = getApprovalState();
+    const item = state.pending.find(entry => entry.email === email);
+    state.pending = state.pending.filter(entry => entry.email !== email);
+    if (item) state.rejected.unshift(item);
+    saveApprovalState(state);
+    renderApprovalsPage();
+    toast(`Compte refusé: ${email}`);
+  };
+
+  function buildLandingTranslations(){
+    return {
+      fr: {
+        eyebrow: 'Tarifs VetPro · Algérie',
+        titleA: 'Simple.',
+        titleB: 'Transparent.',
+        titleC: 'Abordable.',
+        copy: 'VetPro centralise les cas cliniques, l\'historique, les rendez-vous, les vaccinations, l\'hospitalisation, les statistiques et les outils vétérinaires dans une seule expérience premium.',
+        login: 'Se connecter',
+        signup: 'Créer un compte',
+        planQ: 'Accès complet aux fonctions essentielles',
+        quarter: 'Trimestriel',
+        year: 'Annuel',
+        quarterItems: ['IA clinique complète', 'Gestion des dossiers', 'Vaccinations & rappels', 'Planning & hospitalisations', 'Statistiques temps réel'],
+        yearItems: ['Tout du plan trimestriel', 'Priorité support', 'Mises à jour incluses', 'Accès anticipé aux nouvelles fonctions', 'Pilotage avancé de clinique'],
+        priceQuarter: '7 500 DA',
+        priceYear: '25 000 DA',
+        features: [
+          ['Nouveau cas clinique', 'Création rapide de dossier sans répétitions sur le client, l\'animal et le téléphone.'],
+          ['Approbation des comptes', 'Les inscriptions restent en attente jusqu\'à validation manuelle.'],
+          ['Rendez-vous & vaccins', 'Ajout direct de nouveaux clients depuis les modules de suivi.'],
+          ['IOS & Android', 'Applications mobiles en cours de développement, bientôt disponibles.']
+        ],
+        android: 'Android (en cours de développement)',
+        ios: 'iOS (en cours de développement)',
+        socials: 'Suivre VetPro',
+        legal: 'En vous inscrivant, vous acceptez les conditions VetPro, incluant le numéro d\'ordre national vétérinaire ou une carte d\'étudiant pour les stagiaires.'
+      },
+      en: {
+        eyebrow: 'VetPro Pricing · Algeria',
+        titleA: 'Simple.',
+        titleB: 'Transparent.',
+        titleC: 'Affordable.',
+        copy: 'VetPro brings together clinical cases, history, appointments, vaccinations, hospitalization, analytics and veterinary tools in one premium workspace.',
+        login: 'Sign in',
+        signup: 'Create account',
+        planQ: 'Full access to core workflow features',
+        quarter: 'Quarterly',
+        year: 'Yearly',
+        quarterItems: ['Clinical AI assistant', 'Medical records management', 'Vaccines & reminders', 'Planning & hospitalization', 'Real-time statistics'],
+        yearItems: ['Everything in quarterly', 'Priority support', 'Included updates', 'Early access to new tools', 'Advanced clinic oversight'],
+        priceQuarter: '7,500 DZD',
+        priceYear: '25,000 DZD',
+        features: [
+          ['New clinical case', 'Fast case intake without repeating client, animal and phone blocks.'],
+          ['Account approval', 'Registrations stay pending until manually approved.'],
+          ['Appointments & vaccines', 'Add new clients directly from follow-up modules.'],
+          ['IOS & Android', 'Mobile apps are currently work in progress.']
+        ],
+        android: 'Android (work in progress)',
+        ios: 'iOS (work in progress)',
+        socials: 'Follow VetPro',
+        legal: 'By signing up, you accept VetPro terms including a national veterinary registration number or student card for trainees.'
+      },
+      ar: {
+        eyebrow: 'أسعار VetPro · الجزائر',
+        titleA: 'بسيط.',
+        titleB: 'واضح.',
+        titleC: 'بسعر مناسب.',
+        copy: 'VetPro يجمع الحالات السريرية والمواعيد والتلقيحات والإيواء والإحصاءات والأدوات البيطرية داخل تجربة واحدة متكاملة.',
+        login: 'تسجيل الدخول',
+        signup: 'إنشاء حساب',
+        planQ: 'وصول كامل للوظائف الأساسية',
+        quarter: 'ثلاثي',
+        year: 'سنوي',
+        quarterItems: ['مساعد سريري ذكي', 'إدارة الملفات', 'اللقاحات والتذكيرات', 'التخطيط والإيواء', 'إحصاءات فورية'],
+        yearItems: ['كل ما في الخطة الثلاثية', 'أولوية في الدعم', 'تحديثات متضمنة', 'وصول مبكر للميزات الجديدة', 'إدارة متقدمة للعيادة'],
+        priceQuarter: '7 500 دج',
+        priceYear: '25 000 دج',
+        features: [
+          ['حالة سريرية جديدة', 'إدخال سريع بدون تكرار بيانات العميل والحيوان والهاتف.'],
+          ['موافقة الحسابات', 'تبقى التسجيلات معلقة حتى الموافقة اليدوية.'],
+          ['المواعيد واللقاحات', 'إضافة عميل جديد مباشرة من وحدات المتابعة.'],
+          ['IOS و Android', 'تطبيقات الهاتف قيد التطوير حالياً.']
+        ],
+        android: 'Android قيد التطوير',
+        ios: 'iOS قيد التطوير',
+        socials: 'تابع VetPro',
+        legal: 'بإنشاء الحساب فأنت توافق على شروط VetPro بما فيها رقم التسجيل البيطري الوطني أو بطاقة الطالب للمتربصين.'
+      }
+    };
+  }
+
+  function enhanceLanding(){
+    const loginScreen = document.getElementById('login-screen');
+    const loginCard = loginScreen?.querySelector('.login-card');
+    if (!loginScreen || !loginCard || loginScreen.dataset.vetproLanding === 'true') return;
+    loginScreen.classList.add('vetpro-landing');
+    loginScreen.dataset.vetproLanding = 'true';
+    loginCard.classList.add('auth-card-floating');
+    loginCard.style.maxWidth = '460px';
+    loginCard.style.margin = '0 auto';
+    loginCard.style.display = 'none';
+
+    const landing = document.createElement('div');
+    landing.id = 'public-landing';
+    landing.innerHTML = `
+      <div class="landing-shell">
+        <div class="landing-panel">
+          <div class="lang-switch" id="landing-language-switch">
+            <button class="active" data-lang="fr">FR</button>
+            <button data-lang="en">EN</button>
+            <button data-lang="ar">AR</button>
+          </div>
+          <div class="landing-brand">
+            <div class="landing-logo">✚</div>
+            <div>
+              <div class="landing-eyebrow" id="landing-eyebrow"></div>
+              <div style="font-family:'DM Serif Display',serif;font-size:26px">Vet<span style="color:#38d37c">Pro</span></div>
+            </div>
+          </div>
+          <h1><span id="landing-title-a"></span><br><span id="landing-title-b"></span> <span style="color:#fff" id="landing-title-c"></span></h1>
+          <p class="landing-copy" id="landing-copy"></p>
+          <div class="landing-actions">
+            <button class="landing-btn primary" onclick="openAuthCard('login')" id="landing-login-btn"></button>
+            <button class="landing-btn secondary" onclick="openAuthCard('signup')" id="landing-signup-btn"></button>
+          </div>
+          <div class="landing-socials">
+            <a href="${INSTAGRAM_URL}" target="_blank" rel="noopener">Instagram</a>
+            <a href="mailto:${CONTACT_EMAIL}">${CONTACT_EMAIL}</a>
+            <a href="tel:${CONTACT_PHONE.replace(/\s+/g, '')}">${CONTACT_PHONE}</a>
+          </div>
+          <div class="landing-grid">
+            <div class="landing-card">
+              <div class="card-title" id="landing-plan-q"></div>
+              <div class="hero-stat"><div><div style="font-size:11px;color:rgba(255,255,255,.5)">Clients actifs</div><strong>${CLIENTS.length || 0}</strong></div><div style="font-size:42px">📈</div></div>
+              <div class="hero-badges">
+                <span class="hero-badge">Cas cliniques</span>
+                <span class="hero-badge">Vaccinations</span>
+                <span class="hero-badge">Rendez-vous</span>
+                <span class="hero-badge">Statistiques</span>
+              </div>
+            </div>
+            <div class="landing-card light">
+              <div class="card-title">VetPro</div>
+              <div class="inline-note" id="landing-legal"></div>
+            </div>
+          </div>
+        </div>
+        <div class="landing-right">
+          <div class="pricing-wrap">
+            <div class="pricing-card light">
+              <div style="font-size:12px;color:#5e7368" id="pricing-quarter"></div>
+              <h3 id="pricing-quarter-name"></h3>
+              <div class="price" id="pricing-quarter-price"></div>
+              <ul id="pricing-quarter-list"></ul>
+            </div>
+            <div class="pricing-card dark">
+              <div style="font-size:12px;color:rgba(255,255,255,.58)" id="pricing-year"></div>
+              <h3 id="pricing-year-name"></h3>
+              <div class="price" id="pricing-year-price"></div>
+              <ul id="pricing-year-list"></ul>
+            </div>
+          </div>
+          <div class="landing-card light">
+            <div class="card-title">Fonctions</div>
+            <div class="feature-list" id="landing-feature-list"></div>
+          </div>
+          <div class="landing-card light">
+            <div class="card-title">Téléchargement</div>
+            <div class="download-strip">
+              <a class="download-item" href="${PLAY_STORE_URL}">
+                <div class="status">Android</div>
+                <div id="landing-android"></div>
+              </a>
+              <a class="download-item" href="${APP_STORE_URL}">
+                <div class="status">iOS</div>
+                <div id="landing-ios"></div>
+              </a>
+            </div>
+          </div>
+          <div class="landing-card">
+            <div class="card-title" style="color:#fff">Social</div>
+            <div id="landing-social-text" style="color:rgba(255,255,255,.72);line-height:1.7"></div>
+          </div>
+        </div>
+      </div>
+    `;
+    loginScreen.insertBefore(landing, loginCard);
+    loginScreen.appendChild(loginCard);
+
+    const translations = buildLandingTranslations();
+    window.setLandingLanguage = function(lang){
+      const t = translations[lang] || translations.fr;
+      const shell = loginScreen.querySelector('.landing-shell');
+      if (shell) shell.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+      loginScreen.querySelector('#landing-eyebrow').textContent = t.eyebrow;
+      loginScreen.querySelector('#landing-title-a').textContent = t.titleA;
+      loginScreen.querySelector('#landing-title-b').textContent = t.titleB;
+      loginScreen.querySelector('#landing-title-c').textContent = t.titleC;
+      loginScreen.querySelector('#landing-copy').textContent = t.copy;
+      loginScreen.querySelector('#landing-login-btn').textContent = t.login;
+      loginScreen.querySelector('#landing-signup-btn').textContent = t.signup;
+      loginScreen.querySelector('#landing-plan-q').textContent = t.planQ;
+      loginScreen.querySelector('#pricing-quarter').textContent = t.quarter;
+      loginScreen.querySelector('#pricing-quarter-name').textContent = t.quarter;
+      loginScreen.querySelector('#pricing-quarter-price').textContent = t.priceQuarter;
+      loginScreen.querySelector('#pricing-year').textContent = t.year;
+      loginScreen.querySelector('#pricing-year-name').textContent = t.year;
+      loginScreen.querySelector('#pricing-year-price').textContent = t.priceYear;
+      loginScreen.querySelector('#pricing-quarter-list').innerHTML = t.quarterItems.map(item => `<li>✓ ${item}</li>`).join('');
+      loginScreen.querySelector('#pricing-year-list').innerHTML = t.yearItems.map(item => `<li>✓ ${item}</li>`).join('');
+      loginScreen.querySelector('#landing-feature-list').innerHTML = t.features.map(([title, copy]) => `<div class="feature-card"><h4>${title}</h4><p>${copy}</p></div>`).join('');
+      loginScreen.querySelector('#landing-android').textContent = t.android;
+      loginScreen.querySelector('#landing-ios').textContent = t.ios;
+      loginScreen.querySelector('#landing-social-text').textContent = t.socials;
+      loginScreen.querySelector('#landing-legal').textContent = t.legal;
+      document.querySelectorAll('#landing-language-switch button').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === lang));
+    };
+    document.querySelectorAll('#landing-language-switch button').forEach(btn => {
+      btn.addEventListener('click', () => window.setLandingLanguage(btn.dataset.lang));
+    });
+    window.setLandingLanguage('fr');
+  }
+
+  window.openAuthCard = function(mode){
+    const card = document.querySelector('#login-screen .login-card');
+    if (!card) return;
+    card.style.display = 'block';
+    showAuthMode(mode || 'login');
+    card.scrollIntoView({ behavior:'smooth', block:'center' });
+  };
+
+  function rebuildSignupPanel(){
+    const panel = document.getElementById('auth-signup-panel');
+    if (!panel || panel.dataset.vetproEnhanced === 'true') return;
+    panel.dataset.vetproEnhanced = 'true';
+    panel.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label class="login-label">Prénom</label>
+          <input class="login-input" type="text" id="signup-first-name" placeholder="Prénom"/>
+        </div>
+        <div>
+          <label class="login-label">Nom</label>
+          <input class="login-input" type="text" id="signup-last-name" placeholder="Nom"/>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Adresse email</label>
+        <input class="login-input" type="email" id="signup-email" placeholder="client@cabinet.dz" autocomplete="email"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label class="login-label">Téléphone</label>
+          <input class="login-input" type="text" id="signup-phone" placeholder="+213..."/>
+        </div>
+        <div>
+          <label class="login-label">Profil</label>
+          <select class="login-input" id="signup-role">
+            <option value="veterinaire">Vétérinaire</option>
+            <option value="stagiaire">Stagiaire / étudiant</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label class="login-label">N° d'ordre vétérinaire national</label>
+          <input class="login-input" type="text" id="signup-order-number" placeholder="Obligatoire pour vétérinaire"/>
+        </div>
+        <div>
+          <label class="login-label">Carte étudiant / justificatif</label>
+          <input class="login-input" type="text" id="signup-student-proof" placeholder="Obligatoire pour stagiaire"/>
+        </div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Mot de passe</label>
+        <input class="login-input" type="password" id="signup-password" placeholder="Minimum 6 caractères" autocomplete="new-password"/>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Confirmer le mot de passe</label>
+        <input class="login-input" type="password" id="signup-password-confirm" placeholder="Retapez le mot de passe" autocomplete="new-password"/>
+      </div>
+      <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;color:rgba(255,255,255,.7);font-size:12px;line-height:1.5">
+        <input type="checkbox" id="signup-terms" style="margin-top:3px"/>
+        <span>J'accepte les conditions VetPro, la vérification manuelle du compte et l'obligation de fournir un numéro d'ordre vétérinaire national ou une carte d'étudiant pour les stagiaires.</span>
+      </label>
+      <button class="login-btn" onclick="doSignup()">Créer un compte</button>
+      <div style="text-align:center;margin-top:10px"><button type="button" onclick="showAuthMode('login')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">J'ai déjà un compte</button></div>
+    `;
+  }
+
+  function addQuickClientButtons(){
+    const rdvHeader = document.querySelector('#page-rdv > div');
+    if (rdvHeader && !document.getElementById('rdv-add-client-btn')) {
+      const btn = document.createElement('button');
+      btn.id = 'rdv-add-client-btn';
+      btn.className = 'btn btn-ghost';
+      btn.textContent = 'Nouveau client';
+      btn.onclick = () => openModal('modal-client');
+      rdvHeader.appendChild(btn);
+    }
+    const vaccHero = document.querySelector('#page-vaccinations .page-hero');
+    if (vaccHero && !document.getElementById('vacc-add-client-btn')) {
+      const wrap = document.createElement('div');
+      wrap.style.marginTop = '14px';
+      wrap.innerHTML = `<button class="btn btn-ghost" id="vacc-add-client-btn" onclick="openModal('modal-client')">Nouveau client</button>`;
+      vaccHero.appendChild(wrap);
+    }
+  }
+
+  function simplifyCaseFormLabels(){
+    ensureCaseFormEnhancements();
+    const labels = [
+      ['case-client-name', 'Client / propriétaire'],
+      ['case-animal-name', 'Nom de l\'animal'],
+      ['case-client-phone', 'Téléphone']
+    ];
+    labels.forEach(([id, text]) => {
+      const input = document.getElementById(id);
+      const label = input?.closest('.fg')?.querySelector('.lbl');
+      if (label) label.textContent = text;
+    });
+  }
+
+  window.renderStatistics = function(){
+    const page = document.getElementById('page-statistics');
+    if (!page) return;
+    const casesCount = HISTORIQUE_DATA.length;
+    const clientsCount = CLIENTS.length;
+    const revenue = HISTORIQUE_DATA.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0), 0);
+    const recovered = HISTORIQUE_DATA.filter(item => item.resultat === 'guerison').length;
+    const cureRate = casesCount ? Math.round((recovered / casesCount) * 100) : 0;
+    const last12 = new Array(12).fill(0);
+    const rev12 = new Array(12).fill(0);
+    HISTORIQUE_DATA.forEach(item => {
+      const raw = (item.date || '').split('/');
+      if (raw.length === 3) {
+        const monthIndex = parseInt(raw[1], 10) - 1;
+        if (monthIndex >= 0 && monthIndex < 12) {
+          last12[monthIndex] += 1;
+          rev12[monthIndex] += parseInt(item.montant || 0, 10) || 0;
+        }
+      }
+    });
+    page.innerHTML = `
+      <div class="page-hero">
+        <div class="tag">📊 VetPro Analytics</div>
+        <h2>Statistiques de la clinique</h2>
+        <p>Suivi des cas, revenus, clientèle active et tendance mensuelle.</p>
+      </div>
+      <div class="stats-action-bar">
+        <div class="inline-note">Les chiffres se recalculent à partir des données enregistrées dans ce compte.</div>
+        <div class="settings-actions">
+          <button class="btn btn-ghost" onclick="renderStatistics()">Actualiser</button>
+          <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetStatisticsData()">Réinitialiser les statistiques</button>
+        </div>
+      </div>
+      <div class="stats-mini-grid" style="margin-bottom:18px">
+        <div class="stats-card"><div class="big" style="color:var(--info)">${casesCount}</div><div class="kpi-lbl">Cas enregistrés</div></div>
+        <div class="stats-card"><div class="big" style="color:var(--forest)">${revenue.toLocaleString('fr-FR')} DA</div><div class="kpi-lbl">Revenus totaux</div></div>
+        <div class="stats-card"><div class="big" style="color:var(--warning)">${clientsCount}</div><div class="kpi-lbl">Clients actifs</div></div>
+        <div class="stats-card"><div class="big" style="color:var(--sage)">${cureRate}%</div><div class="kpi-lbl">Taux de guérison</div></div>
+      </div>
+      <div class="g2">
+        <div class="stat-chart-card">
+          <div class="card-title">Cas par mois</div>
+          <div id="cases-chart" style="display:flex;gap:8px;height:140px;align-items:flex-end"></div>
+          <div id="cases-labels" style="display:flex;gap:8px;margin-top:8px"></div>
+        </div>
+        <div class="stat-chart-card">
+          <div class="card-title">Revenus par mois</div>
+          <div id="revenue-chart" style="display:flex;gap:8px;height:140px;align-items:flex-end"></div>
+          <div id="revenue-labels" style="display:flex;gap:8px;margin-top:8px"></div>
+        </div>
+      </div>
+      <div class="stat-chart-card" style="margin-top:18px">
+        <div class="card-title">Répartition rapide</div>
+        <div id="patho-bars"></div>
+      </div>
+    `;
+    const pathologies = {};
+    HISTORIQUE_DATA.forEach(item => {
+      const key = (item.diagnostic || 'Non précisé').split('·')[0].trim();
+      pathologies[key] = (pathologies[key] || 0) + 1;
+    });
+    const pathos = Object.entries(pathologies).sort((a,b) => b[1] - a[1]).slice(0,8);
+    const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+    const maxCases = Math.max(...last12, 1);
+    const maxRev = Math.max(...rev12, 1);
+    document.getElementById('cases-chart').innerHTML = last12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxCases) * 120) || 8)}px;background:linear-gradient(180deg,var(--mint),var(--forest));border-radius:10px 10px 0 0"></div>`).join('');
+    document.getElementById('cases-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
+    document.getElementById('revenue-chart').innerHTML = rev12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxRev) * 120) || 8)}px;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:10px 10px 0 0"></div>`).join('');
+    document.getElementById('revenue-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
+    document.getElementById('patho-bars').innerHTML = (pathos.length ? pathos : [['Aucune donnée', 0]]).map(([name, total], index) => `
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--surface2)">
+        <div style="width:18px;font-size:11px;font-weight:700;color:var(--forest)">${index + 1}.</div>
+        <div style="flex:1">${name}</div>
+        <div style="width:140px;height:8px;background:var(--brd);border-radius:999px;overflow:hidden"><div style="width:${pathos.length ? Math.max(6, Math.round((total / (pathos[0][1] || 1)) * 100)) : 0}%;height:100%;background:var(--sage)"></div></div>
+        <div style="font-weight:700;color:var(--forest)">${total}</div>
+      </div>
+    `).join('');
+  };
+
+  window.resetStatisticsData = function(){
+    if (!confirm('Réinitialiser les statistiques et repartir de zéro pour ce compte ?')) return;
+    HISTORIQUE_DATA.splice(0, HISTORIQUE_DATA.length);
+    APPOINTMENTS.splice(0, APPOINTMENTS.length);
+    VACCINE_REMINDERS.splice(0, VACCINE_REMINDERS.length);
+    persistAppState();
+    refreshPersistentViews();
+    renderStatistics();
+    toast('Statistiques remises à zéro');
+  };
+
+  window.saveAppointment = function(){
+    const patientId = document.getElementById('rdv-animal')?.value;
+    const patient = getPatientById(patientId);
+    const date = document.getElementById('rdv-date')?.value;
+    const time = document.getElementById('rdv-time')?.value;
+    const type = document.getElementById('rdv-type')?.value || 'Consultation';
+    const motif = document.getElementById('rdv-motif')?.value?.trim();
+    if (!patient || !date || !time || !motif) { toast('Animal, date, heure et motif sont requis'); return; }
+    APPOINTMENTS.push({
+      id: 'rdv-' + Date.now(),
+      date,
+      time,
+      animal: displayAnimalName(patient.name, patient.species),
+      owner: patient.owner,
+      phone: patient.phone || '',
+      type,
+      motif,
+      status: type === 'Contrôle' ? 'waiting' : 'confirmed'
+    });
+    patient.nextRdv = shortFrDate(date);
+    upsertClientFromPatient(patient);
+    persistAppState();
+    renderRdvPage();
+    renderClientsPage();
+    closeModal('modal-rdv');
+    toast('Rendez-vous enregistré');
+  };
+
+  function loadSettingsIntoForm(){
+    const s = getSettings();
+    const mappings = {
+      '#page-settings input[value="Wail"]': s.vetFirstName,
+      '#page-settings input[value="Kherbache"]': s.vetLastName,
+      '#page-settings input[value="Docteur Vétérinaire · ENSV Algérie"]': s.title,
+      '#page-settings input[value="DZ-VET-2026-004782"]': s.orderNumber,
+      '#page-settings input[type="email"][value="w.kherbache@etud.ensv.dz"]': s.email
+    };
+    Object.entries(mappings).forEach(([selector, value]) => {
+      const el = document.querySelector(selector);
+      if (el) el.value = value;
+    });
+    const telInputs = document.querySelectorAll('#page-settings input');
+    if (telInputs[5]) telInputs[5].value = s.phone;
+    if (telInputs[6]) telInputs[6].value = s.clinicName;
+    if (telInputs[7]) telInputs[7].value = s.clinicAddress;
+    if (telInputs[8]) telInputs[8].value = s.clinicPhone;
+    if (telInputs[9]) telInputs[9].value = s.clinicHours;
+    const footer = document.querySelector('#page-settings textarea');
+    if (footer) footer.value = s.footerText;
+    const lang = document.querySelector('#page-settings select.sel');
+    if (lang) lang.value = lang.options[0]?.value || lang.value;
+    document.documentElement.style.setProperty('--forest', s.display.theme);
+    const toggles = document.querySelectorAll('#page-settings .toggle-switch');
+    const toggleStates = [s.notifications.reminders, s.notifications.stock, s.notifications.digest, s.notifications.hospitalization, s.notifications.references, s.display.compact, s.display.reducedMotion];
+    toggles.forEach((toggle, index) => toggle.classList.toggle('on', !!toggleStates[index]));
+  }
+
+  window.saveVetProSettings = function(){
+    const inputs = document.querySelectorAll('#page-settings input');
+    const toggles = document.querySelectorAll('#page-settings .toggle-switch');
+    const footer = document.querySelector('#page-settings textarea');
+    const next = getSettings();
+    next.vetFirstName = inputs[0]?.value?.trim() || next.vetFirstName;
+    next.vetLastName = inputs[1]?.value?.trim() || next.vetLastName;
+    next.title = inputs[2]?.value?.trim() || next.title;
+    next.orderNumber = inputs[3]?.value?.trim() || next.orderNumber;
+    next.email = inputs[4]?.value?.trim() || next.email;
+    next.phone = inputs[5]?.value?.trim() || next.phone;
+    next.clinicName = inputs[6]?.value?.trim() || next.clinicName;
+    next.clinicAddress = inputs[7]?.value?.trim() || next.clinicAddress;
+    next.clinicPhone = inputs[8]?.value?.trim() || next.clinicPhone;
+    next.clinicHours = inputs[9]?.value?.trim() || next.clinicHours;
+    next.footerText = footer?.value?.trim() || next.footerText;
+    next.notifications.reminders = toggles[0]?.classList.contains('on');
+    next.notifications.stock = toggles[1]?.classList.contains('on');
+    next.notifications.digest = toggles[2]?.classList.contains('on');
+    next.notifications.hospitalization = toggles[3]?.classList.contains('on');
+    next.notifications.references = toggles[4]?.classList.contains('on');
+    next.display.compact = toggles[5]?.classList.contains('on');
+    next.display.reducedMotion = toggles[6]?.classList.contains('on');
+    saveSettings(next);
+    renameBranding();
+    toast('Paramètres VetPro sauvegardés');
+  };
+
+  function wireSettingsActions(){
+    const saveBtn = document.querySelector('#page-settings .btn.btn-p');
+    if (saveBtn) saveBtn.onclick = saveVetProSettings;
+    const securityButtons = document.querySelectorAll('#page-settings .settings-section:last-child .btn');
+    if (securityButtons[0]) securityButtons[0].onclick = () => {
+      const data = {
+        clients: CLIENTS,
+        patients: PATIENTS,
+        appointments: APPOINTMENTS,
+        historique: HISTORIQUE_DATA,
+        reminders: VACCINE_REMINDERS
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'vetpro-export.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      toast('Export VetPro généré');
+    };
+    if (securityButtons[1]) securityButtons[1].onclick = resetStatisticsData;
+  }
+
+  function patchContactAndSupportPages(){
+    const support = document.getElementById('page-support');
+    if (!support) return;
+    support.querySelector('.page-hero .tag').textContent = '☎️ Contacts VetPro';
+    support.querySelector('.page-hero h2').textContent = 'Contact & support';
+    support.querySelector('.page-hero p').textContent = `${CONTACT_EMAIL} · ${CONTACT_PHONE}`;
+    const cards = support.querySelectorAll('.card');
+    if (cards[1]) {
+      cards[1].innerHTML = `
+        <div class="card-title">Coordonnées</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="background:var(--surface2);border-radius:12px;padding:12px">✉️ <a href="mailto:${CONTACT_EMAIL}" style="color:var(--forest);font-weight:700">${CONTACT_EMAIL}</a></div>
+          <div style="background:var(--surface2);border-radius:12px;padding:12px">📞 <a href="tel:${CONTACT_PHONE.replace(/\s+/g, '')}" style="color:var(--forest);font-weight:700">${CONTACT_PHONE}</a></div>
+          <div style="background:var(--surface2);border-radius:12px;padding:12px">📸 <a href="${INSTAGRAM_URL}" target="_blank" rel="noopener" style="color:var(--forest);font-weight:700">${INSTAGRAM_URL}</a></div>
+        </div>`;
+    }
+  }
+
+  window.doSignup = async function(){
+    rebuildSignupPanel();
+    const firstName = document.getElementById('signup-first-name')?.value?.trim();
+    const lastName = document.getElementById('signup-last-name')?.value?.trim();
+    const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
+    const phone = document.getElementById('signup-phone')?.value?.trim();
+    const role = document.getElementById('signup-role')?.value;
+    const orderNumber = document.getElementById('signup-order-number')?.value?.trim();
+    const studentProof = document.getElementById('signup-student-proof')?.value?.trim();
+    const password = document.getElementById('signup-password')?.value;
+    const confirm = document.getElementById('signup-password-confirm')?.value;
+    const termsAccepted = document.getElementById('signup-terms')?.checked;
+    if (!firstName || !lastName || !email || !password) { showLoginError('Veuillez remplir les informations principales.'); return; }
+    if (!termsAccepted) { showLoginError('Vous devez accepter les conditions VetPro.'); return; }
+    if (password !== confirm) { showLoginError('Les mots de passe ne correspondent pas.'); return; }
+    if (role === 'veterinaire' && !orderNumber) { showLoginError('Le numéro d ordre vétérinaire national est requis.'); return; }
+    if (role === 'stagiaire' && !studentProof) { showLoginError('La carte étudiant ou justificatif est requis.'); return; }
+    const state = getApprovalState();
+    const payload = {
+      email,
+      phone,
+      fullName: `${firstName} ${lastName}`.trim(),
+      orderNumber,
+      studentProof,
+      role,
+      roleLabel: role === 'stagiaire' ? 'Stagiaire / étudiant' : 'Vétérinaire',
+      documentLabel: role === 'stagiaire' ? 'Carte étudiant' : 'N° ordre vétérinaire',
+      createdAt: new Date().toLocaleString('fr-FR')
+    };
+    state.pending = [payload, ...state.pending.filter(item => item.email !== email)];
+    saveApprovalState(state);
+    try {
+      if (_sb && SUPA_URL !== 'VOTRE_SUPABASE_URL') {
+        const { error } = await _sb.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: payload.fullName,
+              phone,
+              role,
+              order_number: orderNumber || '',
+              student_proof: studentProof || '',
+              approval_status: 'pending'
+            }
+          }
+        });
+        if (error) throw error;
+      }
+      showAuthMode('login');
+      const loginEmail = document.getElementById('login-email');
+      if (loginEmail) loginEmail.value = email;
+      renderApprovalsPage();
+      toast('Inscription reçue. Le compte reste en attente d approbation.');
+    } catch (err) {
+      showLoginError(err.message || 'Inscription impossible');
+    }
+  };
+
+  window.doLogin = async function(){
+    const email = document.getElementById('login-email')?.value?.trim().toLowerCase();
+    const password = document.getElementById('login-password')?.value;
+    const btn = document.getElementById('login-btn-el');
+    const state = getApprovalState();
+    if (!email || !password) { showLoginError('Veuillez remplir tous les champs.'); return; }
+    if (email !== ADMIN_EMAIL && !state.approved.includes(email)) {
+      const pending = state.pending.find(item => item.email === email);
+      showLoginError(pending ? 'Compte en attente d approbation administrateur.' : 'Compte non approuvé.');
+      return;
+    }
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Connexion...'; }
+    try {
+      if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+        setCurrentUserContext({ email });
+        initializePersistentState();
+        document.getElementById('login-screen')?.classList.add('hidden');
+        document.getElementById('logout-btn').style.display = 'block';
+        toast('Connexion réussie');
+        return;
+      }
+      const { data, error } = await _sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      setCurrentUserContext(data?.user || data?.session?.user || { email });
+      initializePersistentState();
+      document.getElementById('login-screen')?.classList.add('hidden');
+      document.getElementById('logout-btn').style.display = 'block';
+      toast('Connexion réussie');
+    } catch (err) {
+      showLoginError(err.message || 'Erreur de connexion');
+    } finally {
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Accéder à la clinique'; }
+    }
+  };
+
+  function initVetProEnhancements(){
+    if (typeof TITLES === 'object') {
+      TITLES.approvals = 'Approbations';
+      TITLES.terms = 'Conditions';
+      TITLES.contacts = 'Contacts';
+      TITLES.support = 'Contacts VetPro';
+    }
+    injectEnhancementStyles();
+    renameBranding();
+    ensureSidebarEntries();
+    ensureDynamicPages();
+    renderTermsPage('fr');
+    renderApprovalsPage();
+    enhanceLanding();
+    rebuildSignupPanel();
+    addQuickClientButtons();
+    simplifyCaseFormLabels();
+    patchContactAndSupportPages();
+    loadSettingsIntoForm();
+    wireSettingsActions();
+    renderStatistics();
+  }
+
+  document.addEventListener('DOMContentLoaded', initVetProEnhancements);
+  window.addEventListener('load', initVetProEnhancements);
+})();
+</script>
+
 </body>
 </html>
