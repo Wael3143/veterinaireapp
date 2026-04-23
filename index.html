@@ -13,7 +13,7 @@
     display:flex;align-items:center;justify-content:center;
     font-family:'Outfit',sans-serif;
   }
-  #login-screen.hidden{display:none}
+  #login-screen.hidden{display:none !important}
   .login-card{
     width:100%;max-width:420px;padding:40px 36px;
     background:rgba(255,255,255,0.06);
@@ -9911,13 +9911,15 @@ function saveAdmission() {
   }
 
   function showLoginScreen(){
-    document.getElementById('login-screen')?.classList.remove('hidden');
+    const el = document.getElementById('login-screen');
+    if (el) { el.classList.remove('hidden'); el.style.display = ''; }
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.style.display = 'none';
   }
 
   function hideLoginScreen(){
-    document.getElementById('login-screen')?.classList.add('hidden');
+    const el = document.getElementById('login-screen');
+    if (el) { el.classList.add('hidden'); el.style.display = 'none'; }
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) logoutBtn.style.display = 'block';
   }
