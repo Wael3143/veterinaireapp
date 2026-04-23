@@ -7622,16 +7622,16 @@ function saveAdmission() {
   const PLAY_STORE_URL = '#';
   const APPROVALS_KEY = 'vetpro-approvals';
   const SETTINGS_KEY = 'vetpro-settings';
-  const TERMS_TEXT = {
+  const TERMS_TEXT = window.TERMS_TEXT = {
     fr: {
       title: 'Conditions d\'utilisation VetPro',
       intro: 'VetPro est une plateforme professionnelle d\'aide, de gestion clinique et de coordination vétérinaire. L\'accès est conditionné à une validation préalable du profil utilisateur et à l\'acceptation intégrale des présentes conditions.',
       items: [
-        '<strong>Éligibilité professionnelle.</strong> L\'accès complet à VetPro est réservé aux docteurs vétérinaires et aux structures autorisées. Chaque demande d\'inscription doit fournir un numéro d\'ordre vétérinaire national valide. Les stagiaires et étudiants doivent fournir une carte d\'étudiant ou un justificatif équivalent et restent soumis à une validation manuelle.',
+        '<strong>Éligibilité professionnelle.</strong> L\'accès complet à VetPro est réservé aux docteurs vétérinaires, aux structures autorisées et, après validation, aux stagiaires ou étudiants encadrés. VetPro peut demander une vérification professionnelle ou académique avant ou après l\'activation du compte.',
         '<strong>Approbation manuelle des comptes.</strong> Toute inscription reste en attente tant qu\'elle n\'a pas été approuvée par l\'administration VetPro. VetPro peut refuser, suspendre ou supprimer un accès à tout moment en cas d\'information inexacte, incomplète, trompeuse ou contraire à l\'éthique professionnelle.',
         '<strong>Usage autorisé.</strong> La plateforme doit être utilisée exclusivement dans un cadre vétérinaire, éducatif, administratif ou clinique licite. Il est interdit de céder son accès, usurper l\'identité d\'un tiers, contourner les contrôles de sécurité, extraire massivement les données ou perturber le service.',
         '<strong>Données et consentement.</strong> En créant un compte, l\'utilisateur autorise VetPro à traiter ses données professionnelles, coordonnées, documents justificatifs, informations liées aux rendez-vous, rappels et communications par email, téléphone ou SMS pour l\'exploitation, la sécurité, l\'assistance, la facturation, l\'information produit et la conformité.',
-        '<strong>Documents requis.</strong> VetPro peut demander à tout moment un diplôme vétérinaire, un numéro d\'ordre vétérinaire national, une pièce d\'identité, une carte d\'étudiant ou tout document justificatif complémentaire. L\'absence de réponse ou la fourniture de pièces non valides peut entraîner un blocage immédiat du compte.',
+        '<strong>Documents requis.</strong> VetPro peut demander à tout moment un diplôme vétérinaire, une pièce d\'identité, une attestation professionnelle, une preuve académique ou tout document justificatif complémentaire. L\'absence de réponse ou la fourniture de pièces non valides peut entraîner un blocage immédiat du compte.',
         '<strong>Responsabilité clinique.</strong> Les contenus, suggestions, statistiques, protocoles, rappels et aides affichés dans VetPro restent des outils d\'assistance. Les décisions médicales, diagnostiques, thérapeutiques, juridiques et déontologiques relèvent exclusivement du praticien ou de la structure utilisatrice.',
         '<strong>Propriété intellectuelle.</strong> Le design, la structure, les textes, bases, interfaces, modules, marques et éléments visuels VetPro demeurent protégés. Toute reproduction, revente, extraction, duplication fonctionnelle ou réutilisation non autorisée est interdite.',
         '<strong>Droit applicable.</strong> L\'utilisateur s\'engage à respecter les lois et règlements applicables en Algérie, notamment ceux relatifs à l\'exercice vétérinaire, à la santé animale, à la confidentialité et à l\'usage des données professionnelles.'
@@ -7641,11 +7641,11 @@ function saveAdmission() {
       title: 'VetPro Terms of Use',
       intro: 'VetPro is a professional veterinary assistance, clinic management and coordination platform. Access is subject to prior profile verification and full acceptance of these terms.',
       items: [
-        '<strong>Professional eligibility.</strong> Full access is reserved for licensed veterinarians and authorized veterinary structures. Every registration request must include a valid national veterinary registration number. Students and trainees must provide a student card or equivalent proof and remain subject to manual approval.',
+        '<strong>Professional eligibility.</strong> Full access is reserved for licensed veterinarians, authorized veterinary structures and, after validation, supervised trainees or students. VetPro may request professional or academic verification before or after account activation.',
         '<strong>Manual account approval.</strong> Every registration remains pending until approved by VetPro administration. VetPro may refuse, suspend or revoke access at any time if submitted information is false, incomplete, misleading or inconsistent with professional ethics.',
         '<strong>Authorized use.</strong> The platform may only be used for lawful veterinary, educational, administrative or clinical purposes. Sharing credentials, impersonation, bypassing security, scraping data or disrupting the service is prohibited.',
         '<strong>Data and consent.</strong> By creating an account, the user authorizes VetPro to process professional data, contact details, supporting documents, appointment information, reminders and communications by email, phone or SMS for operations, security, support, billing, product information and compliance.',
-        '<strong>Required documents.</strong> VetPro may request a veterinary diploma, national veterinary registration number, identity document, student card or any supporting record at any time. Missing or invalid documents may lead to immediate account restriction.',
+        '<strong>Required documents.</strong> VetPro may request a veterinary diploma, identity document, professional attestation, student proof or any supporting record at any time. Missing or invalid documents may lead to immediate account restriction.',
         '<strong>Clinical responsibility.</strong> All insights, reminders, protocols, statistics and assistance features remain support tools only. Medical, diagnostic, therapeutic, legal and ethical decisions remain the sole responsibility of the practitioner or clinic.',
         '<strong>Intellectual property.</strong> VetPro design, structure, texts, interfaces, modules, marks and visual assets remain protected. Unauthorized reproduction, resale, extraction, cloning or reuse is prohibited.',
         '<strong>Applicable law.</strong> Users agree to comply with all laws and regulations applicable in Algeria, especially those governing veterinary practice, animal health, confidentiality and use of professional data.'
@@ -8009,7 +8009,7 @@ function saveAdmission() {
         android: 'Android (en cours de développement)',
         ios: 'iOS (en cours de développement)',
         socials: 'Suivre VetPro',
-        legal: 'En vous inscrivant, vous acceptez les conditions VetPro, incluant le numéro d\'ordre national vétérinaire ou une carte d\'étudiant pour les stagiaires.'
+        legal: 'En vous inscrivant, vous acceptez les conditions VetPro, la vérification manuelle du compte et les contrôles professionnels ou académiques éventuels.'
       },
       en: {
         eyebrow: 'VetPro Pricing · Algeria',
@@ -8035,7 +8035,7 @@ function saveAdmission() {
         android: 'Android (work in progress)',
         ios: 'iOS (work in progress)',
         socials: 'Follow VetPro',
-        legal: 'By signing up, you accept VetPro terms including a national veterinary registration number or student card for trainees.'
+        legal: 'By signing up, you accept VetPro terms, manual account approval and any professional or academic verification if requested.'
       },
       ar: {
         eyebrow: 'أسعار VetPro · الجزائر',
@@ -8061,7 +8061,7 @@ function saveAdmission() {
         android: 'Android قيد التطوير',
         ios: 'iOS قيد التطوير',
         socials: 'تابع VetPro',
-        legal: 'بإنشاء الحساب فأنت توافق على شروط VetPro بما فيها رقم التسجيل البيطري الوطني أو بطاقة الطالب للمتربصين.'
+        legal: 'بإنشاء الحساب فأنت توافق على شروط VetPro وعلى التحقق اليدوي من الحساب وعلى أي تحقق مهني أو أكاديمي عند الطلب.'
       }
     };
   }
@@ -8521,15 +8521,13 @@ function saveAdmission() {
     if (!firstName || !lastName || !email || !password) { showLoginError('Veuillez remplir les informations principales.'); return; }
     if (!termsAccepted) { showLoginError('Vous devez accepter les conditions VetPro.'); return; }
     if (password !== confirm) { showLoginError('Les mots de passe ne correspondent pas.'); return; }
-    if (role === 'veterinaire' && !orderNumber) { showLoginError('Le numéro d ordre vétérinaire national est requis.'); return; }
-    if (role === 'stagiaire' && !studentProof) { showLoginError('La carte étudiant ou justificatif est requis.'); return; }
     const state = getApprovalState();
     const payload = {
       email,
       phone,
       fullName: `${firstName} ${lastName}`.trim(),
-      orderNumber,
-      studentProof,
+      orderNumber: orderNumber || '',
+      studentProof: studentProof || '',
       role,
       roleLabel: role === 'stagiaire' ? 'Stagiaire / étudiant' : 'Vétérinaire',
       documentLabel: role === 'stagiaire' ? 'Carte étudiant' : 'N° ordre vétérinaire',
@@ -8648,8 +8646,6 @@ function saveAdmission() {
 <script>
 (function(){
   const ADMIN_EMAIL = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
-  const MASTER_LOGIN_EMAIL = '';
-  const MASTER_LOGIN_PASSWORD = '';
   const OWNER_NAME = 'Kherbache Wail';
   const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'contact@vetpro.local';
   const CONTACT_PHONE = '+213781236686';
@@ -8659,6 +8655,7 @@ function saveAdmission() {
   const USER_STATE_TABLE = 'vetpro_user_state';
   const LOCAL_APPROVALS_KEY = 'vetpro-access-fallback-v2';
   const LOGO_PATH = './vetpro-logo.jpg';
+  const TERMS_SOURCE = window.TERMS_TEXT || {};
   let remoteStateSaveTimer = null;
 
   function getFallbackState(){
@@ -8768,11 +8765,9 @@ function saveAdmission() {
     const logoTargets = ['.login-logo', '.landing-logo', '.paw-icon'];
     logoTargets.forEach(selector => {
       document.querySelectorAll(selector).forEach(el => {
-        el.textContent = '';
-        el.style.backgroundImage = `url('${LOGO_PATH}')`;
-        el.style.backgroundSize = 'cover';
-        el.style.backgroundPosition = 'center';
-        el.style.backgroundRepeat = 'no-repeat';
+        if (!el.querySelector('.vetpro-logo-img')) {
+          el.innerHTML = `<img src="${LOGO_PATH}" alt="VetPro logo" class="vetpro-logo-img">`;
+        }
       });
     });
   }
@@ -8793,10 +8788,32 @@ function saveAdmission() {
         padding-top:24px;
         min-height:auto;
       }
+      #public-landing .landing-panel{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        text-align:center;
+      }
+      #public-landing .landing-brand,
+      #public-landing .lang-switch,
+      #public-landing .landing-actions,
+      #public-landing .landing-socials,
+      #public-landing .hero-badges{
+        justify-content:center;
+      }
+      #public-landing .landing-copy{
+        margin:0 auto;
+      }
+      #public-landing .landing-grid{
+        width:100%;
+        max-width:760px;
+        margin-left:auto;
+        margin-right:auto;
+      }
       #login-screen .login-card.vetpro-auth-visible{
         display:block !important;
-        background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.10));
-        border:1px solid rgba(255,255,255,.26);
+        background:linear-gradient(180deg, rgba(7,31,20,.94), rgba(11,45,30,.86));
+        border:1px solid rgba(98,236,154,.24);
         box-shadow:0 28px 70px rgba(0,0,0,.28);
         position:sticky;
         top:28px;
@@ -8804,9 +8821,46 @@ function saveAdmission() {
       }
       #login-screen .login-card.vetpro-auth-visible .login-title,
       #login-screen .login-card.vetpro-auth-visible .login-sub{
-        text-align:left;
+        text-align:center;
+      }
+      #login-screen .login-card.vetpro-auth-visible .login-title{
+        color:#fff;
+      }
+      #login-screen .login-card.vetpro-auth-visible .login-sub{
+        color:rgba(228,245,234,.72);
+      }
+      #login-screen .login-card.vetpro-auth-visible .login-label{
+        color:rgba(226,243,232,.78);
+      }
+      #login-screen .login-card.vetpro-auth-visible .login-input{
+        background:rgba(255,255,255,.10);
+        border-color:rgba(255,255,255,.18);
+        color:#fff;
+      }
+      #login-screen .login-card.vetpro-auth-visible .login-input::placeholder{
+        color:rgba(255,255,255,.45);
       }
       .landing-right .login-card{margin:0;max-width:none}
+      .login-logo,
+      .landing-logo,
+      .paw-icon{
+        overflow:hidden;
+        background:#0a2619;
+        border:1px solid rgba(255,255,255,.12);
+        box-shadow:0 20px 44px rgba(0,0,0,.22);
+      }
+      .login-logo,
+      .landing-logo{
+        width:96px;
+        height:96px;
+      }
+      .vetpro-logo-img{
+        width:100%;
+        height:100%;
+        display:block;
+        object-fit:cover;
+        border-radius:inherit;
+      }
       .landing-longform{
         max-width:1240px;
         margin:28px auto 0;
@@ -8836,6 +8890,7 @@ function saveAdmission() {
         padding:18px;
         background:#fff;
         border:1px solid var(--brd);
+        text-align:center;
       }
       .longform-dark .module-card{
         background:rgba(255,255,255,.06);
@@ -8851,6 +8906,39 @@ function saveAdmission() {
         line-height:1.7;
         color:inherit;
         opacity:.82;
+      }
+      .module-card p{
+        margin:0 auto;
+        max-width:320px;
+      }
+      .vet-ribbon{
+        display:flex;
+        justify-content:center;
+        gap:12px;
+        flex-wrap:wrap;
+        margin-bottom:18px;
+      }
+      .vet-pill{
+        padding:10px 14px;
+        border-radius:999px;
+        background:rgba(255,255,255,.08);
+        border:1px solid rgba(255,255,255,.08);
+        color:#dff7e8;
+        font-size:12px;
+      }
+      .landing-terms-tabs{
+        justify-content:center;
+        margin-top:18px;
+      }
+      .landing-terms-reader{
+        margin-top:16px;
+        text-align:left;
+      }
+      .landing-terms-reader .term-row{
+        grid-template-columns:1fr;
+      }
+      .landing-terms-reader[dir="rtl"]{
+        text-align:right;
       }
       .terms-reader{
         max-height:620px;
@@ -9013,7 +9101,7 @@ function saveAdmission() {
             <div class="terms-card"><h4>Protection des droits</h4><p>Les contenus, l'interface, le design, les modules et la marque VetPro restent proteges et reserves.</p></div>
           </div>
           <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-p" onclick="nav('terms');document.getElementById('login-screen')?.classList.add('hidden')">Lire toutes les conditions</button>
+            <button class="btn btn-p" onclick="openTermsFromLanding()">Lire toutes les conditions</button>
             <button class="btn btn-ghost" onclick="downloadTermsDocument()">Telecharger les conditions</button>
             <button class="btn btn-ghost" onclick="openAuthCard('signup')">Continuer vers l'inscription</button>
           </div>
@@ -9026,7 +9114,7 @@ function saveAdmission() {
             <div class="contact-highlight"><h4>Instagram</h4><p><a class="insta-link" href="${INSTAGRAM_URL}" target="_blank" rel="noopener"><span class="insta-icon">📷</span><span>@vetpro.dz</span></a></p></div>
           </div>
         </section>
-        <div class="contact-footer">© 2026 VetPro. Tous droits reserves</div>
+        <div class="contact-footer">© 2026 VetPro. Tous droits réservés</div>
       `;
       landing.appendChild(wrapper);
     }
@@ -9036,6 +9124,76 @@ function saveAdmission() {
 
     const brandText = landing.querySelector('.landing-brand div div:last-child');
     if (brandText) brandText.innerHTML = `Vet<span style="color:#38d37c">Pro</span><div style="font-size:13px;color:rgba(255,255,255,.6);margin-top:4px">${OWNER_NAME}</div>`;
+  }
+
+  function getTermsSource(){
+    return window.TERMS_TEXT || TERMS_SOURCE || {};
+  }
+
+  window.renderLandingTerms = function(lang='fr', btn){
+    const body = document.getElementById('landing-terms-body');
+    if (!body) return;
+    const source = getTermsSource();
+    const data = source[lang] || source.fr;
+    if (!data) return;
+    if (btn) {
+      document.querySelectorAll('#landing-conditions [data-terms-lang]').forEach(item => item.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    const dir = lang === 'ar' ? 'rtl' : 'ltr';
+    body.setAttribute('dir', dir);
+    body.innerHTML = `
+      <div class="card-title" style="margin-bottom:10px">${data.title}</div>
+      <p style="color:var(--muted);line-height:1.8;margin-bottom:18px">${data.intro}</p>
+      ${data.items.map((item, index) => `
+        <div class="term-row">
+          <div><strong>${index + 1}.</strong> ${item}</div>
+        </div>
+      `).join('')}
+    `;
+  };
+
+  function upgradeLandingVetTheme(){
+    const landing = document.getElementById('public-landing');
+    if (!landing || landing.dataset.vetThemeReady === 'true') return;
+    landing.dataset.vetThemeReady = 'true';
+
+    const functions = document.getElementById('landing-functions');
+    if (functions && !functions.querySelector('.vet-ribbon')) {
+      functions.insertAdjacentHTML('afterbegin', `
+        <div class="vet-ribbon">
+          <span class="vet-pill">🩺 Assistance clinique</span>
+          <span class="vet-pill">🐾 Dossiers patients</span>
+          <span class="vet-pill">💉 Vaccinations & rappels</span>
+          <span class="vet-pill">📅 Rendez-vous synchronisés</span>
+        </div>
+      `);
+    }
+
+    const conditions = document.getElementById('landing-conditions');
+    if (conditions) {
+      conditions.innerHTML = `
+        <div class="card-title" style="margin-bottom:12px;text-align:center">Conditions VetPro</div>
+        <p style="max-width:760px;margin:0 auto 10px;text-align:center;color:var(--muted);line-height:1.8">
+          Consultez les conditions complètes avant inscription. Cette section reste disponible directement depuis l'accueil et peut aussi être téléchargée.
+        </p>
+        <div class="section-tabs landing-terms-tabs">
+          <button class="active" type="button" data-terms-lang="fr" onclick="renderLandingTerms('fr', this)">Français</button>
+          <button type="button" data-terms-lang="en" onclick="renderLandingTerms('en', this)">English</button>
+          <button type="button" data-terms-lang="ar" onclick="renderLandingTerms('ar', this)">العربية</button>
+        </div>
+        <div id="landing-terms-body" class="terms-reader landing-terms-reader"></div>
+        <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+          <button class="btn btn-p" type="button" onclick="downloadTermsDocument()">Télécharger les conditions</button>
+          <button class="btn btn-ghost" type="button" onclick="openAuthCard('signup')">Continuer vers l'inscription</button>
+        </div>
+      `;
+      const defaultButton = conditions.querySelector('[data-terms-lang="fr"]');
+      window.renderLandingTerms('fr', defaultButton || null);
+    }
+
+    const footer = landing.querySelector('.contact-footer');
+    if (footer) footer.textContent = '© 2026 VetPro. Tous droits réservés';
   }
 
   function upgradeContactsPage(){
@@ -9060,7 +9218,7 @@ function saveAdmission() {
           <div class="contact-form-card">
             <div class="card-title">A propos de VetPro</div>
             <p style="color:var(--muted);line-height:1.8">VetPro reunit l'accueil, les cas cliniques, l'historique, les hospitalisations, les vaccinations, les rappels, les statistiques, les ordonnances, les references et les outils de calcul dans une seule interface.</p>
-            <div class="inline-note" style="margin-top:14px">© 2026 VetPro. Tous droits reserves</div>
+            <div class="inline-note" style="margin-top:14px">© 2026 VetPro. Tous droits réservés</div>
           </div>
         </div>
         <div class="contact-form-card">
@@ -9094,10 +9252,16 @@ function saveAdmission() {
   }
 
   window.downloadTermsDocument = function(){
+    const termsData = getTermsSource();
     const sections = ['fr','en','ar'].map(lang => {
-      const data = TERMS_TEXT[lang];
+      const data = termsData[lang] || termsData.fr;
+      if (!data) return '';
       return `${data.title}\n\n${data.intro}\n\n${data.items.map((item, index) => `${index + 1}. ${item.replace(/<[^>]+>/g,'')}`).join('\n\n')}`;
-    }).join('\n\n-------------------------\n\n');
+    }).filter(Boolean).join('\n\n-------------------------\n\n');
+    if (!sections) {
+      toast('Conditions indisponibles pour le moment');
+      return;
+    }
     const blob = new Blob([sections], { type:'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -9108,9 +9272,11 @@ function saveAdmission() {
   };
 
   window.openTermsFromLanding = function(){
-    document.getElementById('login-screen')?.classList.add('hidden');
-    nav('terms');
-    renderTermsPage('fr');
+    const section = document.getElementById('landing-conditions');
+    if (!section) return;
+    section.scrollIntoView({ behavior:'smooth', block:'start' });
+    const defaultButton = section.querySelector('[data-terms-lang="fr"]');
+    window.renderLandingTerms('fr', defaultButton || null);
   };
 
   function collectAppStateSnapshot(){
@@ -9332,6 +9498,31 @@ function saveAdmission() {
     }
   };
 
+  async function recoverOAuthSessionFromHash(){
+    if (!_sb || !window.location.hash || !window.location.hash.includes('access_token=')) return;
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    if (!access_token || !refresh_token) return;
+    try {
+      await _sb.auth.setSession({ access_token, refresh_token });
+      const cleanUrl = window.location.pathname + window.location.search;
+      window.history.replaceState({}, document.title, cleanUrl);
+    } catch (error) {
+      console.warn('OAuth session recovery failed', error);
+    }
+  }
+
+  function wireSupabaseAuthEvents(){
+    if (!_sb || window.__vetproAuthEventsBound) return;
+    window.__vetproAuthEventsBound = true;
+    _sb.auth.onAuthStateChange((event) => {
+      if (['INITIAL_SESSION', 'SIGNED_IN', 'TOKEN_REFRESHED', 'USER_UPDATED', 'SIGNED_OUT'].includes(event)) {
+        setTimeout(() => { checkSession(); }, 0);
+      }
+    });
+  }
+
   window.doSignup = async function(){
     const firstName = document.getElementById('signup-first-name')?.value?.trim();
     const lastName = document.getElementById('signup-last-name')?.value?.trim();
@@ -9384,7 +9575,7 @@ function saveAdmission() {
       showAuthMode('login');
       const loginEmail = document.getElementById('login-email');
       if (loginEmail) loginEmail.value = email;
-      toast(ADMIN_EMAIL && email === ADMIN_EMAIL ? 'Compte administrateur pret. Vous pouvez vous connecter.' : 'Inscription enregistree. Le compte attend approbation.');
+      toast('Inscription enregistree. Le compte attend approbation.');
       refreshApprovalsPageV2();
     } catch (err) {
       showLoginError(err.message || 'Inscription impossible');
@@ -9397,15 +9588,6 @@ function saveAdmission() {
     const btn = document.getElementById('login-btn-el');
     if (!email || !password) { showLoginError('Veuillez remplir tous les champs.'); return; }
 
-    if (MASTER_LOGIN_EMAIL && MASTER_LOGIN_PASSWORD && email === MASTER_LOGIN_EMAIL && password === MASTER_LOGIN_PASSWORD) {
-      setCurrentUserContext({ email, id:'vetpro-master-admin' });
-      initializePersistentState();
-      document.getElementById('login-screen')?.classList.add('hidden');
-      document.getElementById('logout-btn').style.display = 'block';
-      toast('Connexion admin de secours active');
-      return;
-    }
-
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = '<span class="login-spinner"></span>Connexion...';
@@ -9413,7 +9595,7 @@ function saveAdmission() {
 
     try {
       if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
-        showLoginError('Configurez Supabase ou utilisez le compte admin de secours.');
+        showLoginError('Configurez Supabase pour activer la connexion.');
         return;
       }
 
@@ -9450,11 +9632,15 @@ function saveAdmission() {
     if (settingsInputs[4]) settingsInputs[4].value = CONTACT_EMAIL;
     if (settingsInputs[5]) settingsInputs[5].value = CONTACT_PHONE;
     const footer = document.querySelector('#page-settings textarea');
-    if (footer) footer.value = '© 2026 VetPro. Tous droits reserves';
+    if (footer) footer.value = '© 2026 VetPro. Tous droits réservés';
     const supportHero = document.querySelector('#page-support .page-hero p');
-    if (supportHero) supportHero.textContent = `${OWNER_NAME} · ${CONTACT_EMAIL} · ${CONTACT_PHONE}`;
+    if (supportHero) supportHero.textContent = CONTACT_EMAIL !== 'contact@vetpro.local'
+      ? `${OWNER_NAME} · ${CONTACT_EMAIL} · ${CONTACT_PHONE}`
+      : `${OWNER_NAME} · VetPro Algérie · ${CONTACT_PHONE}`;
     const loginSub = document.querySelector('#login-screen .login-sub');
-    if (loginSub) loginSub.innerHTML = `${OWNER_NAME}<br>${CONTACT_EMAIL}`;
+    if (loginSub) loginSub.innerHTML = CONTACT_EMAIL !== 'contact@vetpro.local'
+      ? `${OWNER_NAME}<br>${CONTACT_EMAIL}`
+      : `${OWNER_NAME}<br>Plateforme sécurisée VetPro`;
   }
 
   function installInstagramIcons(){
@@ -9469,14 +9655,17 @@ function saveAdmission() {
 
   function initVetProV2(){
     injectV2Styles();
-    applyLogoEverywhere();
     makeLandingLongAndReadable();
+    upgradeLandingVetTheme();
+    applyLogoEverywhere();
     upgradeTermsPage();
     upgradeContactsPage();
     improveBrandingAndSettings();
     installInstagramIcons();
     removeVetodiagResiduals();
     refreshApprovalsPageV2();
+    wireSupabaseAuthEvents();
+    recoverOAuthSessionFromHash().finally(() => { checkSession(); });
   }
 
   document.addEventListener('DOMContentLoaded', initVetProV2);
