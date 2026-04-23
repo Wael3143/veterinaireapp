@@ -726,7 +726,7 @@ function ensureAuthEnhancements(){
       googleBtn.className = 'login-btn';
       googleBtn.style.cssText = 'margin-top:10px;background:linear-gradient(135deg,#ffffff,#e9f2eb);color:#0b2e1f';
       googleBtn.textContent = 'Continuer avec Google';
-      googleBtn.onclick = doGoogleAuth;
+      googleBtn.onclick = () => window.doGoogleAuth && window.doGoogleAuth();
       loginPanel.appendChild(googleBtn);
       const links = document.createElement('div');
     links.style.cssText = 'display:flex;justify-content:space-between;gap:10px;margin-top:10px';
@@ -9670,6 +9670,578 @@ function saveAdmission() {
 
   document.addEventListener('DOMContentLoaded', initVetProV2);
   window.addEventListener('load', initVetProV2);
+})();
+</script>
+
+<script>
+(function(){
+  const APPROVAL_TABLE = 'vetpro_access_requests';
+  const LOGO_VERSION = '20260423-final';
+  const FINAL_LOGO_SRC = (() => {
+    try {
+      return new URL(`vetpro-logo.jpg?v=${LOGO_VERSION}`, window.location.href.split('#')[0]).href;
+    } catch (error) {
+      return `./vetpro-logo.jpg?v=${LOGO_VERSION}`;
+    }
+  })();
+
+  function addFinalHotfixStyles(){
+    if (document.getElementById('vetpro-final-hotfix-style')) return;
+    const style = document.createElement('style');
+    style.id = 'vetpro-final-hotfix-style';
+    style.textContent = `
+      #login-screen .landing-shell{
+        grid-template-columns:1fr !important;
+        justify-items:center;
+        gap:26px;
+      }
+      #public-landing .landing-panel{
+        max-width:1040px;
+      }
+      #public-landing .landing-right{
+        width:min(1120px, 100%);
+      }
+      #public-landing .landing-right > .landing-card,
+      #public-landing .landing-right > .pricing-wrap{
+        display:none !important;
+      }
+      #login-screen .login-card.vetpro-auth-visible{
+        position:relative !important;
+        top:auto !important;
+        width:min(560px, 100%);
+        margin:0 auto;
+      }
+      #login-screen .login-logo,
+      #login-screen .landing-logo,
+      .paw-icon{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:0;
+        background:#082416;
+      }
+      #login-screen .login-logo img,
+      #login-screen .landing-logo img,
+      .paw-icon img{
+        width:100%;
+        height:100%;
+        display:block;
+        object-fit:cover;
+        border-radius:inherit;
+      }
+      #login-screen .login-error[data-tone="info"]{
+        display:block;
+        background:rgba(37,99,235,.18);
+        border-color:rgba(96,165,250,.35);
+        color:#dbeafe;
+      }
+      #login-screen .login-error[data-tone="warn"]{
+        display:block;
+        background:rgba(217,119,6,.18);
+        border-color:rgba(251,191,36,.35);
+        color:#fde68a;
+      }
+      #login-screen .login-error[data-tone="error"]{
+        display:block;
+        background:rgba(220,38,38,.2);
+        border-color:rgba(248,113,113,.35);
+        color:#fecaca;
+      }
+      .vetpro-center-stack{
+        display:flex;
+        flex-direction:column;
+        gap:22px;
+        max-width:1120px;
+        margin:0 auto;
+      }
+      .vetpro-center-section{
+        background:rgba(255,255,255,.95);
+        border-radius:30px;
+        border:1px solid rgba(12,48,31,.08);
+        box-shadow:0 24px 60px rgba(5,20,13,.10);
+        padding:34px;
+      }
+      .vetpro-center-section.dark{
+        background:linear-gradient(180deg, rgba(7,39,26,.96), rgba(12,56,38,.92));
+        color:#fff;
+      }
+      .vetpro-center-title{
+        text-align:center;
+        font-family:'DM Serif Display',serif;
+        font-size:46px;
+        line-height:1.05;
+        margin-bottom:10px;
+      }
+      .vetpro-center-sub{
+        text-align:center;
+        color:rgba(255,255,255,.76);
+        max-width:780px;
+        margin:0 auto 24px;
+        line-height:1.75;
+      }
+      .vetpro-pricing-grid{
+        display:grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:20px;
+      }
+      .vetpro-pricing-card{
+        border-radius:28px;
+        padding:28px;
+        text-align:center;
+      }
+      .vetpro-pricing-card.light{
+        background:#fff;
+        color:#0d2418;
+        border:1px solid rgba(16,67,44,.08);
+      }
+      .vetpro-pricing-card.dark{
+        background:linear-gradient(180deg, #0b4b31, #0a3725);
+        color:#fff;
+        border:1px solid rgba(117,255,185,.16);
+      }
+      .vetpro-pricing-label{
+        font-size:12px;
+        letter-spacing:.26em;
+        text-transform:uppercase;
+        opacity:.72;
+        margin-bottom:12px;
+      }
+      .vetpro-pricing-name{
+        font-family:'DM Serif Display',serif;
+        font-size:40px;
+        margin-bottom:12px;
+      }
+      .vetpro-pricing-price{
+        font-size:56px;
+        font-weight:800;
+        line-height:1;
+        margin-bottom:18px;
+      }
+      .vetpro-pricing-card ul{
+        list-style:none;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+        margin:0;
+        padding:0;
+      }
+      .vetpro-pricing-card li{
+        font-size:14px;
+        line-height:1.6;
+      }
+      .vetpro-feature-grid{
+        display:grid;
+        grid-template-columns:repeat(2, minmax(0, 1fr));
+        gap:18px;
+      }
+      .vetpro-feature-card{
+        background:rgba(255,255,255,.92);
+        border:1px solid rgba(17,61,40,.08);
+        border-radius:24px;
+        padding:24px;
+        text-align:center;
+      }
+      .vetpro-feature-card h4{
+        font-family:'DM Serif Display',serif;
+        font-size:28px;
+        margin-bottom:10px;
+      }
+      .vetpro-feature-card p{
+        color:#4b5f56;
+        line-height:1.7;
+      }
+      .vetpro-download-grid{
+        display:grid;
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+        gap:18px;
+      }
+      .vetpro-download-card{
+        background:#fff;
+        border:1px solid rgba(17,61,40,.08);
+        border-radius:24px;
+        padding:24px;
+        text-align:center;
+      }
+      .vetpro-download-card h4{
+        font-family:'DM Serif Display',serif;
+        font-size:28px;
+        margin-bottom:10px;
+      }
+      .vetpro-download-card p{
+        color:#4b5f56;
+        line-height:1.7;
+      }
+      .vetpro-download-card a{
+        color:#0b6f43;
+        font-weight:700;
+        text-decoration:none;
+      }
+      @media (max-width: 900px){
+        .vetpro-pricing-grid,
+        .vetpro-feature-grid,
+        .vetpro-download-grid{
+          grid-template-columns:1fr;
+        }
+        .vetpro-center-title{
+          font-size:36px;
+        }
+        .vetpro-pricing-price{
+          font-size:48px;
+        }
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function setLoginFeedback(message, tone){
+    const box = document.getElementById('login-error');
+    if (!box) return;
+    box.textContent = message;
+    box.style.display = 'block';
+    box.dataset.tone = tone || 'error';
+  }
+
+  function clearLoginFeedback(){
+    const box = document.getElementById('login-error');
+    if (!box) return;
+    box.textContent = '';
+    box.style.display = 'none';
+    box.dataset.tone = '';
+  }
+
+  function showLoginScreen(){
+    document.getElementById('login-screen')?.classList.remove('hidden');
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.style.display = 'none';
+  }
+
+  function hideLoginScreen(){
+    document.getElementById('login-screen')?.classList.add('hidden');
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.style.display = 'block';
+  }
+
+  function applyFinalLogo(){
+    const selectors = ['.login-logo', '.landing-logo', '.paw-icon'];
+    selectors.forEach((selector) => {
+      document.querySelectorAll(selector).forEach((node) => {
+        const size = selector === '.paw-icon' ? 56 : 96;
+        node.innerHTML = `<img src="${FINAL_LOGO_SRC}" alt="VetPro logo" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:inherit" onerror="this.onerror=null;this.src='vetpro-logo.jpg'">`;
+      });
+    });
+
+    const loginTitle = document.querySelector('#login-screen .login-title');
+    if (loginTitle) loginTitle.textContent = 'VetPro';
+    const loginSub = document.querySelector('#login-screen .login-sub');
+    if (loginSub) loginSub.innerHTML = 'Plateforme vétérinaire intelligente<br>Connexion sécurisée VetPro';
+  }
+
+  function renderCenteredAccueil(){
+    const landing = document.getElementById('public-landing');
+    if (!landing) return;
+    const wrapper = document.getElementById('landing-longform') || document.createElement('div');
+    wrapper.id = 'landing-longform';
+    wrapper.className = 'landing-longform';
+    wrapper.innerHTML = `
+      <div class="vetpro-center-stack">
+        <section class="vetpro-center-section dark" id="landing-pricing">
+          <div class="vetpro-center-title">Simple. Transparent. Abordable.</div>
+          <div class="vetpro-center-sub">VetPro réunit l'IA clinique, la gestion des dossiers, les rendez-vous, les vaccins, les hospitalisations et les statistiques dans une interface vétérinaire claire et centrée.</div>
+          <div class="vetpro-pricing-grid">
+            <article class="vetpro-pricing-card light">
+              <div class="vetpro-pricing-label">Trimestriel</div>
+              <div class="vetpro-pricing-name">Trimestriel</div>
+              <div class="vetpro-pricing-price">7 500 DA</div>
+              <ul>
+                <li>✓ IA clinique complète</li>
+                <li>✓ Gestion des dossiers</li>
+                <li>✓ Vaccinations & rappels</li>
+                <li>✓ Planning & hospitalisations</li>
+                <li>✓ Statistiques temps réel</li>
+              </ul>
+            </article>
+            <article class="vetpro-pricing-card dark">
+              <div class="vetpro-pricing-label">Annuel</div>
+              <div class="vetpro-pricing-name">Annuel</div>
+              <div class="vetpro-pricing-price">25 000 DA</div>
+              <ul>
+                <li>✓ Tout du plan trimestriel</li>
+                <li>✓ Priorité support</li>
+                <li>✓ Mises à jour incluses</li>
+                <li>✓ Accès anticipé aux nouvelles fonctions</li>
+                <li>✓ Pilotage avancé de clinique</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="vetpro-center-section" id="landing-functions">
+          <div class="vetpro-center-title" style="color:#0d2b1b">Fonctions</div>
+          <div class="vetpro-feature-grid">
+            <article class="vetpro-feature-card">
+              <h4>Nouveau cas clinique</h4>
+              <p>Création rapide de dossier sans répétitions sur le client, l'animal et le téléphone.</p>
+            </article>
+            <article class="vetpro-feature-card">
+              <h4>Approbation des comptes</h4>
+              <p>Les inscriptions restent en attente jusqu'à validation manuelle.</p>
+            </article>
+            <article class="vetpro-feature-card">
+              <h4>Rendez-vous & vaccins</h4>
+              <p>Ajout direct de nouveaux clients depuis les modules de suivi.</p>
+            </article>
+            <article class="vetpro-feature-card">
+              <h4>iOS & Android</h4>
+              <p>Applications mobiles en cours de développement, bientôt disponibles.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="vetpro-center-section" id="landing-downloads">
+          <div class="vetpro-center-title" style="color:#0d2b1b">Téléchargement</div>
+          <div class="vetpro-download-grid">
+            <article class="vetpro-download-card">
+              <h4>Android</h4>
+              <p>Android (en cours de développement)</p>
+            </article>
+            <article class="vetpro-download-card">
+              <h4>iOS</h4>
+              <p>iOS (en cours de développement)</p>
+            </article>
+            <article class="vetpro-download-card" id="landing-contact">
+              <h4>Social</h4>
+              <p><a href="https://www.instagram.com/vetpro.dz/" target="_blank" rel="noopener">Suivre VetPro</a></p>
+            </article>
+          </div>
+        </section>
+      </div>
+    `;
+
+    if (!wrapper.parentElement) {
+      landing.appendChild(wrapper);
+    }
+  }
+
+  function bindFinalButtons(){
+    const loginBtn = document.getElementById('login-btn-el');
+    if (loginBtn) {
+      loginBtn.onclick = (event) => {
+        if (event) event.preventDefault();
+        window.doLogin();
+      };
+    }
+
+    const passwordInput = document.getElementById('login-password');
+    if (passwordInput && passwordInput.dataset.finalBound !== 'true') {
+      passwordInput.dataset.finalBound = 'true';
+      passwordInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          window.doLogin();
+        }
+      });
+    }
+
+    document.querySelectorAll('button').forEach((button) => {
+      const text = (button.textContent || '').toLowerCase();
+      if (text.includes('google')) {
+        button.onclick = (event) => {
+          if (event) event.preventDefault();
+          window.doGoogleAuth();
+        };
+      }
+    });
+  }
+
+  async function fetchOwnApproval(email){
+    if (!_sb || !email) return null;
+    try {
+      const { data, error } = await _sb
+        .from(APPROVAL_TABLE)
+        .select('*')
+        .ilike('email', email)
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data || null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async function ensurePendingApproval(user){
+    if (!_sb || !user?.email) return null;
+    const email = (user.email || '').toLowerCase();
+    const existing = await fetchOwnApproval(email);
+    if (existing) return existing;
+    try {
+      const payload = {
+        user_id: user.id || null,
+        email,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || email,
+        phone: user.phone || '',
+        role: user.user_metadata?.role || 'veterinaire',
+        order_number: null,
+        student_proof: null,
+        status: 'pending',
+        requested_at: new Date().toISOString()
+      };
+      await _sb.from(APPROVAL_TABLE).insert(payload);
+      return payload;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function openClinicForUser(user){
+    if (typeof setCurrentUserContext === 'function') setCurrentUserContext(user);
+    if (typeof initializePersistentState === 'function') initializePersistentState();
+    hideLoginScreen();
+    clearLoginFeedback();
+    if (typeof toast === 'function') toast('Connexion réussie');
+  }
+
+  async function finalizeSessionAccess(sourceLabel){
+    if (!_sb) {
+      showLoginScreen();
+      setLoginFeedback('Connexion Supabase indisponible.', 'error');
+      return false;
+    }
+
+    const { data: { session } } = await _sb.auth.getSession();
+    const user = session?.user || null;
+    if (!user?.email) {
+      showLoginScreen();
+      return false;
+    }
+
+    const email = (user.email || '').toLowerCase();
+    const approval = await fetchOwnApproval(email);
+    if (approval?.status === 'approved') {
+      openClinicForUser(user);
+      return true;
+    }
+
+    await ensurePendingApproval(user);
+    await _sb.auth.signOut();
+    showLoginScreen();
+    setLoginFeedback(
+      approval?.status === 'rejected'
+        ? 'Compte refusé. Contactez VetPro pour une nouvelle vérification.'
+        : 'Compte en attente d’approbation manuelle.',
+      approval?.status === 'rejected' ? 'error' : 'warn'
+    );
+    if (typeof toast === 'function' && sourceLabel !== 'silent') {
+      toast(approval?.status === 'rejected' ? 'Accès refusé' : 'Compte en attente d’approbation');
+    }
+    return false;
+  }
+
+  async function recoverGoogleHashIfNeeded(){
+    if (!_sb || !window.location.hash || !window.location.hash.includes('access_token=')) return false;
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = params.get('access_token');
+    const refresh_token = params.get('refresh_token');
+    const cleanUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+    if (!access_token || !refresh_token) {
+      window.history.replaceState({}, document.title, cleanUrl);
+      return false;
+    }
+
+    setLoginFeedback('Connexion Google en cours...', 'info');
+    try {
+      await _sb.auth.setSession({ access_token, refresh_token });
+      return true;
+    } catch (error) {
+      setLoginFeedback(error?.message || 'Impossible de finaliser la connexion Google.', 'error');
+      return false;
+    } finally {
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  }
+
+  window.doLogin = async function(){
+    const email = document.getElementById('login-email')?.value?.trim().toLowerCase();
+    const password = document.getElementById('login-password')?.value;
+    const btn = document.getElementById('login-btn-el');
+    if (!email || !password) {
+      setLoginFeedback('Veuillez remplir tous les champs.', 'error');
+      return;
+    }
+
+    clearLoginFeedback();
+    setLoginFeedback('Connexion en cours...', 'info');
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="login-spinner"></span>Connexion...';
+    }
+
+    try {
+      if (!_sb) throw new Error('Supabase n’est pas disponible sur cette page.');
+      const { error } = await _sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      await finalizeSessionAccess('password');
+    } catch (error) {
+      const message = error?.message || 'Erreur de connexion';
+      setLoginFeedback(message, 'error');
+      if (typeof toast === 'function') toast(message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Accéder à la clinique';
+      }
+    }
+  };
+
+  window.doGoogleAuth = async function(){
+    clearLoginFeedback();
+    setLoginFeedback('Redirection vers Google...', 'info');
+    try {
+      if (!_sb) throw new Error('Supabase n’est pas disponible pour Google Sign-In.');
+      const redirectTo = `${window.location.origin}${window.location.pathname}`;
+      const { error } = await _sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo,
+          queryParams: {
+            prompt: 'select_account'
+          }
+        }
+      });
+      if (error) throw error;
+    } catch (error) {
+      const message = error?.message || 'Connexion Google impossible';
+      setLoginFeedback(message, 'error');
+      if (typeof toast === 'function') toast(message);
+    }
+  };
+
+  async function runFinalAuthRefresh(){
+    await recoverGoogleHashIfNeeded();
+    await finalizeSessionAccess('silent');
+  }
+
+  function initFinalVetProHotfix(){
+    addFinalHotfixStyles();
+    applyFinalLogo();
+    renderCenteredAccueil();
+    bindFinalButtons();
+    if (_sb && !window.__vetproFinalAuthBound) {
+      window.__vetproFinalAuthBound = true;
+      _sb.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          setTimeout(() => { runFinalAuthRefresh(); }, 0);
+        }
+        if (event === 'SIGNED_OUT') {
+          showLoginScreen();
+        }
+      });
+    }
+    runFinalAuthRefresh();
+  }
+
+  document.addEventListener('DOMContentLoaded', initFinalVetProHotfix);
+  window.addEventListener('load', initFinalVetProHotfix);
 })();
 </script>
 
