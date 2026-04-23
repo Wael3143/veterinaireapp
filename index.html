@@ -663,8 +663,172 @@ function toggleLoginPwd() {
   if (eye) eye.textContent = inp.type === 'password' ? '👁' : '🙈';
 }
 
+function showAuthMode(mode){
+  const maps = {
+    login: { login:'block', signup:'none', forgot:'none' },
+    signup: { login:'none', signup:'block', forgot:'none' },
+    forgot: { login:'none', signup:'none', forgot:'block' },
+  }[mode] || { login:'block', signup:'none', forgot:'none' };
+  const login = document.getElementById('auth-login-panel');
+  const signup = document.getElementById('auth-signup-panel');
+  const forgot = document.getElementById('auth-forgot-panel');
+  if (login) login.style.display = maps.login;
+  if (signup) signup.style.display = maps.signup;
+  if (forgot) forgot.style.display = maps.forgot;
+  const error = document.getElementById('login-error');
+  if (error) error.style.display = 'none';
+}
+function ensureAuthEnhancements(){
+  const card = document.querySelector('#login-screen .login-card');
+  const loginButton = document.getElementById('login-btn-el');
+  if (!card || !loginButton || document.getElementById('auth-login-panel')) return;
+  const emailBlock = loginButton.previousElementSibling?.previousElementSibling;
+  const passwordBlock = loginButton.previousElementSibling;
+  const error = document.getElementById('login-error');
+  const divider = card.querySelector('.login-divider');
+  if (!emailBlock || !passwordBlock || !error || !divider) return;
+  const authBody = document.createElement('div');
+  authBody.innerHTML = `
+    <div id="auth-login-panel"></div>
+    <div id="auth-signup-panel" style="display:none">
+      <div style="margin-bottom:14px">
+        <label class="login-label">Adresse email</label>
+        <input class="login-input" type="email" id="signup-email" placeholder="client@cabinet.dz" autocomplete="email"/>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Mot de passe</label>
+        <input class="login-input" type="password" id="signup-password" placeholder="Minimum 6 caracteres" autocomplete="new-password"/>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Confirmer le mot de passe</label>
+        <input class="login-input" type="password" id="signup-password-confirm" placeholder="Retapez le mot de passe" autocomplete="new-password"/>
+      </div>
+      <button class="login-btn" onclick="doSignup()">Creer un compte</button>
+      <div style="text-align:center;margin-top:10px"><button type="button" onclick="showAuthMode('login')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">J ai deja un compte</button></div>
+    </div>
+    <div id="auth-forgot-panel" style="display:none">
+      <div style="margin-bottom:14px">
+        <label class="login-label">Adresse email</label>
+        <input class="login-input" type="email" id="forgot-email" placeholder="client@cabinet.dz" autocomplete="email"/>
+      </div>
+      <button class="login-btn" onclick="doForgotPassword()">Envoyer le lien de reinitialisation</button>
+      <div style="text-align:center;margin-top:10px"><button type="button" onclick="showAuthMode('login')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">Retour a la connexion</button></div>
+    </div>
+  `;
+  loginButton.parentNode.insertBefore(authBody, divider);
+  const loginPanel = document.getElementById('auth-login-panel');
+  if (loginPanel) {
+    loginPanel.appendChild(emailBlock);
+    loginPanel.appendChild(passwordBlock);
+    loginPanel.appendChild(error);
+    loginPanel.appendChild(loginButton);
+    const links = document.createElement('div');
+    links.style.cssText = 'display:flex;justify-content:space-between;gap:10px;margin-top:10px';
+    links.innerHTML = `
+      <button type="button" onclick="showAuthMode('signup')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">Creer un compte</button>
+      <button type="button" onclick="showAuthMode('forgot')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">Mot de passe oublie</button>
+    `;
+    loginPanel.appendChild(links);
+  }
+}
+async function doLogin() {
+  const email = document.getElementById('login-email')?.value?.trim();
+  const password = document.getElementById('login-password')?.value;
+  const btn = document.getElementById('login-btn-el');
+  const errEl = document.getElementById('login-error');
+  if (!email || !password) { showLoginError('Veuillez remplir tous les champs.'); return; }
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Connexion...'; }
+  if (errEl) errEl.style.display = 'none';
+  try {
+    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+      setCurrentUserContext({ email });
+      initializePersistentState();
+      document.getElementById('login-screen')?.classList.add('hidden');
+      document.getElementById('logout-btn').style.display = 'block';
+      toast('Connecte (mode developpement)');
+      return;
+    }
+    const { data, error } = await _sb.auth.signInWithPassword({ email, password });
+    if (error) throw error;
+    setCurrentUserContext(data?.user || data?.session?.user || { email });
+    initializePersistentState();
+    document.getElementById('login-screen')?.classList.add('hidden');
+    document.getElementById('logout-btn').style.display = 'block';
+    toast('Connexion reussie');
+  } catch(err) {
+    showLoginError(err.message || 'Erreur de connexion. Verifiez vos identifiants.');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Acceder a la clinique'; }
+  }
+}
+async function doSignup(){
+  const email = document.getElementById('signup-email')?.value?.trim();
+  const password = document.getElementById('signup-password')?.value;
+  const confirm = document.getElementById('signup-password-confirm')?.value;
+  if (!email || !password) { showLoginError('Email et mot de passe requis'); return; }
+  if (password !== confirm) { showLoginError('Les mots de passe ne correspondent pas'); return; }
+  try {
+    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+      showAuthMode('login');
+      toast('Mode developpement: compte local simule');
+      return;
+    }
+    const { error } = await _sb.auth.signUp({ email, password });
+    if (error) throw error;
+    showAuthMode('login');
+    if (document.getElementById('login-email')) document.getElementById('login-email').value = email;
+    toast('Compte cree. Verifiez votre email si necessaire');
+  } catch (err) {
+    showLoginError(err.message || 'Inscription impossible');
+  }
+}
+async function doForgotPassword(){
+  const email = document.getElementById('forgot-email')?.value?.trim();
+  if (!email) { showLoginError('Veuillez saisir votre email'); return; }
+  try {
+    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+      showAuthMode('login');
+      toast('Mode developpement: email de reinitialisation simule');
+      return;
+    }
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) throw error;
+    showAuthMode('login');
+    toast('Lien de reinitialisation envoye');
+  } catch (err) {
+    showLoginError(err.message || 'Impossible d envoyer le lien');
+  }
+}
+async function doLogout() {
+  if (_sb && SUPA_URL !== 'VOTRE_SUPABASE_URL') {
+    await _sb.auth.signOut();
+  }
+  setCurrentUserContext(null);
+  initializePersistentState();
+  document.getElementById('login-screen')?.classList.remove('hidden');
+  document.getElementById('logout-btn').style.display = 'none';
+  showAuthMode('login');
+  toast('Deconnecte avec succes');
+}
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  if (el) { el.textContent = 'Erreur: ' + msg; el.style.display = 'block'; }
+}
+function toggleLoginPwd() {
+  const inp = document.getElementById('login-password');
+  const eye = document.getElementById('pwd-eye');
+  if (!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+  if (eye) eye.textContent = inp.type === 'password' ? 'Voir' : 'Masquer';
+}
+
 // Run on page load
-window.addEventListener('DOMContentLoaded', () => { checkSession(); });
+window.addEventListener('DOMContentLoaded', () => {
+  ensureAuthEnhancements();
+  showAuthMode('login');
+  checkSession();
+});
 
 </script>
   <script>
@@ -3043,6 +3207,7 @@ let persistentStateReady = false;
 let PATIENTS = [];
 let CLIENTS = [];
 let APPOINTMENTS = [];
+let VACCINE_REMINDERS = [];
 let clientSearch = '';
 let defaultStateCache = null;
 
@@ -3062,6 +3227,7 @@ function getDefaultState(){
       historique: deepClone(HISTORIQUE_DATA),
       suivi: deepClone(SUIVI_HISTORY),
       appointments: getDefaultAppointments(),
+      vaccineReminders: getDefaultVaccineReminders(),
       patients: derivePatientsFromData(deepClone(HISTORIQUE_DATA), deepClone(ORDOS)),
       clients: deriveClientsFromPatients(derivePatientsFromData(deepClone(HISTORIQUE_DATA), deepClone(ORDOS))),
     };
@@ -3258,6 +3424,41 @@ function upsertClientFromPatient(patient){
   if (display && !client.animals.includes(display)) client.animals.push(display);
   return client;
 }
+function getClientByName(name){
+  return CLIENTS.find(client => (client.fullName || '').toLowerCase() === (name || '').toLowerCase()) || null;
+}
+function getDefaultVaccineReminders(){
+  return [
+    { id:'vacc-1', patientId:'rex-benali-ahmed', animal:'Rex', owner:'Benali Ahmed', vaccine:'CHPPiL + Rage', reminderDate:'2026-04-22', channel:'sms', status:'urgent' },
+    { id:'vacc-2', patientId:'titan-merzouk-rachid', animal:'Titan', owner:'Merzouk Rachid', vaccine:'CHPPiL annuel', reminderDate:'2026-04-28', channel:'sms', status:'upcoming' },
+    { id:'vacc-3', patientId:'luna-hamdi-karim', animal:'Luna', owner:'Hamdi Karim', vaccine:'CHPCH + Rage', reminderDate:'2026-05-02', channel:'email', status:'upcoming' },
+  ];
+}
+function classifyReminderStatus(date){
+  const today = new Date('2026-04-23T00:00:00');
+  const due = new Date(`${date}T00:00:00`);
+  if (Number.isNaN(due.getTime())) return 'planned';
+  const diffDays = Math.round((due - today) / 86400000);
+  if (diffDays <= 3) return 'urgent';
+  if (diffDays <= 10) return 'upcoming';
+  return 'planned';
+}
+function getReminderMeta(status){
+  return {
+    urgent: { badge:'bdg-c', label:'Urgent' },
+    upcoming: { badge:'bdg-u', label:'Proche' },
+    planned: { badge:'bdg-n', label:'Programme' },
+    sent: { badge:'bdg-b', label:'Envoye' },
+  }[status] || { badge:'bdg-n', label:'Programme' };
+}
+function extractOwnerParts(fullName){
+  const parts = (fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return { firstName:'', lastName:'' };
+  return {
+    firstName: parts.slice(0, -1).join(' ') || parts[0],
+    lastName: parts.length > 1 ? parts[parts.length - 1] : '',
+  };
+}
 function getCaseFormFields(){
   const cards = document.querySelectorAll('#page-cas .card');
   if (cards.length < 3) return null;
@@ -3365,8 +3566,284 @@ function ensureModalBindings(){
   const rdvButtons = document.querySelectorAll('#page-rdv .btn.btn-ghost.btn-full');
   if (rdvButtons[1]) rdvButtons[1].onclick = exportRdvPdf;
 }
+function ensureClientIntakePanel(){
+  const page = document.getElementById('page-clients');
+  const host = page?.querySelector('.g2');
+  if (!host || document.getElementById('client-intake-card')) return;
+  host.insertAdjacentHTML('beforebegin', `
+    <div class="card" id="client-intake-card" style="margin-bottom:16px">
+      <div class="card-title">Nouveau client + animal <span>Creation rapide</span></div>
+      <div class="row2" style="margin-bottom:12px">
+        <div class="fg">
+          <label class="lbl">Client existant</label>
+          <select class="sel" id="client-intake-existing" onchange="fillClientAnimalFormFromExisting(this.value)">
+            <option value="">Nouveau client</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="lbl">Admission en cage</label>
+          <select class="sel" id="client-intake-cage-choice" onchange="document.getElementById('client-intake-cage-wrap').style.display=this.value==='yes'?'block':'none'">
+            <option value="no">Non</option>
+            <option value="yes">Oui</option>
+          </select>
+        </div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label class="lbl">Prenom client</label><input class="inp" id="client-intake-first" placeholder="Ahmed"/></div>
+        <div class="fg"><label class="lbl">Nom client</label><input class="inp" id="client-intake-last" placeholder="Benali"/></div>
+        <div class="fg"><label class="lbl">Telephone</label><input class="inp" id="client-intake-phone" placeholder="0550 000 000"/></div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label class="lbl">Email</label><input class="inp" id="client-intake-email" type="email" placeholder="client@email.com"/></div>
+        <div class="fg"><label class="lbl">Adresse</label><input class="inp" id="client-intake-address" placeholder="Adresse du client"/></div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label class="lbl">Nom animal</label><input class="inp" id="client-intake-animal" placeholder="Bella"/></div>
+        <div class="fg"><label class="lbl">Espece</label><select class="sel" id="client-intake-species"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
+        <div class="fg"><label class="lbl">Race</label><input class="inp" id="client-intake-race" placeholder="Labrador"/></div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label class="lbl">Age</label><input class="inp" id="client-intake-age" placeholder="3 ans"/></div>
+        <div class="fg"><label class="lbl">Poids</label><input class="inp" id="client-intake-weight" placeholder="18"/></div>
+        <div class="fg"><label class="lbl">Sexe</label><select class="sel" id="client-intake-sex"><option>Femelle</option><option>Male</option><option>Non precise</option></select></div>
+      </div>
+      <div id="client-intake-cage-wrap" style="display:none">
+        <div class="row2">
+          <div class="fg"><label class="lbl">Choisir la cage</label><select class="sel" id="client-intake-cage"></select></div>
+          <div class="fg"><label class="lbl">Motif</label><input class="inp" id="client-intake-cage-motif" placeholder="Observation, hospitalisation..."/></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+        <button class="btn btn-ghost" onclick="fillClientAnimalFormFromExisting('')">Vider</button>
+        <button class="btn btn-p" onclick="saveClientAnimalBundle()">Enregistrer client + animal</button>
+      </div>
+    </div>
+  `);
+}
+function fillClientAnimalFormFromExisting(clientId){
+  const fields = {
+    first: document.getElementById('client-intake-first'),
+    last: document.getElementById('client-intake-last'),
+    phone: document.getElementById('client-intake-phone'),
+    email: document.getElementById('client-intake-email'),
+    address: document.getElementById('client-intake-address'),
+  };
+  if (!clientId) {
+    Object.values(fields).forEach(field => { if (field) field.value = ''; });
+    return;
+  }
+  const client = CLIENTS.find(item => item.id === clientId);
+  if (!client) return;
+  const parts = extractOwnerParts(client.fullName);
+  if (fields.first) fields.first.value = parts.firstName;
+  if (fields.last) fields.last.value = parts.lastName;
+  if (fields.phone) fields.phone.value = client.phone || '';
+  if (fields.email) fields.email.value = client.email || '';
+  if (fields.address) fields.address.value = client.address || '';
+}
+function saveClientAnimalBundle(){
+  const firstName = document.getElementById('client-intake-first')?.value?.trim();
+  const lastName = document.getElementById('client-intake-last')?.value?.trim();
+  const phone = document.getElementById('client-intake-phone')?.value?.trim();
+  const email = document.getElementById('client-intake-email')?.value?.trim();
+  const address = document.getElementById('client-intake-address')?.value?.trim();
+  const animalName = document.getElementById('client-intake-animal')?.value?.trim();
+  const species = document.getElementById('client-intake-species')?.value || 'Chien';
+  const race = document.getElementById('client-intake-race')?.value?.trim();
+  const age = document.getElementById('client-intake-age')?.value?.trim();
+  const weight = document.getElementById('client-intake-weight')?.value?.trim();
+  const sex = document.getElementById('client-intake-sex')?.value || '';
+  const fullName = [firstName, lastName].filter(Boolean).join(' ').trim();
+  if (!fullName || !animalName) { toast('Nom du client et nom de l animal requis'); return; }
+  const patient = upsertPatient({
+    name: animalName,
+    species,
+    race,
+    age,
+    weight: weight ? `${weight} kg` : '',
+    owner: fullName,
+    phone,
+    email,
+    sexe: sex,
+  });
+  const client = upsertClientFromPatient(patient);
+  client.phone = phone || client.phone;
+  client.email = email || client.email;
+  client.address = address || client.address;
+  const cageChoice = document.getElementById('client-intake-cage-choice')?.value;
+  if (cageChoice === 'yes') {
+    const cageId = document.getElementById('client-intake-cage')?.value;
+    const motif = document.getElementById('client-intake-cage-motif')?.value?.trim() || 'Admission depuis fiche client';
+    const cage = CAGES.find(item => item.id === cageId);
+    if (cage) {
+      cage.statut = 'occup茅e';
+      cage.animal = displayAnimalName(patient.name, patient.species);
+      cage.motif = motif;
+      cage.depuis = todayFr().slice(0,5);
+      if (!SUIVI_HISTORY[cage.id]) SUIVI_HISTORY[cage.id] = [];
+    }
+  }
+  persistAppState();
+  refreshPersistentViews();
+  fillClientAnimalFormFromExisting('');
+  ['client-intake-animal','client-intake-race','client-intake-age','client-intake-weight','client-intake-cage-motif'].forEach(id => {
+    const field = document.getElementById(id);
+    if (field) field.value = '';
+  });
+  toast('Client et animal enregistres pour cet utilisateur');
+}
+function ensureCageAdmissionEnhancements(){
+  const modal = document.getElementById('modal-cage-new');
+  if (!modal || document.getElementById('admission-mode')) return;
+  const title = modal.querySelector('.modal-title');
+  if (!title) return;
+  title.insertAdjacentHTML('afterend', `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 14px">
+      <button type="button" class="btn btn-p" id="admission-mode-existing" onclick="toggleCageAdmissionMode('existing')">Client existant</button>
+      <button type="button" class="btn btn-ghost" id="admission-mode-new" onclick="toggleCageAdmissionMode('new')">Nouveau client</button>
+    </div>
+    <input type="hidden" id="admission-mode" value="existing"/>
+    <div id="admission-new-client" style="display:none;margin-bottom:12px">
+      <div class="row2">
+        <div class="fg"><label class="lbl">Prenom client</label><input class="inp" id="admit-client-first" placeholder="Ahmed"/></div>
+        <div class="fg"><label class="lbl">Nom client</label><input class="inp" id="admit-client-last" placeholder="Benali"/></div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label class="lbl">Telephone</label><input class="inp" id="admit-client-phone" placeholder="0550 000 000"/></div>
+        <div class="fg"><label class="lbl">Nom animal</label><input class="inp" id="admit-animal-new" placeholder="Bella"/></div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label class="lbl">Espece</label><select class="sel" id="admit-species-new"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
+        <div class="fg"><label class="lbl">Race</label><input class="inp" id="admit-race-new" placeholder="Labrador"/></div>
+        <div class="fg"><label class="lbl">Poids</label><input class="inp" id="admit-weight-new" placeholder="18"/></div>
+      </div>
+    </div>
+  `);
+}
+function toggleCageAdmissionMode(mode){
+  const input = document.getElementById('admission-mode');
+  if (input) input.value = mode;
+  const existingBtn = document.getElementById('admission-mode-existing');
+  const newBtn = document.getElementById('admission-mode-new');
+  if (existingBtn) existingBtn.className = mode === 'existing' ? 'btn btn-p' : 'btn btn-ghost';
+  if (newBtn) newBtn.className = mode === 'new' ? 'btn btn-p' : 'btn btn-ghost';
+  const existingSelect = document.getElementById('admit-animal-id')?.closest('.fg');
+  const newBlock = document.getElementById('admission-new-client');
+  if (existingSelect) existingSelect.style.display = mode === 'existing' ? 'block' : 'none';
+  if (newBlock) newBlock.style.display = mode === 'new' ? 'block' : 'none';
+}
+function renderVaccineReminders(){
+  const wrap = document.getElementById('vacc-rappels');
+  if (!wrap) return;
+  const rows = VACCINE_REMINDERS.slice().sort((a,b) => a.reminderDate.localeCompare(b.reminderDate));
+  wrap.innerHTML = `
+    <div class="ibox ibox-a" style="margin-bottom:14px">${rows.filter(item => item.status === 'urgent').length} rappels urgents programmes</div>
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">Enregistrer un rappel vaccinal</div>
+      <div class="row2">
+        <div class="fg"><label class="lbl">Animal</label><select class="sel" id="vacc-reminder-patient"></select></div>
+        <div class="fg"><label class="lbl">Vaccin / rappel</label><input class="inp" id="vacc-reminder-name" placeholder="CHPPiL + Rage"/></div>
+      </div>
+      <div class="row3">
+        <div class="fg"><label class="lbl">Date de rappel</label><input class="inp" type="date" id="vacc-reminder-date"/></div>
+        <div class="fg"><label class="lbl">Canal</label><select class="sel" id="vacc-reminder-channel"><option value="sms">SMS</option><option value="email">Email</option><option value="call">Appel</option></select></div>
+        <div class="fg" style="display:flex;align-items:flex-end"><button class="btn btn-p btn-full" onclick="saveVaccineReminder()">Ajouter rappel</button></div>
+      </div>
+    </div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Animal</th><th>Proprietaire</th><th>Vaccin</th><th>Date rappel</th><th>Statut</th><th>Action</th></tr></thead>
+        <tbody>
+          ${rows.map(item => {
+            const meta = getReminderMeta(item.status);
+            return `<tr>
+              <td><strong>${displayAnimalName(item.animal, getPatientById(item.patientId)?.species || 'Chien')}</strong></td>
+              <td>${item.owner}</td>
+              <td>${item.vaccine}</td>
+              <td>${shortFrDate(item.reminderDate)}</td>
+              <td><span class="bdg ${meta.badge}">${meta.label}</span></td>
+              <td><button class="btn btn-sm btn-ghost" onclick="markReminderSent('${item.id}')">${item.channel.toUpperCase()}</button></td>
+            </tr>`;
+          }).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Aucun rappel enregistre</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  `;
+  const select = document.getElementById('vacc-reminder-patient');
+  if (select) {
+    select.innerHTML = PATIENTS
+      .slice()
+      .sort((a,b) => a.name.localeCompare(b.name))
+      .map(patient => `<option value="${patient.id}">${displayAnimalName(patient.name, patient.species)} (${patient.owner})</option>`)
+      .join('') || '<option value="">Aucun animal enregistre</option>';
+  }
+}
+function saveVaccineReminder(){
+  const patientId = document.getElementById('vacc-reminder-patient')?.value;
+  const vaccine = document.getElementById('vacc-reminder-name')?.value?.trim();
+  const reminderDate = document.getElementById('vacc-reminder-date')?.value;
+  const channel = document.getElementById('vacc-reminder-channel')?.value || 'sms';
+  const patient = getPatientById(patientId);
+  if (!patient || !vaccine || !reminderDate) { toast('Animal, vaccin et date requis'); return; }
+  VACCINE_REMINDERS.unshift({
+    id: 'vacc-' + Date.now(),
+    patientId,
+    animal: patient.name,
+    owner: patient.owner,
+    vaccine,
+    reminderDate,
+    channel,
+    status: classifyReminderStatus(reminderDate),
+  });
+  persistAppState();
+  renderVaccineReminders();
+  toast('Rappel vaccinal enregistre');
+}
+function markReminderSent(id){
+  const reminder = VACCINE_REMINDERS.find(item => item.id === id);
+  if (!reminder) return;
+  reminder.status = 'sent';
+  persistAppState();
+  renderVaccineReminders();
+  toast(`Rappel ${reminder.channel.toUpperCase()} note comme envoye`);
+}
+function exportHistoriqueData(){
+  const rows = HISTORIQUE_DATA.map(item => ({
+    date: item.date,
+    animal: stripAnimalEmoji(item.animal),
+    client: item.client,
+    diagnostic: item.diagnostic,
+    statut: item.statutTraitement,
+    resultat: item.resultat,
+    montant: item.montant,
+    rdv: item.rdv,
+  }));
+  const csv = [
+    ['Date','Animal','Client','Diagnostic','Statut','Resultat','Montant','RDV'].join(';'),
+    ...rows.map(row => [row.date,row.animal,row.client,row.diagnostic,row.statut,row.resultat,row.montant,row.rdv].map(value => `"${String(value ?? '').replace(/"/g,'""')}"`).join(';'))
+  ].join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'historique-cas.csv';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  toast('Export historique genere');
+}
+function bindHistoriqueActions(){
+  const page = document.getElementById('page-historique');
+  if (!page) return;
+  const buttons = page.querySelectorAll('button');
+  if (buttons[0]) buttons[0].onclick = exportHistoriqueData;
+  if (buttons[1]) buttons[1].onclick = () => nav('cas');
+}
 function populatePatientSelects(){
   ensureModalBindings();
+  ensureClientIntakePanel();
+  ensureCageAdmissionEnhancements();
   const patientOptions = PATIENTS
     .slice()
     .sort((a,b) => a.name.localeCompare(b.name))
@@ -3403,6 +3880,87 @@ function populatePatientSelects(){
     cageSelect.innerHTML = free.map(c => `<option value="${c.id}">${c.id} — ${c.statut === 'nettoyage' ? 'Nettoyage' : 'Libre'}</option>`).join('');
     if (current && cageSelect.querySelector(`option[value="${current}"]`)) cageSelect.value = current;
   }
+  const clientSelect = document.getElementById('client-intake-existing');
+  if (clientSelect) {
+    const current = clientSelect.value;
+    clientSelect.innerHTML = `<option value="">Nouveau client</option>${CLIENTS
+      .slice()
+      .sort((a,b) => a.fullName.localeCompare(b.fullName))
+      .map(client => `<option value="${client.id}">${client.fullName}</option>`)
+      .join('')}`;
+    if (current && clientSelect.querySelector(`option[value="${current}"]`)) clientSelect.value = current;
+  }
+  const quickCageSelect = document.getElementById('client-intake-cage');
+  if (quickCageSelect) {
+    const current = quickCageSelect.value;
+    quickCageSelect.innerHTML = CAGES
+      .filter(c => c.statut !== 'occup茅e')
+      .map(c => `<option value="${c.id}">${c.id}</option>`)
+      .join('') || '<option value="">Aucune cage libre</option>';
+    if (current && quickCageSelect.querySelector(`option[value="${current}"]`)) quickCageSelect.value = current;
+  }
+  renderVaccineReminders();
+}
+function populatePatientSelects(){
+  ensureModalBindings();
+  ensureClientIntakePanel();
+  ensureCageAdmissionEnhancements();
+  const patientOptions = PATIENTS
+    .slice()
+    .sort((a,b) => a.name.localeCompare(b.name))
+    .map(patient => {
+      const label = `${displayAnimalName(patient.name, patient.species)} 路 ${patient.race || patient.species}${patient.weight ? ' 路 ' + patient.weight : ''} (${patient.owner})`;
+      return `<option value="${patient.id}">${label}</option>`;
+    }).join('');
+  const ordoSelect = document.getElementById('on-animal');
+  if (ordoSelect) {
+    const current = ordoSelect.value;
+    ordoSelect.innerHTML = `<option value="">Select</option>${patientOptions}<option value="nouveau">+ Nouveau patient (saisie libre)</option>`;
+    if (current && ordoSelect.querySelector(`option[value="${current}"]`)) ordoSelect.value = current;
+  }
+  const admitSelect = document.getElementById('admit-animal-id');
+  if (admitSelect) {
+    const current = admitSelect.value;
+    admitSelect.innerHTML = patientOptions || '<option value="">Aucun animal enregistre</option>';
+    if (current && admitSelect.querySelector(`option[value="${current}"]`)) admitSelect.value = current;
+  }
+  const rdvSelect = document.getElementById('rdv-animal');
+  if (rdvSelect) {
+    const current = rdvSelect.value;
+    rdvSelect.innerHTML = PATIENTS
+      .slice()
+      .sort((a,b) => a.name.localeCompare(b.name))
+      .map(patient => `<option value="${patient.id}">${displayAnimalName(patient.name, patient.species)} (${patient.owner})</option>`)
+      .join('') || '<option value="">Aucun animal enregistre</option>';
+    if (current && rdvSelect.querySelector(`option[value="${current}"]`)) rdvSelect.value = current;
+  }
+  const cageSelect = document.getElementById('admit-cage-id');
+  if (cageSelect) {
+    const free = CAGES.filter(c => c.statut !== 'occup茅e');
+    const current = cageSelect.value;
+    cageSelect.innerHTML = free.map(c => `<option value="${c.id}">${c.id} - ${c.statut === 'nettoyage' ? 'Nettoyage' : 'Libre'}</option>`).join('');
+    if (current && cageSelect.querySelector(`option[value="${current}"]`)) cageSelect.value = current;
+  }
+  const clientSelect = document.getElementById('client-intake-existing');
+  if (clientSelect) {
+    const current = clientSelect.value;
+    clientSelect.innerHTML = `<option value="">Nouveau client</option>${CLIENTS
+      .slice()
+      .sort((a,b) => a.fullName.localeCompare(b.fullName))
+      .map(client => `<option value="${client.id}">${client.fullName}</option>`)
+      .join('')}`;
+    if (current && clientSelect.querySelector(`option[value="${current}"]`)) clientSelect.value = current;
+  }
+  const quickCageSelect = document.getElementById('client-intake-cage');
+  if (quickCageSelect) {
+    const current = quickCageSelect.value;
+    quickCageSelect.innerHTML = CAGES
+      .filter(c => c.statut !== 'occup茅e')
+      .map(c => `<option value="${c.id}">${c.id}</option>`)
+      .join('') || '<option value="">Aucune cage libre</option>';
+    if (current && quickCageSelect.querySelector(`option[value="${current}"]`)) quickCageSelect.value = current;
+  }
+  renderVaccineReminders();
 }
 function renderRdvPage(){
   const page = document.getElementById('page-rdv');
@@ -3462,6 +4020,7 @@ function saveAppointment(){
   });
   patient.nextRdv = shortFrDate(date);
   upsertClientFromPatient(patient);
+  cage.statut = 'occup茅e';
   persistAppState();
   renderRdvPage();
   renderClientsPage();
@@ -3528,6 +4087,7 @@ function persistAppState(){
     historique: HISTORIQUE_DATA,
     suivi: SUIVI_HISTORY,
     appointments: APPOINTMENTS,
+    vaccineReminders: VACCINE_REMINDERS,
     patients: PATIENTS,
     clients: CLIENTS,
   }));
@@ -3535,9 +4095,13 @@ function persistAppState(){
 function refreshPersistentViews(){
   ensureCaseFormEnhancements();
   ensureModalBindings();
+  ensureClientIntakePanel();
+  ensureCageAdmissionEnhancements();
   populatePatientSelects();
   renderClientsPage();
   renderRdvPage();
+  renderVaccineReminders();
+  bindHistoriqueActions();
   if (document.getElementById('page-cages')) renderCages();
   if (document.getElementById('page-historique')) renderHist(document.getElementById('hist-search')?.value || '');
   if (document.getElementById('page-ordonnances')) renderOrdos(document.getElementById('ordo-search')?.value || '');
@@ -3552,6 +4116,7 @@ function initializePersistentState(){
   replaceArrayContents(ORDOS, saved?.ordos || defaults.ordos);
   replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
   replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
+  replaceArrayContents(VACCINE_REMINDERS, saved?.vaccineReminders || defaults.vaccineReminders);
   replaceObjectContents(SUIVI_HISTORY, saved?.suivi || defaults.suivi);
   PATIENTS = deepClone(saved?.patients || defaults.patients);
   CLIENTS = deepClone(saved?.clients || defaults.clients);
@@ -5501,6 +6066,7 @@ function setVaccTab(el, tab) {
   const chips = document.querySelectorAll('#page-vaccinations .fchip');
   chips.forEach(c => c.classList.remove('on'));
   if (el) el.classList.add('on');
+  if (tab === 'rappels') renderVaccineReminders();
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -6726,7 +7292,50 @@ function saveAdmission() {
   const cage = CAGES.find(c => c.id === cageId);
   const patient = getPatientById(patientId);
   if (!cage || !patient) { toast('⚠️ Impossible de trouver la cage ou le patient'); return; }
-  cage.statut = 'occupée';
+  cage.statut = 'occup茅e';
+  cage.statut = 'occup茅e';
+  cage.animal = displayAnimalName(patient.name, patient.species);
+  cage.statut = 'occup茅e';
+  cage.motif = motif;
+  cage.statut = 'occup茅e';
+  cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
+  cage.notes = document.getElementById('admit-notes')?.value?.trim() || null;
+  if (!SUIVI_HISTORY[cageId]) SUIVI_HISTORY[cageId] = [];
+  patient.nextRdv = shortFrDate(document.getElementById('admit-exit-date')?.value || '') || patient.nextRdv;
+  upsertClientFromPatient(patient);
+  persistAppState();
+  closeModal('modal-cage-new');
+  activeCageId = cageId;
+  renderCages();
+  selectCage(cageId);
+  toast(`✅ ${patient.name} admis en ${cageId}`);
+}
+
+function saveAdmission() {
+  const cageId = document.getElementById('admit-cage-id')?.value;
+  const motif = document.getElementById('admit-motif')?.value?.trim();
+  const mode = document.getElementById('admission-mode')?.value || 'existing';
+  if (!cageId || !motif) { toast('Cage et motif sont requis'); return; }
+  const cage = CAGES.find(c => c.id === cageId);
+  let patient = null;
+  if (mode === 'new') {
+    const owner = [document.getElementById('admit-client-first')?.value?.trim(), document.getElementById('admit-client-last')?.value?.trim()].filter(Boolean).join(' ').trim();
+    const animalName = document.getElementById('admit-animal-new')?.value?.trim();
+    if (!owner || !animalName) { toast('Client et animal requis pour une nouvelle admission'); return; }
+    patient = upsertPatient({
+      name: animalName,
+      species: document.getElementById('admit-species-new')?.value || 'Chien',
+      race: document.getElementById('admit-race-new')?.value?.trim() || '',
+      weight: document.getElementById('admit-weight-new')?.value?.trim() ? `${document.getElementById('admit-weight-new').value.trim()} kg` : '',
+      owner,
+      phone: document.getElementById('admit-client-phone')?.value?.trim() || '',
+      nextRdv: shortFrDate(document.getElementById('admit-exit-date')?.value || ''),
+    });
+  } else {
+    patient = getPatientById(document.getElementById('admit-animal-id')?.value);
+  }
+  if (!cage || !patient) { toast('Impossible de trouver la cage ou le patient'); return; }
+  cage.statut = 'occup茅e';
   cage.animal = displayAnimalName(patient.name, patient.species);
   cage.motif = motif;
   cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
@@ -6739,7 +7348,7 @@ function saveAdmission() {
   activeCageId = cageId;
   renderCages();
   selectCage(cageId);
-  toast(`✅ ${patient.name} admis en ${cageId}`);
+  toast(`${patient.name} admis en ${cageId}`);
 }
 
 function saveNewCase() {
@@ -6809,6 +7418,86 @@ function saveNewCase() {
   populatePatientSelects();
   toast('✅ Cas clinique enregistré et sauvegardé');
   nav('historique');
+}
+
+function saveAdmission() {
+  const cageId = document.getElementById('admit-cage-id')?.value;
+  const motif = document.getElementById('admit-motif')?.value?.trim();
+  const mode = document.getElementById('admission-mode')?.value || 'existing';
+  if (!cageId || !motif) { toast('Cage et motif sont requis'); return; }
+  const cage = CAGES.find(c => c.id === cageId);
+  let patient = null;
+  if (mode === 'new') {
+    const owner = [document.getElementById('admit-client-first')?.value?.trim(), document.getElementById('admit-client-last')?.value?.trim()].filter(Boolean).join(' ').trim();
+    const animalName = document.getElementById('admit-animal-new')?.value?.trim();
+    if (!owner || !animalName) { toast('Client et animal requis pour une nouvelle admission'); return; }
+    patient = upsertPatient({
+      name: animalName,
+      species: document.getElementById('admit-species-new')?.value || 'Chien',
+      race: document.getElementById('admit-race-new')?.value?.trim() || '',
+      weight: document.getElementById('admit-weight-new')?.value?.trim() ? `${document.getElementById('admit-weight-new').value.trim()} kg` : '',
+      owner,
+      phone: document.getElementById('admit-client-phone')?.value?.trim() || '',
+      nextRdv: shortFrDate(document.getElementById('admit-exit-date')?.value || ''),
+    });
+  } else {
+    patient = getPatientById(document.getElementById('admit-animal-id')?.value);
+  }
+  if (!cage || !patient) { toast('Impossible de trouver la cage ou le patient'); return; }
+  cage.statut = 'occup茅e';
+  cage.animal = displayAnimalName(patient.name, patient.species);
+  cage.motif = motif;
+  cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
+  cage.notes = document.getElementById('admit-notes')?.value?.trim() || null;
+  if (!SUIVI_HISTORY[cageId]) SUIVI_HISTORY[cageId] = [];
+  patient.nextRdv = shortFrDate(document.getElementById('admit-exit-date')?.value || '') || patient.nextRdv;
+  upsertClientFromPatient(patient);
+  persistAppState();
+  closeModal('modal-cage-new');
+  activeCageId = cageId;
+  renderCages();
+  selectCage(cageId);
+  toast(`${patient.name} admis en ${cageId}`);
+}
+
+function saveAdmission() {
+  const cageId = document.getElementById('admit-cage-id')?.value;
+  const motif = document.getElementById('admit-motif')?.value?.trim();
+  const mode = document.getElementById('admission-mode')?.value || 'existing';
+  if (!cageId || !motif) { toast('Cage et motif sont requis'); return; }
+  const cage = CAGES.find(c => c.id === cageId);
+  let patient = null;
+  if (mode === 'new') {
+    const owner = [document.getElementById('admit-client-first')?.value?.trim(), document.getElementById('admit-client-last')?.value?.trim()].filter(Boolean).join(' ').trim();
+    const animalName = document.getElementById('admit-animal-new')?.value?.trim();
+    if (!owner || !animalName) { toast('Client et animal requis pour une nouvelle admission'); return; }
+    patient = upsertPatient({
+      name: animalName,
+      species: document.getElementById('admit-species-new')?.value || 'Chien',
+      race: document.getElementById('admit-race-new')?.value?.trim() || '',
+      weight: document.getElementById('admit-weight-new')?.value?.trim() ? `${document.getElementById('admit-weight-new').value.trim()} kg` : '',
+      owner,
+      phone: document.getElementById('admit-client-phone')?.value?.trim() || '',
+      nextRdv: shortFrDate(document.getElementById('admit-exit-date')?.value || ''),
+    });
+  } else {
+    patient = getPatientById(document.getElementById('admit-animal-id')?.value);
+  }
+  if (!cage || !patient) { toast('Impossible de trouver la cage ou le patient'); return; }
+  cage.statut = 'occup\u00E9e';
+  cage.animal = displayAnimalName(patient.name, patient.species);
+  cage.motif = motif;
+  cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
+  cage.notes = document.getElementById('admit-notes')?.value?.trim() || null;
+  if (!SUIVI_HISTORY[cageId]) SUIVI_HISTORY[cageId] = [];
+  patient.nextRdv = shortFrDate(document.getElementById('admit-exit-date')?.value || '') || patient.nextRdv;
+  upsertClientFromPatient(patient);
+  persistAppState();
+  closeModal('modal-cage-new');
+  activeCageId = cageId;
+  renderCages();
+  selectCage(cageId);
+  toast(`${patient.name} admis en ${cageId}`);
 }
 
 // ── Init historique on nav ──
