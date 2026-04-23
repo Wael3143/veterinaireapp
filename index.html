@@ -1120,7 +1120,7 @@ window.addEventListener('DOMContentLoaded', () => { checkSession(); });
         </div>
       </div>
 
-      <button class="btn btn-p btn-full btn-lg" onclick="toast('Cas clinique enregistré ✅')">💾 Enregistrer le cas</button>
+      <button class="btn btn-p btn-full btn-lg" onclick="saveNewCase()">💾 Enregistrer le cas</button>
     </div>
   </div>
 </div>
@@ -3428,7 +3428,7 @@ function renderRdvPage(){
           </div>
         </div>
       </div>`;
-    }).join('') || '<div class="card" style="text-align:center;color:var(--muted)">Aucun rendez-vous aujourd\\'hui</div>';
+    }).join('') || '<div class="card" style="text-align:center;color:var(--muted)">Aucun rendez-vous aujourd hui</div>';
   }
   if (weekBody) {
     weekBody.innerHTML = upcoming.map(item => {
