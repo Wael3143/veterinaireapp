@@ -716,13 +716,19 @@ function ensureAuthEnhancements(){
     </div>
   `;
   loginButton.parentNode.insertBefore(authBody, divider);
-  const loginPanel = document.getElementById('auth-login-panel');
-  if (loginPanel) {
-    loginPanel.appendChild(emailBlock);
-    loginPanel.appendChild(passwordBlock);
-    loginPanel.appendChild(error);
-    loginPanel.appendChild(loginButton);
-    const links = document.createElement('div');
+    const loginPanel = document.getElementById('auth-login-panel');
+    if (loginPanel) {
+      loginPanel.appendChild(emailBlock);
+      loginPanel.appendChild(passwordBlock);
+      loginPanel.appendChild(error);
+      loginPanel.appendChild(loginButton);
+      const googleBtn = document.createElement('button');
+      googleBtn.className = 'login-btn';
+      googleBtn.style.cssText = 'margin-top:10px;background:linear-gradient(135deg,#ffffff,#e9f2eb);color:#0b2e1f';
+      googleBtn.textContent = 'Continuer avec Google';
+      googleBtn.onclick = doGoogleAuth;
+      loginPanel.appendChild(googleBtn);
+      const links = document.createElement('div');
     links.style.cssText = 'display:flex;justify-content:space-between;gap:10px;margin-top:10px';
     links.innerHTML = `
       <button type="button" onclick="showAuthMode('signup')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">Creer un compte</button>
@@ -7930,6 +7936,7 @@ function saveAdmission() {
       </div>
     `;
   }
+  window.renderTermsPage = renderTermsPage;
 
   function renderApprovalsPage(){
     const host = document.getElementById('approvals-list');
@@ -8231,16 +8238,6 @@ function saveAdmission() {
           </select>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-        <div>
-          <label class="login-label">N° d'ordre vétérinaire national</label>
-          <input class="login-input" type="text" id="signup-order-number" placeholder="Obligatoire pour vétérinaire"/>
-        </div>
-        <div>
-          <label class="login-label">Carte étudiant / justificatif</label>
-          <input class="login-input" type="text" id="signup-student-proof" placeholder="Obligatoire pour stagiaire"/>
-        </div>
-      </div>
       <div style="margin-bottom:14px">
         <label class="login-label">Mot de passe</label>
         <input class="login-input" type="password" id="signup-password" placeholder="Minimum 6 caractères" autocomplete="new-password"/>
@@ -8251,9 +8248,10 @@ function saveAdmission() {
       </div>
       <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;color:rgba(255,255,255,.7);font-size:12px;line-height:1.5">
         <input type="checkbox" id="signup-terms" style="margin-top:3px"/>
-        <span>J'accepte les conditions VetPro, la vérification manuelle du compte et l'obligation de fournir un numéro d'ordre vétérinaire national ou une carte d'étudiant pour les stagiaires.</span>
+        <span>J'accepte les conditions VetPro et la vérification manuelle du compte par l'administrateur.</span>
       </label>
       <button class="login-btn" onclick="doSignup()">Créer un compte</button>
+      <button class="login-btn" style="margin-top:10px;background:linear-gradient(135deg,#ffffff,#e9f2eb);color:#0b2e1f" onclick="doGoogleAuth()">Continuer avec Google</button>
       <div style="text-align:center;margin-top:10px"><button type="button" onclick="showAuthMode('login')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">J'ai déjà un compte</button></div>
     `;
   }
@@ -8599,6 +8597,23 @@ function saveAdmission() {
       showLoginError(err.message || 'Erreur de connexion');
     } finally {
       if (btn) { btn.disabled = false; btn.innerHTML = 'Accéder à la clinique'; }
+    }
+  };
+
+  window.doGoogleAuth = async function(){
+    try {
+      if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
+        showLoginError('Google Sign-In nécessite Supabase configuré.');
+        return;
+      }
+      const redirectTo = window.location.origin + window.location.pathname;
+      const { error } = await _sb.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo }
+      });
+      if (error) throw error;
+    } catch (err) {
+      showLoginError(err.message || 'Connexion Google impossible');
     }
   };
 
@@ -8997,11 +9012,22 @@ function saveAdmission() {
     const host = document.getElementById('approvals-list');
     if (!host) return;
     const rows = await fetchPendingApprovals();
+    const help = `
+      <div class="ibox ibox-b" style="margin-bottom:14px">
+        <strong>Gestion exacte des demandes :</strong><br>
+        1. Un utilisateur clique sur creer un compte ou Google.<br>
+        2. Sa demande arrive ici avec le statut pending.<br>
+        3. Vous vous connectez avec votre compte admin.<br>
+        4. Vous ouvrez Approbations.<br>
+        5. Vous cliquez sur Approuver ou Refuser.<br>
+        6. Si le compte est approuve, l'utilisateur peut se connecter.
+      </div>
+    `;
     if (!rows.length) {
-      host.innerHTML = `<div class="ibox ibox-b">Aucune demande en attente. Les nouveaux comptes apparaitront ici apres inscription.</div>`;
+      host.innerHTML = help + `<div class="ibox ibox-b">Aucune demande en attente. Les nouveaux comptes apparaitront ici apres inscription.</div>`;
       return;
     }
-    host.innerHTML = rows.map(item => `
+    host.innerHTML = help + rows.map(item => `
       <div class="approval-row">
         <div>
           <div style="font-weight:700">${item.full_name || item.fullName || item.email}</div>
@@ -9084,6 +9110,20 @@ function saveAdmission() {
         if (screen) screen.classList.add('hidden');
         if (logoutBtn) logoutBtn.style.display = 'block';
       } else {
+        if (session?.user?.email) {
+          await upsertApprovalRequest({
+            email,
+            full_name: session.user.user_metadata?.full_name || session.user.user_metadata?.name || email,
+            phone: session.user.phone || '',
+            role: session.user.user_metadata?.role || 'veterinaire',
+            order_number: null,
+            student_proof: null,
+            status: 'pending',
+            requested_at: new Date().toISOString(),
+            user_id: session.user.id || null
+          });
+          toast('Compte en attente d approbation.');
+        }
         if (session) await _sb.auth.signOut();
         setCurrentUserContext(null);
         if (screen) screen.classList.remove('hidden');
@@ -9100,8 +9140,6 @@ function saveAdmission() {
     const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
     const phone = document.getElementById('signup-phone')?.value?.trim();
     const role = document.getElementById('signup-role')?.value || 'veterinaire';
-    const orderNumber = document.getElementById('signup-order-number')?.value?.trim();
-    const studentProof = document.getElementById('signup-student-proof')?.value?.trim();
     const password = document.getElementById('signup-password')?.value;
     const confirm = document.getElementById('signup-password-confirm')?.value;
     const accepted = document.getElementById('signup-terms')?.checked;
@@ -9109,16 +9147,14 @@ function saveAdmission() {
     if (!firstName || !lastName || !email || !password) { showLoginError('Veuillez remplir les informations principales.'); return; }
     if (password !== confirm) { showLoginError('Les mots de passe ne correspondent pas.'); return; }
     if (!accepted) { showLoginError('Vous devez accepter les conditions VetPro.'); return; }
-    if (role === 'veterinaire' && !orderNumber) { showLoginError('Le numero d ordre veterinaire national est requis.'); return; }
-    if (role === 'stagiaire' && !studentProof) { showLoginError('La carte d etudiant est requise pour un stagiaire.'); return; }
 
     const payload = {
       email,
       full_name: `${firstName} ${lastName}`.trim(),
       phone,
       role,
-      order_number: orderNumber || null,
-      student_proof: studentProof || null,
+      order_number: null,
+      student_proof: null,
       status: ADMIN_EMAIL && email === ADMIN_EMAIL ? 'approved' : 'pending',
       requested_at: new Date().toISOString()
     };
@@ -9132,8 +9168,8 @@ function saveAdmission() {
             data: {
               full_name: payload.full_name,
               role,
-              order_number: orderNumber || '',
-              student_proof: studentProof || '',
+              order_number: '',
+              student_proof: '',
               owner_name: OWNER_NAME
             }
           }
