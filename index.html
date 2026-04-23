@@ -8654,7 +8654,9 @@ function saveAdmission() {
   const CONTACT_TABLE = 'vetpro_contact_messages';
   const USER_STATE_TABLE = 'vetpro_user_state';
   const LOCAL_APPROVALS_KEY = 'vetpro-access-fallback-v2';
-  const LOGO_PATH = './vetpro-logo.jpg';
+  const VETPRO_LOGO_SVG = window.__vetproLogoSvg || (window.__vetproLogoSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none"><defs><linearGradient id="vetproBg" x1="78" y1="54" x2="438" y2="460" gradientUnits="userSpaceOnUse"><stop stop-color="#0b3826"/><stop offset="1" stop-color="#062114"/></linearGradient><linearGradient id="vetproMint" x1="145" y1="122" x2="366" y2="388" gradientUnits="userSpaceOnUse"><stop stop-color="#49f48a"/><stop offset="1" stop-color="#31cf71"/></linearGradient></defs><rect x="20" y="20" width="472" height="472" rx="112" fill="url(#vetproBg)"/><rect x="38" y="38" width="436" height="436" rx="96" stroke="#1b6a45" stroke-opacity=".38" stroke-width="8"/><rect x="214" y="104" width="84" height="304" rx="42" fill="url(#vetproMint)"/><rect x="104" y="214" width="304" height="84" rx="42" fill="url(#vetproMint)"/><circle cx="126" cy="126" r="36" fill="#33bc6b"/><circle cx="386" cy="126" r="36" fill="#33bc6b"/><circle cx="126" cy="386" r="36" fill="#33bc6b"/><circle cx="386" cy="386" r="36" fill="#33bc6b"/><circle cx="256" cy="256" r="162" stroke="#7dfab0" stroke-opacity=".08" stroke-width="14"/></svg>`);
+  const LOGO_PATH = window.__vetproLogoDataUri || (window.__vetproLogoDataUri = `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(VETPRO_LOGO_SVG)}`);
+  const getLogoMarkup = window.__vetproLogoMarkup || (window.__vetproLogoMarkup = (size = 96) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512" fill="none" aria-hidden="true"><defs><linearGradient id="vetproBgInline" x1="78" y1="54" x2="438" y2="460" gradientUnits="userSpaceOnUse"><stop stop-color="#0b3826"/><stop offset="1" stop-color="#062114"/></linearGradient><linearGradient id="vetproMintInline" x1="145" y1="122" x2="366" y2="388" gradientUnits="userSpaceOnUse"><stop stop-color="#49f48a"/><stop offset="1" stop-color="#31cf71"/></linearGradient></defs><rect x="20" y="20" width="472" height="472" rx="112" fill="url(#vetproBgInline)"/><rect x="38" y="38" width="436" height="436" rx="96" stroke="#1b6a45" stroke-opacity=".38" stroke-width="8"/><rect x="214" y="104" width="84" height="304" rx="42" fill="url(#vetproMintInline)"/><rect x="104" y="214" width="304" height="84" rx="42" fill="url(#vetproMintInline)"/><circle cx="126" cy="126" r="36" fill="#33bc6b"/><circle cx="386" cy="126" r="36" fill="#33bc6b"/><circle cx="126" cy="386" r="36" fill="#33bc6b"/><circle cx="386" cy="386" r="36" fill="#33bc6b"/><circle cx="256" cy="256" r="162" stroke="#7dfab0" stroke-opacity=".08" stroke-width="14"/></svg>`);
   const TERMS_SOURCE = window.TERMS_TEXT || {};
   let remoteStateSaveTimer = null;
 
@@ -8765,8 +8767,9 @@ function saveAdmission() {
     const logoTargets = ['.login-logo', '.landing-logo', '.paw-icon'];
     logoTargets.forEach(selector => {
       document.querySelectorAll(selector).forEach(el => {
-        if (!el.querySelector('.vetpro-logo-img')) {
-          el.innerHTML = `<img src="${LOGO_PATH}" alt="VetPro logo" class="vetpro-logo-img">`;
+        if (!el.querySelector('svg') && !el.querySelector('.vetpro-logo-img')) {
+          const size = selector === '.paw-icon' ? 56 : 96;
+          el.innerHTML = getLogoMarkup(size);
         }
       });
     });
@@ -9677,11 +9680,11 @@ function saveAdmission() {
 (function(){
   const APPROVAL_TABLE = 'vetpro_access_requests';
   const LOGO_VERSION = '20260423-final';
-  const FINAL_LOGO_SRC = (() => {
+  const FINAL_LOGO_SRC = window.__vetproLogoDataUri || (() => {
     try {
-      return new URL(`vetpro-logo.jpg?v=${LOGO_VERSION}`, window.location.href.split('#')[0]).href;
+      return new URL(`vetpro-logo-mark.svg?v=${LOGO_VERSION}`, window.location.href.split('#')[0]).href;
     } catch (error) {
-      return `./vetpro-logo.jpg?v=${LOGO_VERSION}`;
+      return `./vetpro-logo-mark.svg?v=${LOGO_VERSION}`;
     }
   })();
 
@@ -9926,7 +9929,11 @@ function saveAdmission() {
     selectors.forEach((selector) => {
       document.querySelectorAll(selector).forEach((node) => {
         const size = selector === '.paw-icon' ? 56 : 96;
-        node.innerHTML = `<img src="${FINAL_LOGO_SRC}" alt="VetPro logo" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:inherit" onerror="this.onerror=null;this.src='vetpro-logo.jpg'">`;
+        if (typeof window.__vetproLogoMarkup === 'function') {
+          node.innerHTML = window.__vetproLogoMarkup(size);
+        } else {
+          node.innerHTML = `<img src="${FINAL_LOGO_SRC}" alt="VetPro logo" style="width:${size}px;height:${size}px;object-fit:cover;border-radius:inherit" onerror="this.onerror=null;this.src='vetpro-logo-mark.svg'">`;
+        }
       });
     });
 
@@ -10093,6 +10100,32 @@ function saveAdmission() {
     }
   }
 
+  async function ensureAdminApproval(user){
+    if (!_sb || !user?.email) return null;
+    const adminEmail = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
+    const email = (user.email || '').toLowerCase();
+    if (!adminEmail || email !== adminEmail) return null;
+    try {
+      const payload = {
+        user_id: user.id || null,
+        email,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || 'Admin VetPro',
+        phone: user.phone || '',
+        role: user.user_metadata?.role || 'veterinaire',
+        order_number: null,
+        student_proof: null,
+        status: 'approved',
+        requested_at: new Date().toISOString(),
+        reviewed_at: new Date().toISOString(),
+        reviewed_by: 'system'
+      };
+      await _sb.from(APPROVAL_TABLE).upsert(payload, { onConflict:'email' });
+      return payload;
+    } catch (error) {
+      return null;
+    }
+  }
+
   function openClinicForUser(user){
     if (typeof setCurrentUserContext === 'function') setCurrentUserContext(user);
     if (typeof initializePersistentState === 'function') initializePersistentState();
@@ -10116,6 +10149,13 @@ function saveAdmission() {
     }
 
     const email = (user.email || '').toLowerCase();
+    const adminEmail = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
+    if (adminEmail && email === adminEmail) {
+      await ensureAdminApproval(user);
+      openClinicForUser(user);
+      return true;
+    }
+
     const approval = await fetchOwnApproval(email);
     if (approval?.status === 'approved') {
       openClinicForUser(user);
@@ -10127,8 +10167,8 @@ function saveAdmission() {
     showLoginScreen();
     setLoginFeedback(
       approval?.status === 'rejected'
-        ? 'Compte refusé. Contactez VetPro pour une nouvelle vérification.'
-        : 'Compte en attente d’approbation manuelle.',
+        ? `Compte refusé pour ${email}. Contactez VetPro pour une nouvelle vérification.`
+        : `Compte ${email} en attente d’approbation manuelle.`,
       approval?.status === 'rejected' ? 'error' : 'warn'
     );
     if (typeof toast === 'function' && sourceLabel !== 'silent') {
@@ -10182,7 +10222,15 @@ function saveAdmission() {
       if (error) throw error;
       await finalizeSessionAccess('password');
     } catch (error) {
-      const message = error?.message || 'Erreur de connexion';
+      const adminEmail = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
+      let message = error?.message || 'Erreur de connexion';
+      if (
+        adminEmail &&
+        email === adminEmail &&
+        /invalid login credentials|email not confirmed|invalid/i.test(message)
+      ) {
+        message = 'Le compte admin existe peut-être dans les approbations mais pas encore dans Supabase Authentication. Créez-le une fois via "Créer un compte" avec cet email admin, puis reconnectez-vous.';
+      }
       setLoginFeedback(message, 'error');
       if (typeof toast === 'function') toast(message);
     } finally {
@@ -10221,11 +10269,28 @@ function saveAdmission() {
     await finalizeSessionAccess('silent');
   }
 
+  function showGoogleAccountHint(){
+    if (!window.location.hash || !window.location.hash.includes('access_token=')) return;
+    try {
+      const token = new URLSearchParams(window.location.hash.slice(1)).get('access_token');
+      if (!token) return;
+      const parts = token.split('.');
+      if (parts.length < 2) return;
+      const payload = JSON.parse(decodeURIComponent(escape(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')))));
+      const adminEmail = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
+      const oauthEmail = (payload?.email || '').toLowerCase();
+      if (adminEmail && oauthEmail && oauthEmail !== adminEmail) {
+        setLoginFeedback(`Google s’est connecté avec ${oauthEmail}, pas avec l’email admin configuré.`, 'warn');
+      }
+    } catch (error) {}
+  }
+
   function initFinalVetProHotfix(){
     addFinalHotfixStyles();
     applyFinalLogo();
     renderCenteredAccueil();
     bindFinalButtons();
+    showGoogleAccountHint();
     if (_sb && !window.__vetproFinalAuthBound) {
       window.__vetproFinalAuthBound = true;
       _sb.auth.onAuthStateChange((event) => {
