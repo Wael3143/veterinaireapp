@@ -7621,6 +7621,8 @@ function saveAdmission() {
 
 <script>
 (function(){
+  if (window.__vetproDataFinalLayerLoaded) return;
+  window.__vetproDataFinalLayerLoaded = true;
   const BRAND = 'VetPro';
   const ADMIN_EMAIL = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
   const CONTACT_PHONE = '+213781236686';
@@ -8655,7 +8657,7 @@ function saveAdmission() {
 (function(){
   const ADMIN_EMAIL = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
   const OWNER_NAME = 'Kherbache Wail';
-  const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'contact@vetpro.local';
+  const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'w.kherbache@etud.ensv.dz';
   const CONTACT_PHONE = '+213781236686';
   const INSTAGRAM_URL = 'https://www.instagram.com/vetpro.dz/';
   const APPROVAL_TABLE = 'vetpro_access_requests';
@@ -10315,6 +10317,501 @@ function saveAdmission() {
 
   document.addEventListener('DOMContentLoaded', initFinalVetProHotfix);
   window.addEventListener('load', initFinalVetProHotfix);
+})();
+</script>
+
+<script>
+(function(){
+  const ADMIN_EMAIL_KEY = 'vetpro-admin-email';
+  const CONTACT_EMAIL_KEY = 'vetpro-contact-email';
+  const SETTINGS_STORAGE_KEY = 'vetpro-settings';
+  const STATS_META_KEY = 'vetpro-stats-meta';
+  const EASTER_KEY = 'vetpro-anais-unlocked';
+  const DEFAULT_CONTACT_EMAIL = 'w.kherbache@etud.ensv.dz';
+
+  if (!localStorage.getItem(CONTACT_EMAIL_KEY)) {
+    localStorage.setItem(CONTACT_EMAIL_KEY, DEFAULT_CONTACT_EMAIL);
+  }
+
+  function getAdminEmail(){
+    return (localStorage.getItem(ADMIN_EMAIL_KEY) || '').trim().toLowerCase();
+  }
+
+  function getCurrentSessionUser(){
+    try {
+      return window.__vetproCurrentSessionUser || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function getActiveUserName(){
+    const user = getCurrentSessionUser();
+    const settings = typeof getSettings === 'function' ? getSettings() : null;
+    const fromSettings = [settings?.vetFirstName, settings?.vetLastName].filter(Boolean).join(' ').trim();
+    const fromMeta = user?.user_metadata?.full_name || user?.user_metadata?.name || '';
+    const fromEmail = (user?.email || '').split('@')[0];
+    return fromSettings || fromMeta || fromEmail || 'VetPro';
+  }
+
+  function isCurrentAdmin(){
+    const adminEmail = getAdminEmail();
+    const email = (getCurrentSessionUser()?.email || '').toLowerCase();
+    return !!adminEmail && !!email && adminEmail === email;
+  }
+
+  function getStatsMeta(){
+    try {
+      const parsed = JSON.parse(localStorage.getItem(STATS_META_KEY) || '{}');
+      return {
+        month: parsed.month || 'all',
+        year: parsed.year || 'all',
+        legacyCases: Number(parsed.legacyCases || 0),
+        legacyRevenue: Number(parsed.legacyRevenue || 0)
+      };
+    } catch (e) {
+      return { month:'all', year:'all', legacyCases:0, legacyRevenue:0 };
+    }
+  }
+
+  function saveStatsMeta(next){
+    localStorage.setItem(STATS_META_KEY, JSON.stringify(next));
+    if (typeof persistAppState === 'function') persistAppState();
+  }
+
+  function normalizeDateParts(dateText){
+    if (!dateText) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateText)) {
+      const [year, month, day] = dateText.split('-').map(Number);
+      return { year, month, day };
+    }
+    const raw = String(dateText).split('/');
+    if (raw.length === 3) {
+      const [day, month, year] = raw.map(Number);
+      return { year, month, day };
+    }
+    return null;
+  }
+
+  function getFilteredHistory(){
+    const meta = getStatsMeta();
+    return HISTORIQUE_DATA.filter((item) => {
+      const parts = normalizeDateParts(item.date);
+      if (!parts) return meta.month === 'all' && meta.year === 'all';
+      if (meta.year !== 'all' && Number(meta.year) !== parts.year) return false;
+      if (meta.month !== 'all' && Number(meta.month) !== parts.month) return false;
+      return true;
+    });
+  }
+
+  function applyThemeAndLanguage(){
+    if (typeof getSettings !== 'function') return;
+    const settings = getSettings();
+    document.documentElement.style.setProperty('--forest', settings.display?.theme || '#1A4A2E');
+    document.body.classList.toggle('compact-ui', !!settings.display?.compact);
+    document.body.classList.toggle('reduced-motion', !!settings.display?.reducedMotion);
+    document.documentElement.setAttribute('lang', settings.display?.language || 'fr');
+  }
+
+  function refreshUserBranding(){
+    const userName = getActiveUserName();
+    const firstName = userName.split(' ')[0] || userName;
+    document.querySelectorAll('.sb-footer-name, .tb-name-main').forEach(el => el.textContent = userName);
+    const hero = document.querySelector('#page-dashboard .page-hero h2');
+    if (hero) hero.textContent = `Bonjour, ${firstName} 👋`;
+    const supportHero = document.querySelector('#page-support .page-hero p');
+    if (supportHero) supportHero.textContent = `${userName} · ${DEFAULT_CONTACT_EMAIL} · +213781236686`;
+  }
+
+  function hideApprovalsForNonAdmin(){
+    const entry = document.getElementById('sb-approvals');
+    const page = document.getElementById('page-approvals');
+    const visible = isCurrentAdmin();
+    if (entry) entry.style.display = visible ? '' : 'none';
+    if (page && !visible && page.classList.contains('active')) {
+      nav('dashboard');
+    }
+  }
+
+  function dedupeCaseForm(){
+    const page = document.getElementById('page-cas');
+    if (!page) return;
+    const rows = Array.from(page.querySelectorAll('.row3')).filter((row) => {
+      const text = row.textContent || '';
+      return text.includes("Nom de l'animal") && text.includes('Client / Propri');
+    });
+    rows.forEach((row, index) => {
+      if (index > 0) row.remove();
+    });
+    const extraRows = Array.from(page.querySelectorAll('#case-extra-fields'));
+    extraRows.forEach((row, index) => {
+      if (index > 0) row.remove();
+    });
+    if (typeof ensureCaseFormEnhancements === 'function') ensureCaseFormEnhancements();
+  }
+
+  function enhanceCasePaymentControls(){
+    const amount = document.getElementById('case-amount');
+    const paid = document.getElementById('case-paid');
+    if (!amount || !paid || document.getElementById('case-payment-helpers')) return;
+    const wrap = document.createElement('div');
+    wrap.id = 'case-payment-helpers';
+    wrap.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px';
+    wrap.innerHTML = `
+      <button type="button" class="btn btn-ghost btn-sm">Paiement total</button>
+      <button type="button" class="btn btn-ghost btn-sm">Acompte 50%</button>
+      <button type="button" class="btn btn-ghost btn-sm">Reste à 0</button>
+    `;
+    const buttons = wrap.querySelectorAll('button');
+    buttons[0].onclick = () => { paid.value = amount.value || '0'; };
+    buttons[1].onclick = () => {
+      const val = parseInt(amount.value || '0', 10) || 0;
+      paid.value = String(Math.round(val / 2));
+    };
+    buttons[2].onclick = () => { paid.value = '0'; };
+    paid.closest('.fg')?.insertAdjacentElement('afterend', wrap);
+  }
+
+  function installTomorrowNotifications(){
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+    if (Notification.permission !== 'granted') return;
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    const tomorrowIso = tomorrow.toISOString().slice(0, 10);
+    APPOINTMENTS.filter(item => item.date === tomorrowIso).forEach(item => {
+      const key = `vetpro-rdv-notified:${item.id}:${tomorrowIso}`;
+      if (localStorage.getItem(key)) return;
+      new Notification('Rappel rendez-vous VetPro', {
+        body: `${item.animal} - ${item.owner} demain à ${item.time}`,
+      });
+      localStorage.setItem(key, '1');
+    });
+  }
+
+  function ensureSupportEmail(){
+    document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+      link.href = `mailto:${DEFAULT_CONTACT_EMAIL}`;
+      if (link.textContent.includes('@')) link.textContent = DEFAULT_CONTACT_EMAIL;
+    });
+    const supportHero = document.querySelector('#page-support .page-hero p');
+    if (supportHero) supportHero.textContent = `${DEFAULT_CONTACT_EMAIL} · +213781236686`;
+  }
+
+  function patchSettingsPersistence(){
+    if (typeof collectAppStateSnapshot === 'function') {
+      const originalCollect = collectAppStateSnapshot;
+      collectAppStateSnapshot = window.collectAppStateSnapshot = function(){
+        const base = originalCollect();
+        return {
+          ...base,
+          settings: typeof getSettings === 'function' ? getSettings() : null,
+          statsMeta: getStatsMeta()
+        };
+      };
+    }
+    if (typeof applyAppStateSnapshot === 'function') {
+      const originalApply = applyAppStateSnapshot;
+      applyAppStateSnapshot = window.applyAppStateSnapshot = function(saved, defaults){
+        originalApply(saved, defaults);
+        if (saved?.settings && typeof saveSettings === 'function') {
+          saveSettings(saved.settings);
+        }
+        if (saved?.statsMeta) {
+          saveStatsMeta({
+            month: saved.statsMeta.month || 'all',
+            year: saved.statsMeta.year || 'all',
+            legacyCases: Number(saved.statsMeta.legacyCases || 0),
+            legacyRevenue: Number(saved.statsMeta.legacyRevenue || 0)
+          });
+        }
+      };
+    }
+  }
+
+  function patchSettingsUI(){
+    const page = document.getElementById('page-settings');
+    if (!page) return;
+    const swatches = page.querySelectorAll('.color-swatch');
+    const langSelect = page.querySelector('select.sel');
+    if (typeof loadSettingsIntoForm === 'function') {
+      const originalLoad = loadSettingsIntoForm;
+      loadSettingsIntoForm = window.loadSettingsIntoForm = function(){
+        originalLoad();
+        const s = getSettings();
+        swatches.forEach((swatch) => {
+          swatch.classList.toggle('selected', (swatch.style.background || '').replace(/\s+/g, '').toLowerCase() === (s.display.theme || '').replace(/\s+/g, '').toLowerCase());
+        });
+        if (langSelect) {
+          const map = { fr:0, en:1, ar:2 };
+          langSelect.selectedIndex = map[s.display.language] ?? 0;
+        }
+        applyThemeAndLanguage();
+        refreshUserBranding();
+      };
+    }
+    swatches.forEach((swatch) => {
+      swatch.onclick = function(){
+        swatches.forEach(s => s.classList.remove('selected'));
+        this.classList.add('selected');
+      };
+    });
+    if (typeof saveVetProSettings === 'function') {
+      const originalSave = saveVetProSettings;
+      saveVetProSettings = window.saveVetProSettings = function(){
+        const inputs = document.querySelectorAll('#page-settings input');
+        const next = typeof getSettings === 'function' ? getSettings() : {};
+        next.display = next.display || {};
+        next.display.theme = page.querySelector('.color-swatch.selected')?.style.background || next.display.theme || '#1A4A2E';
+        next.display.language = langSelect?.selectedIndex === 1 ? 'en' : langSelect?.selectedIndex === 2 ? 'ar' : 'fr';
+        if (inputs[4] && !inputs[4].value.trim()) inputs[4].value = DEFAULT_CONTACT_EMAIL;
+        originalSave();
+        const saved = getSettings();
+        saved.display.theme = next.display.theme;
+        saved.display.language = next.display.language;
+        if (!saved.email) saved.email = DEFAULT_CONTACT_EMAIL;
+        saveSettings(saved);
+        applyThemeAndLanguage();
+        refreshUserBranding();
+        persistAppState();
+      };
+    }
+  }
+
+  function patchStatistics(){
+    window.renderStatistics = function(){
+      const page = document.getElementById('page-statistics');
+      if (!page) return;
+      const meta = getStatsMeta();
+      const history = getFilteredHistory();
+      const years = Array.from(new Set(HISTORIQUE_DATA.map(item => normalizeDateParts(item.date)?.year).filter(Boolean))).sort((a,b) => b-a);
+      const casesCount = history.length + meta.legacyCases;
+      const clientsCount = CLIENTS.length;
+      const revenue = history.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0), 0) + meta.legacyRevenue;
+      const recovered = history.filter(item => item.resultat === 'guerison').length;
+      const cureRate = history.length ? Math.round((recovered / history.length) * 100) : 0;
+      const last12 = new Array(12).fill(0);
+      const rev12 = new Array(12).fill(0);
+      history.forEach(item => {
+        const parts = normalizeDateParts(item.date);
+        if (!parts) return;
+        last12[parts.month - 1] += 1;
+        rev12[parts.month - 1] += parseInt(item.montant || 0, 10) || 0;
+      });
+      page.innerHTML = `
+        <div class="page-hero">
+          <div class="tag">📊 VetPro Analytics</div>
+          <h2>Statistiques de la clinique</h2>
+          <p>Filtrez par mois et année, puis ajoutez d’anciennes données si vous migrez depuis un ancien registre.</p>
+        </div>
+        <div class="stats-action-bar" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:18px">
+          <div class="fg"><label class="lbl">Mois</label><select id="stats-month" class="sel">
+            <option value="all">Tous</option>
+            ${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => `<option value="${i + 1}" ${String(meta.month) === String(i + 1) ? 'selected' : ''}>${m}</option>`).join('')}
+          </select></div>
+          <div class="fg"><label class="lbl">Année</label><select id="stats-year" class="sel">
+            <option value="all">Toutes</option>
+            ${years.map(year => `<option value="${year}" ${String(meta.year) === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
+          </select></div>
+          <div class="fg"><label class="lbl">Anciennes consultations</label><input id="legacy-cases" class="inp" type="number" min="0" value="${meta.legacyCases}"></div>
+          <div class="fg"><label class="lbl">Ancien revenu (DA)</label><input id="legacy-revenue" class="inp" type="number" min="0" value="${meta.legacyRevenue}"></div>
+          <button class="btn btn-ghost" onclick="saveLegacyStats()">Enregistrer historique ancien</button>
+          <button class="btn btn-ghost" onclick="renderStatistics()">Actualiser</button>
+          <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetStatisticsData()">Réinitialiser</button>
+        </div>
+        <div class="stats-mini-grid" style="margin-bottom:18px">
+          <div class="stats-card"><div class="big" style="color:var(--info)">${casesCount}</div><div class="kpi-lbl">Cas enregistrés</div></div>
+          <div class="stats-card"><div class="big" style="color:var(--forest)">${revenue.toLocaleString('fr-FR')} DA</div><div class="kpi-lbl">Revenus totaux</div></div>
+          <div class="stats-card"><div class="big" style="color:var(--warning)">${clientsCount}</div><div class="kpi-lbl">Clients actifs</div></div>
+          <div class="stats-card"><div class="big" style="color:var(--sage)">${cureRate}%</div><div class="kpi-lbl">Taux de guérison</div></div>
+        </div>
+        <div class="g2">
+          <div class="stat-chart-card">
+            <div class="card-title">Cas par mois</div>
+            <div id="cases-chart" style="display:flex;gap:8px;height:140px;align-items:flex-end"></div>
+            <div id="cases-labels" style="display:flex;gap:8px;margin-top:8px"></div>
+          </div>
+          <div class="stat-chart-card">
+            <div class="card-title">Revenus par mois</div>
+            <div id="revenue-chart" style="display:flex;gap:8px;height:140px;align-items:flex-end"></div>
+            <div id="revenue-labels" style="display:flex;gap:8px;margin-top:8px"></div>
+          </div>
+        </div>
+      `;
+      const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+      const maxCases = Math.max(...last12, 1);
+      const maxRev = Math.max(...rev12, 1);
+      document.getElementById('cases-chart').innerHTML = last12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxCases) * 120) || 8)}px;background:linear-gradient(180deg,var(--mint),var(--forest));border-radius:10px 10px 0 0"></div>`).join('');
+      document.getElementById('cases-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
+      document.getElementById('revenue-chart').innerHTML = rev12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxRev) * 120) || 8)}px;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:10px 10px 0 0"></div>`).join('');
+      document.getElementById('revenue-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
+      document.getElementById('stats-month')?.addEventListener('change', (e) => {
+        const next = getStatsMeta();
+        next.month = e.target.value;
+        saveStatsMeta(next);
+        renderStatistics();
+      });
+      document.getElementById('stats-year')?.addEventListener('change', (e) => {
+        const next = getStatsMeta();
+        next.year = e.target.value;
+        saveStatsMeta(next);
+        renderStatistics();
+      });
+    };
+    window.saveLegacyStats = function(){
+      const next = getStatsMeta();
+      next.legacyCases = parseInt(document.getElementById('legacy-cases')?.value || '0', 10) || 0;
+      next.legacyRevenue = parseInt(document.getElementById('legacy-revenue')?.value || '0', 10) || 0;
+      saveStatsMeta(next);
+      renderStatistics();
+      toast('Anciennes statistiques enregistrées');
+    };
+  }
+
+  function patchDrugs(){
+    const extras = [
+      {id:'orniprural',n:'Orniprural',m:'Ornidazole + support hépatique',g:'Gastroprotecteurs',f:'Injectable',v:'IM/IV',p:650,s:8,smin:2,c:'#0E7490',ind:'Troubles digestifs, soutien hépatique, diarrhées',ci:'Hypersensibilité',eff:'Nausées rares',inter:'Prudence avec autres nitroimidazolés',poso:'Selon protocole clinique, adapter au poids'},
+      {id:'benazepril',n:'Benazepril',m:'Benazepril',g:'Cardio-Diurétiques',f:'Comprimé',v:'PO',p:900,s:6,smin:2,c:'#B91C1C',ind:'Insuffisance cardiaque, protéinurie, HTA',ci:'Hypotension, déshydratation',eff:'Hypotension, fatigue',inter:'Prudence furosémide',poso:'0.25 à 0.5 mg/kg PO 1x/j'},
+      {id:'ivermectine',n:'Ivermectine',m:'Ivermectine',g:'Antiparasitaires',f:'Injectable',v:'SC',p:300,s:0,smin:3,c:'#059669',ind:'Parasitoses sélectionnées',ci:'Races MDR1 sensibles, surdosage neurotoxique',eff:'Tremblements, ataxie',inter:'Prudence avec spinosad',poso:'Selon indication et espèce'}
+    ];
+    extras.forEach((drug) => { if (!DRUGS.find(d => d.id === drug.id)) DRUGS.push(drug); });
+    const originalRenderDrugs = window.renderDrugs;
+    if (typeof originalRenderDrugs === 'function') {
+      window.__vetproOwnedFilter = window.__vetproOwnedFilter || 'all';
+      renderDrugs = window.renderDrugs = function(group, search){
+        const grid = document.getElementById('drug-grid');
+        const page = document.getElementById('page-meds');
+        if (page && !document.getElementById('drug-owned-toolbar')) {
+          const toolbar = document.createElement('div');
+          toolbar.id = 'drug-owned-toolbar';
+          toolbar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin:12px 0';
+          toolbar.innerHTML = `
+            <button class="btn btn-ghost btn-sm" data-owned="all">Tous</button>
+            <button class="btn btn-ghost btn-sm" data-owned="owned">En stock</button>
+            <button class="btn btn-ghost btn-sm" data-owned="missing">À commander</button>
+          `;
+          page.querySelector('.card')?.insertAdjacentElement('afterbegin', toolbar);
+          toolbar.querySelectorAll('button').forEach(btn => {
+            btn.onclick = () => {
+              window.__vetproOwnedFilter = btn.dataset.owned;
+              renderDrugs(drugFilter || '', drugSearch || '');
+            };
+          });
+        }
+        originalRenderDrugs(group, search);
+        if (!grid) return;
+        Array.from(grid.children).forEach((card) => {
+          const title = card.querySelector('[style*="font-weight:700"]')?.textContent || '';
+          const drug = DRUGS.find(d => d.n === title);
+          if (!drug) return;
+          const owned = drug.s > 0;
+          if (window.__vetproOwnedFilter === 'owned' && !owned) card.style.display = 'none';
+          else if (window.__vetproOwnedFilter === 'missing' && owned) card.style.display = 'none';
+          else card.style.display = '';
+        });
+      };
+    }
+    const originalShowDrug = window.showDrug;
+    if (typeof originalShowDrug === 'function') {
+      showDrug = window.showDrug = function(id){
+        originalShowDrug(id);
+        const body = document.getElementById('drug-modal-body');
+        const drug = DRUGS.find(d => d.id === id);
+        if (!body || !drug || body.querySelector('#drug-reset-stock-btn')) return;
+        const actions = document.createElement('div');
+        actions.style.cssText = 'margin-top:12px;display:flex;gap:8px;flex-wrap:wrap';
+        actions.innerHTML = `<button class="btn btn-ghost btn-sm" id="drug-reset-stock-btn">Remettre le stock à 0</button>`;
+        actions.querySelector('button').onclick = () => {
+          drug.s = 0;
+          persistAppState();
+          closeModal('modal-drug');
+          renderDrugs(drugFilter || '', drugSearch || '');
+          toast('Stock remis à 0');
+        };
+        body.appendChild(actions);
+      };
+    }
+  }
+
+  function patchApprovalsAccess(){
+    const originalRefresh = window.renderApprovalsPage;
+    window.renderApprovalsPage = async function(){
+      if (!isCurrentAdmin()) {
+        const host = document.getElementById('approvals-list');
+        if (host) host.innerHTML = `<div class="ibox ibox-b">Accès réservé à l’administrateur.</div>`;
+        return;
+      }
+      if (typeof originalRefresh === 'function') return originalRefresh();
+    };
+  }
+
+  function patchSessionBrandingHooks(){
+    if (!_sb || window.__vetproSessionBrandingBound) return;
+    window.__vetproSessionBrandingBound = true;
+    _sb.auth.getSession().then(({ data }) => {
+      window.__vetproCurrentSessionUser = data?.session?.user || null;
+      refreshUserBranding();
+      hideApprovalsForNonAdmin();
+      installTomorrowNotifications();
+    });
+    _sb.auth.onAuthStateChange((_event, session) => {
+      window.__vetproCurrentSessionUser = session?.user || null;
+      setTimeout(() => {
+        refreshUserBranding();
+        hideApprovalsForNonAdmin();
+        installTomorrowNotifications();
+      }, 0);
+    });
+  }
+
+  function installAnaisEasterEgg(){
+    let taps = 0;
+    let buffer = '';
+    document.addEventListener('click', (event) => {
+      const logo = event.target.closest('.login-logo, .landing-logo, .sb-logo-inner');
+      if (!logo) return;
+      taps += 1;
+      if (taps >= 5) {
+        localStorage.setItem('vetpro-anais-armed', '1');
+        taps = 0;
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (localStorage.getItem('vetpro-anais-armed') !== '1') return;
+      buffer = (buffer + event.key.toLowerCase()).slice(-5);
+      if (buffer === 'anais') {
+        localStorage.removeItem('vetpro-anais-armed');
+        localStorage.setItem(EASTER_KEY, '1');
+        toast('Mode Anais activé');
+        document.body.insertAdjacentHTML('beforeend', `<div id="anais-secret" style="position:fixed;right:18px;bottom:18px;padding:12px 16px;border-radius:16px;background:linear-gradient(135deg,#082416,#14532d);color:#fff;box-shadow:0 20px 40px rgba(0,0,0,.25);z-index:9999">Anais · mode secret actif</div>`);
+      }
+    });
+  }
+
+  function initVetProDataFinal(){
+    if (window.__vetproDataFinalInitialized) return;
+    window.__vetproDataFinalInitialized = true;
+    dedupeCaseForm();
+    enhanceCasePaymentControls();
+    ensureSupportEmail();
+    patchSettingsPersistence();
+    patchSettingsUI();
+    patchStatistics();
+    patchDrugs();
+    patchApprovalsAccess();
+    patchSessionBrandingHooks();
+    applyThemeAndLanguage();
+    refreshUserBranding();
+    hideApprovalsForNonAdmin();
+    installTomorrowNotifications();
+    installAnaisEasterEgg();
+  }
+
+  document.addEventListener('DOMContentLoaded', initVetProDataFinal);
+  window.addEventListener('load', initVetProDataFinal);
 })();
 </script>
 
