@@ -11541,5 +11541,304 @@ function saveAdmission() {
 })();
 </script>
 
+<script>
+(function(){
+  if (window.__vetproCaseHistoryFixLoaded) return;
+  window.__vetproCaseHistoryFixLoaded = true;
+
+  function persistEverything(){
+    if (typeof persistAppState === 'function') persistAppState();
+    if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+    if (typeof renderFinancesPage === 'function') renderFinancesPage();
+    if (typeof renderStatistics === 'function') renderStatistics();
+    if (typeof renderHist === 'function') renderHist(document.getElementById('hist-search')?.value || '');
+    if (typeof renderOrdos === 'function') renderOrdos(document.getElementById('ordo-search')?.value || '', true);
+  }
+
+  function ensureCaseOrdonnanceOption(){
+    const refs = typeof getCaseFormFields === 'function' ? getCaseFormFields() : null;
+    const examCard = refs?.examCard || document.querySelectorAll('#page-cas .card')[2];
+    if (!examCard || document.getElementById('case-ordo-wrap')) return;
+    const row = examCard.querySelector('.row2:last-of-type') || examCard.querySelector('.row3:last-of-type');
+    const host = row?.parentElement || examCard;
+    const wrap = document.createElement('div');
+    wrap.id = 'case-ordo-wrap';
+    wrap.className = 'card';
+    wrap.style.marginTop = '14px';
+    wrap.innerHTML = `
+      <div class="card-title">📝 Ordonnance liée au cas <span>Option rapide</span></div>
+      <div class="toggle-wrap" style="margin-bottom:12px">
+        <div class="toggle-info"><strong>Créer une ordonnance avec ce cas</strong><p>Une ordonnance sera enregistrée et visible dans Historique et Ordonnances.</p></div>
+        <div class="toggle-switch" id="case-create-ordo-toggle"></div>
+      </div>
+      <div class="fg">
+        <label class="lbl">Prescription / notes d'ordonnance</label>
+        <textarea class="tex" id="case-ordo-notes" rows="3" placeholder="Ex: Shotapen 1 mL/10 kg IM 1x/j pendant 5 jours&#10;Oméprazole 1 mg/kg 1x/j"></textarea>
+      </div>
+    `;
+    host.appendChild(wrap);
+    const toggle = document.getElementById('case-create-ordo-toggle');
+    if (toggle) {
+      toggle.onclick = function(){
+        this.classList.toggle('on');
+      };
+    }
+  }
+
+  function parsePrescriptionLines(text){
+    return String(text || '')
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map((line, index) => ({
+        n: line.split(' - ')[0].slice(0, 48) || `Ligne ${index + 1}`,
+        d: line,
+        q: 'Selon prescription'
+      }));
+  }
+
+  function createOrdonnanceFromCase(patient, diagnosis, nextRdv, notes){
+    const now = new Date();
+    const num = `ORD-${now.getFullYear()}-${String(now.getTime()).slice(-5)}`;
+    const meds = parsePrescriptionLines(notes);
+    const newOrdo = {
+      num,
+      animal: displayAnimalName(patient.name, patient.species),
+      proprietaire: patient.owner,
+      espece: patient.species,
+      race: patient.race || patient.species,
+      age: patient.age || '-',
+      poids: patient.weight || '-',
+      date: todayFr(),
+      diagnostic: diagnosis,
+      statut: 'En cours',
+      meds: meds.length ? meds : [{ n:'Traitement à compléter', d:'Voir protocole du cas clinique', q:'-' }],
+      controle: nextRdv || 'Contrôle à programmer'
+    };
+    ORDOS.unshift(newOrdo);
+    return newOrdo.num;
+  }
+
+  function exportHistCase(id){
+    const h = HISTORIQUE_DATA.find(item => item.id === id);
+    if (!h) {
+      if (typeof toast === 'function') toast('Fiche introuvable');
+      return;
+    }
+    const printWin = window.open('', '_blank', 'width=900,height=1100');
+    if (!printWin) {
+      if (typeof toast === 'function') toast('Autorisez les popups pour exporter la fiche');
+      return;
+    }
+    printWin.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Fiche ${h.animal}</title>
+      <style>
+        body{font-family:Arial,sans-serif;color:#0D1B2A;margin:32px;line-height:1.6}
+        h1{margin:0 0 4px;font-size:24px}
+        h2{margin:18px 0 8px;font-size:15px}
+        .muted{color:#666}
+        .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .box{border:1px solid #ddd;border-radius:12px;padding:12px 14px;margin-top:10px}
+        .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#eef6f1;color:#1A4A2E;font-size:11px;font-weight:700}
+        ul{margin:8px 0 0 18px;padding:0}
+      </style>
+    </head><body>
+      <h1>${h.animal}</h1>
+      <div class="muted">${h.client} · ${h.tel || '-'} · ${h.date}</div>
+      <div style="margin-top:8px"><span class="pill">${h.diagnostic}</span></div>
+      <div class="row" style="margin-top:16px">
+        <div class="box"><strong>Espèce</strong><div>${h.espece || '-'}</div></div>
+        <div class="box"><strong>Race / âge / poids</strong><div>${h.race || '-'} · ${h.age || '-'} · ${h.poids || '-'}</div></div>
+      </div>
+      <div class="row">
+        <div class="box"><strong>Montant</strong><div>${Number(h.montant || 0).toLocaleString('fr-FR')} DA</div></div>
+        <div class="box"><strong>Paiement</strong><div>${h.paiement || 'impaye'}${h.paidAmount != null ? ` · reçu ${Number(h.paidAmount || 0).toLocaleString('fr-FR')} DA` : ''}</div></div>
+      </div>
+      <div class="box"><strong>Notes cliniques</strong><div>${h.notesCliniques || '-'}</div></div>
+      <div class="box"><strong>Conseils / contrôle</strong><div>${h.conseilsSortie || '-'}<br>${h.rdv || '-'}</div></div>
+      <div class="box"><strong>Traitements</strong><ul>${(h.traitements || []).map(t => `<li><strong>${t.medicament || '-'}</strong> — ${t.posologie || '-'}</li>`).join('') || '<li>Aucun traitement détaillé</li>'}</ul></div>
+    </body></html>`);
+    printWin.document.close();
+    printWin.focus();
+    setTimeout(() => printWin.print(), 250);
+  }
+  window.exportHistCase = exportHistCase;
+
+  const originalSaveNewCase = window.saveNewCase;
+  window.saveNewCase = function(){
+    if (typeof ensureCaseFormEnhancements === 'function') ensureCaseFormEnhancements();
+    ensureCaseOrdonnanceOption();
+    const animalName = document.getElementById('case-animal-name')?.value?.trim();
+    const owner = document.getElementById('case-client-name')?.value?.trim();
+    const phone = document.getElementById('case-client-phone')?.value?.trim();
+    const species = document.getElementById('case-espece')?.value || 'Chien';
+    const race = document.getElementById('case-race')?.value?.trim() || '';
+    const age = document.getElementById('case-age')?.value?.trim() || '';
+    const weightValue = document.getElementById('case-poids')?.value?.trim();
+    const diagnosis = document.getElementById('diag-inp')?.value?.trim();
+    if (!animalName || !owner || !diagnosis) {
+      if (typeof toast === 'function') toast('Animal, propriétaire et diagnostic sont requis');
+      return;
+    }
+    const amount = parseInt(document.getElementById('case-amount')?.value || '0', 10) || 0;
+    const paid = parseInt(document.getElementById('case-paid')?.value || '0', 10) || 0;
+    const nextRdv = typeof shortFrDate === 'function' ? shortFrDate(document.getElementById('case-next-rdv')?.value || '') : '';
+    const email = document.getElementById('case-client-email')?.value?.trim() || '';
+    const ordoEnabled = !!document.getElementById('case-create-ordo-toggle')?.classList.contains('on');
+    const ordoNotes = document.getElementById('case-ordo-notes')?.value?.trim() || '';
+    const patient = upsertPatient({
+      name: animalName,
+      species,
+      race,
+      age,
+      weight: weightValue ? `${weightValue} kg` : '',
+      owner,
+      phone,
+      email,
+      nextRdv,
+      sexe: document.getElementById('case-sexe')?.value || '',
+      notes: document.getElementById('case-observations')?.value?.trim() || '',
+    });
+    upsertClientFromPatient(patient);
+    const now = new Date();
+    const urgencyScore = parseInt(document.getElementById('urg-score')?.textContent || '0', 10) || 0;
+    const paiement = paid <= 0 ? 'impaye' : paid < amount ? 'partiel' : 'paye';
+    const historiqueId = `h${now.getTime()}`;
+    const traitements = parsePrescriptionLines(ordoNotes).map(line => ({
+      medicament: line.n,
+      posologie: line.d,
+      duree: 'Selon prescription',
+      resultat: 'en-cours'
+    }));
+    let ordonnanceNum = null;
+    if (ordoEnabled) {
+      ordonnanceNum = createOrdonnanceFromCase(patient, diagnosis, nextRdv, ordoNotes);
+    }
+    HISTORIQUE_DATA.unshift({
+      id: historiqueId,
+      animal: displayAnimalName(patient.name, patient.species),
+      espece: patient.species.toLowerCase(),
+      race: patient.race || patient.species,
+      age: patient.age || '-',
+      poids: patient.weight || '-',
+      client: patient.owner,
+      tel: patient.phone || '-',
+      date: todayFr(),
+      dateSortie: null,
+      diagnostic: diagnosis,
+      urgence: urgencyScore >= 7 ? 'critique' : urgencyScore >= 4 ? 'urgent' : 'normal',
+      traitements,
+      statutTraitement: traitements.length ? 'en-cours' : 'non-traite',
+      resultat: 'stabilisation',
+      notesCliniques: [
+        document.getElementById('case-history')?.value?.trim(),
+        document.getElementById('case-symptoms')?.value?.trim(),
+        document.getElementById('case-observations')?.value?.trim(),
+        document.getElementById('case-exams')?.value?.trim(),
+        ordoNotes ? `Prescription: ${ordoNotes}` : ''
+      ].filter(Boolean).join(' · '),
+      conseilsSortie: nextRdv ? `Contrôle prévu le ${nextRdv}` : 'Contrôle à programmer',
+      montant: amount,
+      paidAmount: Math.max(0, paid),
+      paiement,
+      rdv: nextRdv || 'A planifier',
+      vaccAJour: !!document.getElementById('case-vaccins')?.checked,
+      ordonnance: ordonnanceNum,
+      sexe: patient.sexe || ''
+    });
+    persistEverything();
+    if (typeof populatePatientSelects === 'function') populatePatientSelects();
+    if (typeof toast === 'function') toast(ordonnanceNum ? 'Cas et ordonnance enregistrés' : 'Cas clinique enregistré et sauvegardé');
+    if (typeof nav === 'function') nav('historique');
+  };
+
+  const originalRenderHist = window.renderHist;
+  if (typeof originalRenderHist === 'function') {
+    window.renderHist = function(filter){
+      originalRenderHist(filter);
+      const tbody = document.getElementById('hist-tbody');
+      if (!tbody) return;
+      Array.from(tbody.querySelectorAll('tr')).forEach((row) => {
+        const detailBtn = row.querySelector('button');
+        const actionCell = row.lastElementChild?.querySelector('div');
+        if (!detailBtn || !actionCell) return;
+        const match = detailBtn.getAttribute('onclick')?.match(/showHistDetail\('([^']+)'\)/);
+        const histId = match?.[1];
+        if (!histId) return;
+        const item = HISTORIQUE_DATA.find(entry => entry.id === histId);
+        if (!item) return;
+        if (!actionCell.querySelector('.vetpro-hist-export')) {
+          const exportBtn = document.createElement('button');
+          exportBtn.className = 'btn btn-sm btn-ghost vetpro-hist-export';
+          exportBtn.textContent = 'Fiche';
+          exportBtn.onclick = function(event){
+            event.stopPropagation();
+            exportHistCase(histId);
+          };
+          actionCell.appendChild(exportBtn);
+        }
+        if (!item.ordonnance && !actionCell.querySelector('.vetpro-hist-ordo')) {
+          const ordoBtn = document.createElement('button');
+          ordoBtn.className = 'btn btn-sm btn-ghost vetpro-hist-ordo';
+          ordoBtn.textContent = 'Ordo';
+          ordoBtn.onclick = function(event){
+            event.stopPropagation();
+            item.ordonnance = createOrdonnanceFromCase({
+              name: stripAnimalEmoji(item.animal),
+              species: item.espece ? item.espece.charAt(0).toUpperCase() + item.espece.slice(1) : 'Chien',
+              race: item.race || '',
+              age: item.age || '',
+              weight: item.poids || '',
+              owner: item.client || '',
+              phone: item.tel || ''
+            }, item.diagnostic || 'Consultation', item.rdv || '', item.notesCliniques || '');
+            persistEverything();
+            showOrdo(item.ordonnance);
+            nav('ordonnances');
+          };
+          actionCell.appendChild(ordoBtn);
+        }
+      });
+    };
+  }
+
+  const originalShowHistDetail = window.showHistDetail;
+  if (typeof originalShowHistDetail === 'function') {
+    window.showHistDetail = function(id){
+      originalShowHistDetail(id);
+      const body = document.getElementById('hist-detail-body');
+      const item = HISTORIQUE_DATA.find(entry => entry.id === id);
+      if (!body || !item) return;
+      const actions = body.querySelector('div[style*="display:flex;gap:9px"]');
+      if (!actions) return;
+      const exportBtn = Array.from(actions.querySelectorAll('button')).find(btn => btn.textContent.includes('Exporter fiche'));
+      if (exportBtn) exportBtn.onclick = () => exportHistCase(id);
+      if (!item.ordonnance && !actions.querySelector('.vetpro-detail-ordo')) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-ghost vetpro-detail-ordo';
+        btn.textContent = '📝 Créer ordonnance';
+        btn.onclick = function(){
+          item.ordonnance = createOrdonnanceFromCase({
+            name: stripAnimalEmoji(item.animal),
+            species: item.espece ? item.espece.charAt(0).toUpperCase() + item.espece.slice(1) : 'Chien',
+            race: item.race || '',
+            age: item.age || '',
+            weight: item.poids || '',
+            owner: item.client || '',
+            phone: item.tel || ''
+          }, item.diagnostic || 'Consultation', item.rdv || '', item.notesCliniques || '');
+          persistEverything();
+          showOrdo(item.ordonnance);
+          nav('ordonnances');
+        };
+        actions.insertBefore(btn, actions.lastElementChild);
+      }
+    };
+  }
+
+  document.addEventListener('DOMContentLoaded', ensureCaseOrdonnanceOption);
+  window.addEventListener('load', ensureCaseOrdonnanceOption);
+})();
+</script>
+
 </body>
 </html>
