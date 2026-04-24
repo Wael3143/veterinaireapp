@@ -11203,5 +11203,345 @@ function saveAdmission() {
 })();
 </script>
 
+<script>
+(function(){
+  if (window.__vetproUltraFixLoaded) return;
+  window.__vetproUltraFixLoaded = true;
+
+  function pageSettings(){
+    return document.getElementById('page-settings');
+  }
+
+  function currentName(){
+    const user = window.__vetproCurrentSessionUser || null;
+    const settings = typeof getSettings === 'function' ? getSettings() : null;
+    const full = [settings?.vetFirstName, settings?.vetLastName].filter(Boolean).join(' ').trim();
+    return full || user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : 'VetPro');
+  }
+
+  function initialsFrom(name){
+    return (name || 'VP').split(/\s+/).filter(Boolean).slice(0, 2).map(part => (part[0] || '').toUpperCase()).join('') || 'VP';
+  }
+
+  function applyUltraTheme(){
+    if (typeof getSettings !== 'function') return;
+    const theme = getSettings()?.display?.theme || '#1A4A2E';
+    const palettes = {
+      '#1A4A2E': { forest:'#1A4A2E', sage:'#4A7C59', mint:'#A8D5B5', info:'#1A5276', gold:'#C9973A', gold2:'#E8BC62' },
+      '#1565C0': { forest:'#1565C0', sage:'#4F8EDC', mint:'#B9D9FF', info:'#0B3D91', gold:'#4F8EDC', gold2:'#B9D9FF' },
+      '#7C3AED': { forest:'#7C3AED', sage:'#9E6CF4', mint:'#DEC9FF', info:'#5B21B6', gold:'#A78BFA', gold2:'#DDD6FE' },
+      '#B45309': { forest:'#B45309', sage:'#D97706', mint:'#FCD9A7', info:'#92400E', gold:'#F59E0B', gold2:'#FCD34D' },
+      '#B91C1C': { forest:'#B91C1C', sage:'#DC2626', mint:'#FECACA', info:'#991B1B', gold:'#F87171', gold2:'#FCA5A5' }
+    };
+    const p = palettes[theme] || palettes['#1A4A2E'];
+    document.documentElement.style.setProperty('--forest', p.forest);
+    document.documentElement.style.setProperty('--sage', p.sage);
+    document.documentElement.style.setProperty('--mint', p.mint);
+    document.documentElement.style.setProperty('--info', p.info);
+    document.documentElement.style.setProperty('--gold', p.gold);
+    document.documentElement.style.setProperty('--gold2', p.gold2);
+    document.body.classList.toggle('vetpro-compact-mode', !!getSettings()?.display?.compact);
+    document.body.classList.toggle('vetpro-reduced-motion', !!getSettings()?.display?.reducedMotion);
+  }
+
+  function applyUltraIdentity(){
+    const name = currentName();
+    const initials = initialsFrom(name);
+    document.querySelectorAll('.tb-name-main, .sb-footer-name').forEach(el => el.textContent = name);
+    document.querySelectorAll('.tb-avatar, .sb-footer-avatar').forEach(el => el.textContent = initials);
+    const hero = document.querySelector('#page-dashboard .page-hero h2');
+    if (hero) hero.textContent = `Bonjour, ${name.split(' ')[0] || name} 👋`;
+  }
+
+  function settingsFields(){
+    const page = pageSettings();
+    return page ? Array.from(page.querySelectorAll('input.inp, textarea.tex, select.sel')) : [];
+  }
+
+  function syncUltraSettingsUI(){
+    if (typeof getSettings !== 'function') return;
+    const page = pageSettings();
+    if (!page) return;
+    const s = getSettings();
+    const fields = settingsFields();
+    if (fields[0]) fields[0].value = s.vetFirstName || '';
+    if (fields[1]) fields[1].value = s.vetLastName || '';
+    if (fields[2]) fields[2].value = s.title || '';
+    if (fields[3]) fields[3].value = s.orderNumber || '';
+    if (fields[4]) fields[4].value = s.email || 'w.kherbache@etud.ensv.dz';
+    if (fields[5]) fields[5].value = s.phone || '';
+    if (fields[7]) fields[7].value = s.clinicName || '';
+    if (fields[8]) fields[8].value = s.clinicAddress || '';
+    if (fields[9]) fields[9].value = s.clinicPhone || '';
+    if (fields[10]) fields[10].value = s.clinicHours || '';
+    if (fields[11]) fields[11].value = s.footerText || '© 2026 VetPro. Tous droits réservés';
+    page.querySelectorAll('.color-swatch').forEach((swatch) => {
+      const selected = (swatch.style.background || '').replace(/\s+/g, '').toLowerCase() === (s.display?.theme || '').replace(/\s+/g, '').toLowerCase();
+      swatch.classList.toggle('selected', selected);
+    });
+    const langSelect = page.querySelector('.settings-section .sel:last-of-type') || page.querySelector('select.sel');
+    if (langSelect) langSelect.selectedIndex = s.display?.language === 'en' ? 1 : s.display?.language === 'ar' ? 2 : 0;
+    const toggles = Array.from(page.querySelectorAll('.toggle-switch'));
+    const states = [
+      !!s.notifications?.reminders,
+      !!s.notifications?.stock,
+      !!s.notifications?.digest,
+      !!s.notifications?.hospitalization,
+      !!s.notifications?.references,
+      !!s.display?.compact,
+      !!s.display?.reducedMotion
+    ];
+    toggles.forEach((toggle, idx) => toggle.classList.toggle('on', !!states[idx]));
+  }
+
+  function saveUltraSettings(){
+    if (typeof getSettings !== 'function' || typeof saveSettings !== 'function') return;
+    const page = pageSettings();
+    if (!page) return;
+    const fields = settingsFields();
+    const toggles = Array.from(page.querySelectorAll('.toggle-switch'));
+    const langSelect = page.querySelector('.settings-section .sel:last-of-type') || page.querySelector('select.sel');
+    const selectedSwatch = page.querySelector('.color-swatch.selected');
+    const next = getSettings();
+    next.vetFirstName = fields[0]?.value?.trim() || '';
+    next.vetLastName = fields[1]?.value?.trim() || '';
+    next.title = fields[2]?.value?.trim() || next.title || '';
+    next.orderNumber = fields[3]?.value?.trim() || next.orderNumber || '';
+    next.email = fields[4]?.value?.trim() || 'w.kherbache@etud.ensv.dz';
+    next.phone = fields[5]?.value?.trim() || '';
+    next.clinicName = fields[7]?.value?.trim() || '';
+    next.clinicAddress = fields[8]?.value?.trim() || '';
+    next.clinicPhone = fields[9]?.value?.trim() || '';
+    next.clinicHours = fields[10]?.value?.trim() || '';
+    next.footerText = fields[11]?.value?.trim() || '© 2026 VetPro. Tous droits réservés';
+    next.notifications = next.notifications || {};
+    next.notifications.reminders = !!toggles[0]?.classList.contains('on');
+    next.notifications.stock = !!toggles[1]?.classList.contains('on');
+    next.notifications.digest = !!toggles[2]?.classList.contains('on');
+    next.notifications.hospitalization = !!toggles[3]?.classList.contains('on');
+    next.notifications.references = !!toggles[4]?.classList.contains('on');
+    next.display = next.display || {};
+    next.display.theme = selectedSwatch?.style.background || next.display.theme || '#1A4A2E';
+    next.display.language = langSelect?.selectedIndex === 1 ? 'en' : langSelect?.selectedIndex === 2 ? 'ar' : 'fr';
+    next.display.compact = !!toggles[5]?.classList.contains('on');
+    next.display.reducedMotion = !!toggles[6]?.classList.contains('on');
+    saveSettings(next);
+    if (typeof persistAppState === 'function') persistAppState();
+    if (typeof refreshUserBranding === 'function') refreshUserBranding();
+    if (typeof applyThemeAndLanguage === 'function') applyThemeAndLanguage();
+    applyUltraTheme();
+    applyUltraIdentity();
+    if (typeof renderStatistics === 'function') renderStatistics();
+    if (typeof renderFinancesPage === 'function') renderFinancesPage();
+    toast('Paramètres sauvegardés');
+  }
+
+  function wireUltraSettings(){
+    const page = pageSettings();
+    if (!page || page.__vetproUltraSettingsWired) return;
+    page.__vetproUltraSettingsWired = true;
+    const saveBtn = page.querySelector('button.btn.btn-p');
+    if (saveBtn) {
+      saveBtn.removeAttribute('onclick');
+      saveBtn.onclick = saveUltraSettings;
+    }
+    page.querySelectorAll('.color-swatch').forEach((swatch) => {
+      swatch.onclick = function(){
+        page.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+        this.classList.add('selected');
+        const current = getSettings();
+        current.display = current.display || {};
+        current.display.theme = this.style.background || '#1A4A2E';
+        saveSettings(current);
+        applyUltraTheme();
+      };
+    });
+    page.querySelectorAll('.toggle-switch').forEach((toggle) => {
+      toggle.onclick = function(){
+        this.classList.toggle('on');
+      };
+    });
+  }
+
+  function forceSinglePatientBlock(){
+    const page = document.getElementById('page-cas');
+    if (!page) return;
+    const card = page.querySelector('.card');
+    if (!card) return;
+    card.querySelectorAll('#case-extra-fields').forEach(el => el.remove());
+    Array.from(card.querySelectorAll('.fg, .row2, .row3')).forEach((block) => {
+      const text = (block.innerText || '').trim();
+      if (
+        text.includes("Nom de l'animal") ||
+        text.includes('Client / Propri') ||
+        text.includes('Téléphone client') ||
+        text.includes('Bella') ||
+        text.includes('Benali Ahmed') ||
+        text.includes('0550 000 000')
+      ) {
+        block.remove();
+      }
+    });
+    const title = card.querySelector('.card-title');
+    if (title) {
+      title.insertAdjacentHTML('afterend', `
+        <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
+          <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
+          <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
+          <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
+        </div>
+      `);
+    }
+    if (typeof ensureCaseFormEnhancements === 'function') ensureCaseFormEnhancements();
+  }
+
+  function observeCaseBlock(){
+    const page = document.getElementById('page-cas');
+    const card = page?.querySelector('.card');
+    if (!card || card.__vetproUltraObserved) return;
+    const observer = new MutationObserver(() => forceSinglePatientBlock());
+    observer.observe(card, { childList:true, subtree:true });
+    card.__vetproUltraObserved = true;
+  }
+
+  function lockDrugToolbarToMeds(){
+    const toolbar = document.getElementById('drug-owned-toolbar');
+    const medsPage = document.getElementById('page-meds');
+    if (!toolbar) return;
+    toolbar.style.display = medsPage?.classList.contains('active') ? 'flex' : 'none';
+  }
+
+  function addUltraStockReset(){
+    const page = document.getElementById('page-meds');
+    if (!page || document.getElementById('reset-all-stock-btn-ultra')) return;
+    const header = page.querySelector('div[style*="justify-content:space-between"]');
+    if (!header) return;
+    const btn = document.createElement('button');
+    btn.id = 'reset-all-stock-btn-ultra';
+    btn.className = 'btn btn-ghost';
+    btn.textContent = 'Tout le stock à 0';
+    btn.onclick = () => {
+      DRUGS.forEach(item => { item.s = 0; });
+      if (typeof persistAppState === 'function') persistAppState();
+      if (typeof renderDrugs === 'function') renderDrugs(drugFilter || '', drugSearch || '');
+      toast('Tous les stocks ont été remis à 0');
+    };
+    header.appendChild(btn);
+  }
+
+  function showHelloBanner(){
+    const user = window.__vetproCurrentSessionUser || null;
+    if (!user?.email || document.getElementById('vetpro-hello-ultra')) return;
+    const banner = document.createElement('div');
+    banner.id = 'vetpro-hello-ultra';
+    banner.style.cssText = 'position:fixed;top:24px;left:50%;transform:translate(-50%,-16px);opacity:0;transition:all .35s ease;z-index:10011;background:linear-gradient(135deg,var(--forest),var(--sage));color:#fff;padding:14px 22px;border-radius:999px;box-shadow:0 20px 40px rgba(0,0,0,.18)';
+    banner.textContent = `Bonjour ${currentName()} 👋`;
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => {
+      banner.style.opacity = '1';
+      banner.style.transform = 'translate(-50%, 0)';
+    });
+    setTimeout(() => {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translate(-50%, -16px)';
+      setTimeout(() => banner.remove(), 350);
+    }, 3000);
+  }
+
+  function showFirstLoginChoicesUltra(){
+    const user = window.__vetproCurrentSessionUser || null;
+    const key = `vetpro-first-login-choice:${user?.id || user?.email || 'guest'}`;
+    if (!user?.email || localStorage.getItem(key) === 'done' || document.getElementById('vetpro-first-login-ultra')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'vetpro-first-login-ultra';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10012;background:rgba(5,12,9,.62);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="width:min(760px,100%);background:#fff;border-radius:28px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.25)">
+        <div style="font-family:'DM Serif Display',serif;font-size:34px;color:var(--ink);margin-bottom:8px">Bienvenue ${currentName()}</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:18px">Choisissez comment démarrer votre espace privé.</p>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+          <button class="btn btn-ghost" id="vetpro-keep-demo-ultra" style="min-height:120px;justify-content:center">Garder les données démo</button>
+          <button class="btn btn-ghost" id="vetpro-start-zero-ultra" style="min-height:120px;justify-content:center">Commencer à zéro</button>
+          <button class="btn btn-p" id="vetpro-import-data-ultra" style="min-height:120px;justify-content:center">Importer mes données</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#vetpro-keep-demo-ultra').onclick = () => {
+      localStorage.setItem(key, 'done');
+      overlay.remove();
+      toast('Mode démo conservé');
+    };
+    overlay.querySelector('#vetpro-start-zero-ultra').onclick = () => {
+      const empty = { cages:[], drugs:[], ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
+      if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
+      if (typeof persistAppState === 'function') persistAppState();
+      if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+      if (typeof renderFinancesPage === 'function') renderFinancesPage();
+      if (typeof renderStatistics === 'function') renderStatistics();
+      localStorage.setItem(key, 'done');
+      overlay.remove();
+      toast('Espace démarré à zéro');
+    };
+    overlay.querySelector('#vetpro-import-data-ultra').onclick = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        try {
+          const json = JSON.parse(await file.text());
+          if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(json, getDefaultState());
+          if (typeof persistAppState === 'function') persistAppState();
+          if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+          if (typeof renderFinancesPage === 'function') renderFinancesPage();
+          if (typeof renderStatistics === 'function') renderStatistics();
+          localStorage.setItem(key, 'done');
+          overlay.remove();
+          toast('Import terminé');
+        } catch (_error) {
+          toast('Fichier JSON invalide');
+        }
+      };
+      input.click();
+    };
+  }
+
+  function runUltraFixes(){
+    wireUltraSettings();
+    syncUltraSettingsUI();
+    applyUltraTheme();
+    applyUltraIdentity();
+    forceSinglePatientBlock();
+    observeCaseBlock();
+    addUltraStockReset();
+    lockDrugToolbarToMeds();
+    showFirstLoginChoicesUltra();
+    showHelloBanner();
+  }
+
+  document.addEventListener('DOMContentLoaded', runUltraFixes);
+  window.addEventListener('load', runUltraFixes);
+
+  if (typeof window.nav === 'function' && !window.__vetproUltraNavPatched) {
+    const originalNav = window.nav;
+    window.__vetproUltraNavPatched = true;
+    window.nav = function(id){
+      originalNav(id);
+      runUltraFixes();
+    };
+  }
+
+  if (window._sb && !window.__vetproUltraAuthPatched) {
+    window.__vetproUltraAuthPatched = true;
+    _sb.auth.onAuthStateChange((_event, session) => {
+      window.__vetproCurrentSessionUser = session?.user || null;
+      setTimeout(runUltraFixes, 0);
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
