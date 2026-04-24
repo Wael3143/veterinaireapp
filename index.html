@@ -10367,10 +10367,11 @@ function saveAdmission() {
         month: parsed.month || 'all',
         year: parsed.year || 'all',
         legacyCases: Number(parsed.legacyCases || 0),
-        legacyRevenue: Number(parsed.legacyRevenue || 0)
+        legacyRevenue: Number(parsed.legacyRevenue || 0),
+        legacyRecords: Array.isArray(parsed.legacyRecords) ? parsed.legacyRecords : []
       };
     } catch (e) {
-      return { month:'all', year:'all', legacyCases:0, legacyRevenue:0 };
+      return { month:'all', year:'all', legacyCases:0, legacyRevenue:0, legacyRecords:[] };
     }
   }
 
@@ -10446,6 +10447,24 @@ function saveAdmission() {
     const extraRows = Array.from(page.querySelectorAll('#case-extra-fields'));
     extraRows.forEach((row, index) => {
       if (index > 0) row.remove();
+    });
+    ['case-animal-name','case-client-name','case-client-phone'].forEach((id) => {
+      const nodes = Array.from(page.querySelectorAll(`#${id}`));
+      nodes.forEach((node, index) => {
+        const fg = node.closest('.fg');
+        if (index > 0 && fg) fg.remove();
+      });
+    });
+    const labelGroups = {
+      "Nom de l'animal": 0,
+      'Client / Propriétaire': 0,
+      'Téléphone client': 0
+    };
+    Array.from(page.querySelectorAll('.fg')).forEach((fg) => {
+      const label = fg.querySelector('.lbl')?.textContent?.trim();
+      if (!label || !(label in labelGroups)) return;
+      labelGroups[label] += 1;
+      if (labelGroups[label] > 1) fg.remove();
     });
     if (typeof ensureCaseFormEnhancements === 'function') ensureCaseFormEnhancements();
   }
@@ -10537,6 +10556,12 @@ function saveAdmission() {
     if (!page) return;
     const swatches = page.querySelectorAll('.color-swatch');
     const langSelect = page.querySelector('select.sel');
+    const originalRename = window.renameBranding;
+    renameBranding = window.renameBranding = function(){
+      if (typeof originalRename === 'function') originalRename();
+      refreshUserBranding();
+      applyThemeAndLanguage();
+    };
     if (typeof loadSettingsIntoForm === 'function') {
       const originalLoad = loadSettingsIntoForm;
       loadSettingsIntoForm = window.loadSettingsIntoForm = function(){
@@ -10549,6 +10574,9 @@ function saveAdmission() {
           const map = { fr:0, en:1, ar:2 };
           langSelect.selectedIndex = map[s.display.language] ?? 0;
         }
+        const profileInputs = document.querySelectorAll('#page-settings input');
+        if (profileInputs[0]) profileInputs[0].value = s.vetFirstName || '';
+        if (profileInputs[1]) profileInputs[1].value = s.vetLastName || '';
         applyThemeAndLanguage();
         refreshUserBranding();
       };
@@ -10577,20 +10605,38 @@ function saveAdmission() {
         applyThemeAndLanguage();
         refreshUserBranding();
         persistAppState();
+        renderFinancesPage();
+        renderStatistics();
       };
     }
   }
 
   function patchStatistics(){
+    function getLegacyRecords(){
+      const meta = getStatsMeta();
+      return Array.isArray(meta.legacyRecords) ? meta.legacyRecords : [];
+    }
+    function saveLegacyRecords(records){
+      const next = getStatsMeta();
+      next.legacyRecords = records;
+      saveStatsMeta(next);
+    }
     window.renderStatistics = function(){
       const page = document.getElementById('page-statistics');
       if (!page) return;
       const meta = getStatsMeta();
       const history = getFilteredHistory();
       const years = Array.from(new Set(HISTORIQUE_DATA.map(item => normalizeDateParts(item.date)?.year).filter(Boolean))).sort((a,b) => b-a);
-      const casesCount = history.length + meta.legacyCases;
+      const legacyRecords = getLegacyRecords().filter((item) => {
+        if (meta.year !== 'all' && Number(meta.year) !== Number(item.year)) return false;
+        if (meta.month !== 'all' && Number(meta.month) !== Number(item.month)) return false;
+        return true;
+      });
+      const legacyCasesTotal = legacyRecords.reduce((sum, item) => sum + (Number(item.cases) || 0), 0) + meta.legacyCases;
+      const legacyRevenueTotal = legacyRecords.reduce((sum, item) => sum + (Number(item.revenue) || 0), 0) + meta.legacyRevenue;
+      const casesCount = history.length + legacyCasesTotal;
       const clientsCount = CLIENTS.length;
-      const revenue = history.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0), 0) + meta.legacyRevenue;
+      const revenue = history.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0), 0) + legacyRevenueTotal;
       const recovered = history.filter(item => item.resultat === 'guerison').length;
       const cureRate = history.length ? Math.round((recovered / history.length) * 100) : 0;
       const last12 = new Array(12).fill(0);
@@ -10621,6 +10667,17 @@ function saveAdmission() {
           <button class="btn btn-ghost" onclick="saveLegacyStats()">Enregistrer historique ancien</button>
           <button class="btn btn-ghost" onclick="renderStatistics()">Actualiser</button>
           <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetStatisticsData()">Réinitialiser</button>
+        </div>
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-title">Historique mensuel ancien</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
+            <div class="fg"><label class="lbl">Année</label><input id="legacy-row-year" class="inp" type="number" min="2020" value="${new Date().getFullYear()}"></div>
+            <div class="fg"><label class="lbl">Mois</label><select id="legacy-row-month" class="sel">${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => `<option value="${i + 1}">${m}</option>`).join('')}</select></div>
+            <div class="fg"><label class="lbl">Cas</label><input id="legacy-row-cases" class="inp" type="number" min="0" value="0"></div>
+            <div class="fg"><label class="lbl">Revenus (DA)</label><input id="legacy-row-revenue" class="inp" type="number" min="0" value="0"></div>
+            <button class="btn btn-ghost" onclick="addLegacyStatsRow()">Ajouter</button>
+          </div>
+          <div id="legacy-stats-list" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
         </div>
         <div class="stats-mini-grid" style="margin-bottom:18px">
           <div class="stats-card"><div class="big" style="color:var(--info)">${casesCount}</div><div class="kpi-lbl">Cas enregistrés</div></div>
@@ -10660,6 +10717,18 @@ function saveAdmission() {
         saveStatsMeta(next);
         renderStatistics();
       });
+      const legacyList = document.getElementById('legacy-stats-list');
+      if (legacyList) {
+        const rows = getLegacyRecords();
+        legacyList.innerHTML = rows.length ? rows.map((row, index) => `
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--brd);border-radius:14px;background:#fff">
+            <div><strong>${row.month}/${row.year}</strong></div>
+            <div>${row.cases} cas</div>
+            <div>${Number(row.revenue || 0).toLocaleString('fr-FR')} DA</div>
+            <button class="btn btn-ghost btn-sm" onclick="removeLegacyStatsRow(${index})">Supprimer</button>
+          </div>
+        `).join('') : `<div class="ibox ibox-b">Aucune ancienne ligne enregistrée.</div>`;
+      }
     };
     window.saveLegacyStats = function(){
       const next = getStatsMeta();
@@ -10668,6 +10737,24 @@ function saveAdmission() {
       saveStatsMeta(next);
       renderStatistics();
       toast('Anciennes statistiques enregistrées');
+    };
+    window.addLegacyStatsRow = function(){
+      const year = parseInt(document.getElementById('legacy-row-year')?.value || '0', 10) || new Date().getFullYear();
+      const month = parseInt(document.getElementById('legacy-row-month')?.value || '0', 10) || 1;
+      const cases = parseInt(document.getElementById('legacy-row-cases')?.value || '0', 10) || 0;
+      const revenue = parseInt(document.getElementById('legacy-row-revenue')?.value || '0', 10) || 0;
+      const rows = getLegacyRecords();
+      rows.push({ year, month, cases, revenue });
+      saveLegacyRecords(rows);
+      renderStatistics();
+      toast('Ligne historique ajoutée');
+    };
+    window.removeLegacyStatsRow = function(index){
+      const rows = getLegacyRecords();
+      rows.splice(index, 1);
+      saveLegacyRecords(rows);
+      renderStatistics();
+      toast('Ligne historique supprimée');
     };
   }
 
@@ -10693,13 +10780,16 @@ function saveAdmission() {
             <button class="btn btn-ghost btn-sm" data-owned="owned">En stock</button>
             <button class="btn btn-ghost btn-sm" data-owned="missing">À commander</button>
           `;
-          page.querySelector('.card')?.insertAdjacentElement('afterbegin', toolbar);
+          grid?.parentElement?.insertAdjacentElement('beforebegin', toolbar);
           toolbar.querySelectorAll('button').forEach(btn => {
             btn.onclick = () => {
               window.__vetproOwnedFilter = btn.dataset.owned;
+              toolbar.querySelectorAll('button').forEach(b => b.classList.remove('btn-p'));
+              btn.classList.add('btn-p');
               renderDrugs(drugFilter || '', drugSearch || '');
             };
           });
+          toolbar.querySelector('[data-owned="all"]')?.classList.add('btn-p');
         }
         originalRenderDrugs(group, search);
         if (!grid) return;
@@ -10735,6 +10825,74 @@ function saveAdmission() {
       };
     }
   }
+
+  function renderFinancesPage(){
+    const page = document.getElementById('page-finances');
+    if (!page) return;
+    const rows = HISTORIQUE_DATA.slice().sort((a,b) => {
+      const ad = normalizeDateParts(a.date);
+      const bd = normalizeDateParts(b.date);
+      const av = ad ? new Date(ad.year, ad.month - 1, ad.day).getTime() : 0;
+      const bv = bd ? new Date(bd.year, bd.month - 1, bd.day).getTime() : 0;
+      return bv - av;
+    });
+    const paidTotal = rows.reduce((sum, item) => sum + ((item.paiement === 'paye') ? (parseInt(item.montant || 0, 10) || 0) : (parseInt(item.paidAmount || 0, 10) || 0)), 0);
+    const waitingTotal = rows.reduce((sum, item) => sum + Math.max((parseInt(item.montant || 0, 10) || 0) - (parseInt(item.paidAmount || 0, 10) || 0), 0), 0);
+    page.innerHTML = `
+      <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);margin-bottom:18px">💰 Finances</h2>
+      <div class="g4" style="margin-bottom:20px">
+        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">RECETTES</div><div class="fin-amount" style="color:var(--forest)">${paidTotal.toLocaleString('fr-FR')} DA</div></div>
+        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">RESTE À RECEVOIR</div><div class="fin-amount" style="color:var(--warning)">${waitingTotal.toLocaleString('fr-FR')} DA</div></div>
+        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">DOSSIERS</div><div class="fin-amount" style="color:var(--info)">${rows.length}</div></div>
+        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">PANIER MOYEN</div><div class="fin-amount" style="color:var(--ink)">${rows.length ? Math.round(rows.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0),0) / rows.length).toLocaleString('fr-FR') : 0} DA</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Transactions éditables</div>
+        <table class="tbl">
+          <thead><tr><th>Date</th><th>Animal / Client</th><th>Diagnostic</th><th>Total</th><th>Reçu</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${rows.map(item => {
+              const total = parseInt(item.montant || 0, 10) || 0;
+              const received = item.paiement === 'paye' ? total : (parseInt(item.paidAmount || 0, 10) || 0);
+              const status = received <= 0 ? 'impaye' : received < total ? 'partiel' : 'paye';
+              return `
+                <tr>
+                  <td>${item.date || '-'}</td>
+                  <td>${item.animal || '-'}<br><span style="color:var(--muted);font-size:11px">${item.client || '-'}</span></td>
+                  <td>${item.diagnostic || '-'}</td>
+                  <td><strong>${total.toLocaleString('fr-FR')} DA</strong></td>
+                  <td><input class="inp" type="number" min="0" value="${received}" data-finance-id="${item.id}" style="max-width:130px"></td>
+                  <td>${status === 'paye' ? '<span class="pay-ok">Payé</span>' : status === 'partiel' ? '<span class="pay-pt">Partiel</span>' : '<span class="pay-no">Impayé</span>'}</td>
+                  <td style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn btn-ghost btn-sm" onclick="setFinancePayment('${item.id}','full')">Tout payer</button>
+                    <button class="btn btn-ghost btn-sm" onclick="setFinancePayment('${item.id}','save')">Enregistrer</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  window.setFinancePayment = function(id, mode){
+    const item = HISTORIQUE_DATA.find(entry => entry.id === id);
+    if (!item) return;
+    const total = parseInt(item.montant || 0, 10) || 0;
+    const input = document.querySelector(`[data-finance-id="${id}"]`);
+    let received = parseInt(input?.value || '0', 10) || 0;
+    if (mode === 'full') {
+      received = total;
+      if (input) input.value = String(total);
+    }
+    item.paidAmount = Math.max(0, received);
+    item.paiement = received <= 0 ? 'impaye' : received < total ? 'partiel' : 'paye';
+    persistAppState();
+    renderFinancesPage();
+    renderStatistics();
+    toast('Paiement mis à jour');
+  };
 
   function patchApprovalsAccess(){
     const originalRefresh = window.renderApprovalsPage;
@@ -10808,6 +10966,17 @@ function saveAdmission() {
     hideApprovalsForNonAdmin();
     installTomorrowNotifications();
     installAnaisEasterEgg();
+    renderFinancesPage();
+    const originalNav = window.nav;
+    if (typeof originalNav === 'function' && !window.__vetproNavFinancePatched) {
+      window.__vetproNavFinancePatched = true;
+      nav = window.nav = function(id){
+        originalNav(id);
+        if (id === 'finances') renderFinancesPage();
+        if (id === 'statistics') renderStatistics();
+        if (id === 'cas') dedupeCaseForm();
+      };
+    }
   }
 
   document.addEventListener('DOMContentLoaded', initVetProDataFinal);
