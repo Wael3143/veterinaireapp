@@ -10984,5 +10984,224 @@ function saveAdmission() {
 })();
 </script>
 
+<script>
+(function(){
+  if (window.__vetproLastMileFixesLoaded) return;
+  window.__vetproLastMileFixesLoaded = true;
+
+  function currentUserName(){
+    const user = window.__vetproCurrentSessionUser || null;
+    const settings = typeof getSettings === 'function' ? getSettings() : null;
+    const full = [settings?.vetFirstName, settings?.vetLastName].filter(Boolean).join(' ').trim();
+    return full || user?.user_metadata?.full_name || user?.user_metadata?.name || (user?.email ? user.email.split('@')[0] : 'VetPro');
+  }
+
+  function userInitials(name){
+    return (name || 'VP').split(/\s+/).filter(Boolean).slice(0,2).map(part => part[0]?.toUpperCase() || '').join('') || 'VP';
+  }
+
+  function applyVisibleTheme(){
+    if (typeof getSettings !== 'function') return;
+    const theme = getSettings()?.display?.theme || '#1A4A2E';
+    const palettes = {
+      '#1A4A2E': { forest:'#1A4A2E', sage:'#4A7C59', mint:'#A8D5B5', info:'#1A5276', gold:'#C9973A', gold2:'#E8BC62' },
+      '#1565C0': { forest:'#1565C0', sage:'#4F8EDC', mint:'#B9D9FF', info:'#0B3D91', gold:'#4F8EDC', gold2:'#B9D9FF' },
+      '#7C3AED': { forest:'#7C3AED', sage:'#9E6CF4', mint:'#DEC9FF', info:'#5B21B6', gold:'#A78BFA', gold2:'#DDD6FE' },
+      '#B45309': { forest:'#B45309', sage:'#D97706', mint:'#FCD9A7', info:'#92400E', gold:'#F59E0B', gold2:'#FCD34D' },
+      '#B91C1C': { forest:'#B91C1C', sage:'#DC2626', mint:'#FECACA', info:'#991B1B', gold:'#F87171', gold2:'#FCA5A5' }
+    };
+    const palette = palettes[theme] || palettes['#1A4A2E'];
+    Object.entries({
+      '--forest': palette.forest,
+      '--sage': palette.sage,
+      '--mint': palette.mint,
+      '--info': palette.info,
+      '--gold': palette.gold,
+      '--gold2': palette.gold2
+    }).forEach(([key, value]) => document.documentElement.style.setProperty(key, value));
+  }
+
+  function applyHeaderIdentity(){
+    const name = currentUserName();
+    const initials = userInitials(name);
+    document.querySelectorAll('.tb-name-main, .sb-footer-name').forEach(el => el.textContent = name);
+    document.querySelectorAll('.tb-avatar, .sb-footer-avatar').forEach(el => el.textContent = initials);
+    const hero = document.querySelector('#page-dashboard .page-hero h2');
+    if (hero) hero.textContent = `Bonjour, ${name.split(' ')[0] || name} 👋`;
+  }
+
+  function forceSingleCaseHeader(){
+    const page = document.getElementById('page-cas');
+    if (!page) return;
+    const patientCard = page.querySelector('.card');
+    if (!patientCard) return;
+    patientCard.querySelectorAll('#case-extra-fields').forEach(el => el.remove());
+    const allFields = Array.from(patientCard.querySelectorAll('.fg'));
+    allFields.forEach((fg) => {
+      const label = fg.querySelector('.lbl')?.textContent?.trim() || '';
+      if (
+        label.includes("Nom de l'animal") ||
+        label.includes('Client / Propri') ||
+        label.includes('Téléphone client') ||
+        label.includes('T茅l茅phone client')
+      ) {
+        fg.remove();
+      }
+    });
+    const title = patientCard.querySelector('.card-title');
+    if (title && !patientCard.querySelector('#case-extra-fields')) {
+      title.insertAdjacentHTML('afterend', `
+        <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
+          <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
+          <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
+          <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
+        </div>
+      `);
+    }
+    if (typeof ensureCaseFormEnhancements === 'function') ensureCaseFormEnhancements();
+  }
+
+  function keepDrugToolbarOnlyOnMeds(){
+    const toolbar = document.getElementById('drug-owned-toolbar');
+    if (!toolbar) return;
+    const medsPage = document.getElementById('page-meds');
+    toolbar.style.display = medsPage?.classList.contains('active') ? 'flex' : 'none';
+  }
+
+  function addResetAllStockButton(){
+    const page = document.getElementById('page-meds');
+    if (!page || document.getElementById('reset-all-stock-btn')) return;
+    const header = page.querySelector('div[style*="justify-content:space-between"]');
+    if (!header) return;
+    const btn = document.createElement('button');
+    btn.id = 'reset-all-stock-btn';
+    btn.className = 'btn btn-ghost';
+    btn.textContent = 'Tout le stock à 0';
+    btn.onclick = () => {
+      DRUGS.forEach(item => { item.s = 0; });
+      if (typeof persistAppState === 'function') persistAppState();
+      if (typeof renderDrugs === 'function') renderDrugs(drugFilter || '', drugSearch || '');
+      toast('Tous les stocks ont été remis à 0');
+    };
+    header.appendChild(btn);
+  }
+
+  function addFirstLoginChoices(){
+    const user = window.__vetproCurrentSessionUser || null;
+    const key = `vetpro-first-login-choice:${user?.id || user?.email || 'guest'}`;
+    if (!user?.email || localStorage.getItem(key) === 'done' || document.getElementById('vetpro-first-login')) return;
+    const overlay = document.createElement('div');
+    overlay.id = 'vetpro-first-login';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(5,12,9,.62);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="width:min(760px,100%);background:#fff;border-radius:28px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.25)">
+        <div style="font-family:'DM Serif Display',serif;font-size:34px;color:var(--ink);margin-bottom:8px">Bienvenue ${currentUserName()}</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:18px">Choisissez comment démarrer votre espace privé.</p>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+          <button class="btn btn-ghost" id="vetpro-keep-demo" style="min-height:120px;justify-content:center">Garder les données démo</button>
+          <button class="btn btn-ghost" id="vetpro-start-zero" style="min-height:120px;justify-content:center">Commencer à zéro</button>
+          <button class="btn btn-p" id="vetpro-import-data" style="min-height:120px;justify-content:center">Importer mes données</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#vetpro-keep-demo').onclick = () => {
+      localStorage.setItem(key, 'done');
+      overlay.remove();
+      toast('Mode démo conservé');
+    };
+    overlay.querySelector('#vetpro-start-zero').onclick = () => {
+      const empty = { cages:[], drugs:[], ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
+      if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
+      if (typeof persistAppState === 'function') persistAppState();
+      if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+      if (typeof renderFinancesPage === 'function') renderFinancesPage();
+      if (typeof renderStatistics === 'function') renderStatistics();
+      localStorage.setItem(key, 'done');
+      overlay.remove();
+      toast('Espace démarré à zéro');
+    };
+    overlay.querySelector('#vetpro-import-data').onclick = () => {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'application/json';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        try {
+          const json = JSON.parse(await file.text());
+          if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(json, getDefaultState());
+          if (typeof persistAppState === 'function') persistAppState();
+          if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+          if (typeof renderFinancesPage === 'function') renderFinancesPage();
+          if (typeof renderStatistics === 'function') renderStatistics();
+          localStorage.setItem(key, 'done');
+          overlay.remove();
+          toast('Import terminé');
+        } catch (e) {
+          toast('Fichier JSON invalide');
+        }
+      };
+      input.click();
+    };
+  }
+
+  function showAnimatedHello(){
+    const user = window.__vetproCurrentSessionUser || null;
+    if (!user?.email || document.getElementById('vetpro-hello-animated')) return;
+    const banner = document.createElement('div');
+    banner.id = 'vetpro-hello-animated';
+    banner.style.cssText = 'position:fixed;top:24px;left:50%;transform:translate(-50%,-16px);opacity:0;transition:all .35s ease;z-index:10009;background:linear-gradient(135deg,var(--forest),var(--sage));color:#fff;padding:14px 22px;border-radius:999px;box-shadow:0 20px 40px rgba(0,0,0,.18)';
+    banner.textContent = `Bonjour ${currentUserName()} 👋`;
+    document.body.appendChild(banner);
+    requestAnimationFrame(() => {
+      banner.style.opacity = '1';
+      banner.style.transform = 'translate(-50%, 0)';
+    });
+    setTimeout(() => {
+      banner.style.opacity = '0';
+      banner.style.transform = 'translate(-50%, -16px)';
+      setTimeout(() => banner.remove(), 350);
+    }, 3000);
+  }
+
+  function installLastMileFixes(){
+    applyVisibleTheme();
+    applyHeaderIdentity();
+    forceSingleCaseHeader();
+    addResetAllStockButton();
+    keepDrugToolbarOnlyOnMeds();
+    addFirstLoginChoices();
+    showAnimatedHello();
+  }
+
+  document.addEventListener('DOMContentLoaded', installLastMileFixes);
+  window.addEventListener('load', installLastMileFixes);
+  const oldNav = window.nav;
+  if (typeof oldNav === 'function' && !window.__vetproLastMileNavPatched) {
+    window.__vetproLastMileNavPatched = true;
+    window.nav = function(id){
+      oldNav(id);
+      keepDrugToolbarOnlyOnMeds();
+      if (id === 'cas') forceSingleCaseHeader();
+      if (id === 'meds') addResetAllStockButton();
+      if (id === 'settings') {
+        applyVisibleTheme();
+        applyHeaderIdentity();
+      }
+    };
+  }
+  if (_sb && !window.__vetproLastMileAuthPatched) {
+    window.__vetproLastMileAuthPatched = true;
+    _sb.auth.onAuthStateChange((_event, session) => {
+      window.__vetproCurrentSessionUser = session?.user || null;
+      setTimeout(() => {
+        installLastMileFixes();
+      }, 0);
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
