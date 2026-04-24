@@ -11399,8 +11399,6 @@ function saveAdmission() {
     const page = document.getElementById('page-cas');
     const card = page?.querySelector('.card');
     if (!card || card.__vetproUltraObserved) return;
-    const observer = new MutationObserver(() => forceSinglePatientBlock());
-    observer.observe(card, { childList:true, subtree:true });
     card.__vetproUltraObserved = true;
   }
 
