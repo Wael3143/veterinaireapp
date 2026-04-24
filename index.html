@@ -5369,7 +5369,7 @@ function showSurgGuide(id){
 // ═══════════════════════════════════════════════════
 //    AI — OpenRouter LLaMA 3.3 70B GRATUIT
 // ═══════════════════════════════════════════════════
-const API_KEY='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';
+const AI_FUNCTION_NAME='vetpro-ai';
 const MODEL='meta-llama/llama-3.3-70b-instruct:free';
 let chatHist=[],aiLoading=false; // aiInited declared above
 const SYS=`Tu es un assistant vétérinaire expert — VétérinApp Pro v5.0, développé par Dr. Kherbache Wail (ENSV Algérie).
@@ -5410,14 +5410,22 @@ async function sendAI(){
     const ctx=[espece&&'Espèce: '+espece,poids&&'Poids: '+poids+'kg',age&&'Âge: '+age,race&&'Race: '+race].filter(Boolean).join(', ');
     const sys=ctx?SYS+'\n\nCONTEXTE PATIENT : '+ctx:SYS;
     const messages=[{role:'system',content:sys},...chatHist.slice(-16)];
-    const r=await fetch('https://openrouter.ai/api/v1/chat/completions',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+API_KEY,'HTTP-Referer':'https://veterinaireapp.dz','X-Title':'VeterinaireApp Pro v4 - Dr. Kherbache Wail'},
-      body:JSON.stringify({model:MODEL,max_tokens:1024,temperature:0.35,messages})
+    if(!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL'){
+      throw new Error('Supabase n’est pas configuré pour l’assistant IA.');
+    }
+    const { data, error } = await _sb.functions.invoke(AI_FUNCTION_NAME, {
+      body: { model: MODEL, max_tokens: 1024, temperature: 0.35, messages }
     });
-    const d=await r.json();removeTyping();
-    if(!r.ok){appendAIMsg('bot','❌ Erreur API ('+r.status+'): '+(d.error?.message||'Erreur inconnue')+'.\nVérifiez votre connexion internet.');}
-    else{const rep=d.choices?.[0]?.message?.content||'Réponse vide.';appendAIMsg('bot',rep);chatHist.push({role:'assistant',content:rep});}
+    removeTyping();
+    if(error){
+      appendAIMsg('bot','❌ Erreur Edge Function: '+(error.message||'Erreur inconnue')+'.');
+    } else if(data?.error){
+      appendAIMsg('bot','❌ Erreur OpenRouter: '+data.error+'.');
+    } else {
+      const rep=data?.content||data?.choices?.[0]?.message?.content||'Réponse vide.';
+      appendAIMsg('bot',rep);
+      chatHist.push({role:'assistant',content:rep});
+    }
   }catch(e){removeTyping();appendAIMsg('bot','❌ Erreur de connexion. Vérifiez votre réseau et réessayez.');}
   aiLoading=false;btn.disabled=false;btn.textContent='➤';
 }
@@ -7616,7 +7624,7 @@ function saveAdmission() {
   const BRAND = 'VetPro';
   const ADMIN_EMAIL = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
   const CONTACT_PHONE = '+213781236686';
-  const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'contact@vetpro.local';
+  const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'w.kherbache@etud.ensv.dz';
   const INSTAGRAM_URL = 'https://www.instagram.com/vetpro.dz/';
   const APP_STORE_URL = '#';
   const PLAY_STORE_URL = '#';
@@ -9452,7 +9460,7 @@ function saveAdmission() {
     }
 
     const body = encodeURIComponent(`Nom: ${name}\nEmail: ${email}\n\n${message}`);
-    if (CONTACT_EMAIL && CONTACT_EMAIL !== 'contact@vetpro.local') {
+    if (CONTACT_EMAIL) {
       window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${body}`;
       toast(saved ? 'Message enregistre et email prepare' : 'Email prepare vers la boite VetPro');
     } else {
