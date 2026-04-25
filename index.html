@@ -2126,7 +2126,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)">⚙️ Paramètres</h2>
       <p style="color:var(--muted);font-size:12.5px;margin-top:3px">Profil · Clinique · Notifications · Affichage · Sécurité</p>
     </div>
-    <button class="btn btn-p" onclick="toast('Paramètres sauvegardés ✅')">💾 Sauvegarder</button>
+    <button class="btn btn-p" id="vp-settings-save-btn" onclick="window.vpSaveSettings && window.vpSaveSettings()">💾 Sauvegarder</button>
   </div>
 
   <div class="g2">
@@ -2204,8 +2204,12 @@ window.addEventListener('DOMContentLoaded', () => {
             <div class="color-swatch" style="background:#B91C1C" title="Rouge" onclick="document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));this.classList.add('selected')"></div>
           </div>
         </div>
-        <div class="fg" style="margin-top:12px"><label class="lbl">Langue interface</label>
-          <select class="sel"><option selected>🇫🇷 Français</option><option>🇬🇧 English</option><option>🇩🇿 العربية</option></select>
+        <div class="fg" style="margin-top:12px"><label class="lbl" id="vp-settings-lang-label">Langue interface</label>
+          <select class="sel" id="vp-settings-language" onchange="window.vpSetLanguage && window.vpSetLanguage(this.value)">
+            <option value="fr">🇫🇷 Français</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="ar">🇩🇿 العربية</option>
+          </select>
         </div>
         <div class="toggle-wrap">
           <div class="toggle-info"><strong>Mode compact</strong><p>Réduit les espacements pour afficher plus d'informations</p></div>
@@ -2226,9 +2230,9 @@ window.addEventListener('DOMContentLoaded', () => {
         <div class="fg"><label class="lbl">Confirmer le mot de passe</label>
           <input class="inp" type="password" placeholder="Répéter le mot de passe"/>
         </div>
-        <div style="display:flex;gap:9px;margin-top:10px">
-          <button class="btn btn-ghost" onclick="toast('Sauvegarde exportée ✅')">💾 Exporter données</button>
-          <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="toast('⚠️ Fonctionnalité Admin uniquement')">🗑️ Réinitialiser</button>
+        <div style="display:flex;gap:9px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn btn-ghost" id="vp-settings-export-btn" onclick="window.vpExportData && window.vpExportData()">💾 Exporter données</button>
+          <button class="btn btn-ghost" id="vp-settings-reset-btn" style="color:var(--danger);border-color:var(--danger)" onclick="window.vpResetToZero && window.vpResetToZero()">🗑️ Réinitialiser à 0</button>
         </div>
       </div>
     </div>
@@ -11837,6 +11841,900 @@ function saveAdmission() {
 
   document.addEventListener('DOMContentLoaded', ensureCaseOrdonnanceOption);
   window.addEventListener('load', ensureCaseOrdonnanceOption);
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     VETPRO FINAL OVERRIDE LAYER (added 2026-04-25)
+     - Admin detection from profiles table (not localStorage)
+     - Login access gate (pending/rejected/trial/expired)
+     - Approvals UI: 15-day trial, until-date, N-days, permanent
+     - i18n FR/AR/EN with RTL
+     - Settings persistence per user (Supabase vetpro_user_settings)
+     - Welcome message dedup (once per session)
+     - Reset to 0 (calls reset_user_data RPC)
+     - Mobile responsive helpers (hamburger nav)
+══════════════════════════════════════════════════════════════ -->
+<style id="vetpro-final-mobile-style">
+  /* Mobile-first responsive layer (additive — does not break desktop) */
+  body.vp-rtl{direction:rtl;text-align:right}
+  body.vp-rtl .sidebar{order:2}
+  body.vp-rtl .lbl{text-align:right}
+  body.vp-rtl .sb-item{flex-direction:row-reverse}
+
+  /* Mobile hamburger button */
+  #vp-mobile-toggle{
+    display:none;position:fixed;top:12px;left:12px;z-index:200;
+    width:44px;height:44px;border-radius:12px;border:none;cursor:pointer;
+    background:linear-gradient(135deg,#0F3D2A,#2E7D52);color:#fff;
+    font-size:20px;box-shadow:0 4px 16px rgba(0,0,0,.25);
+  }
+  body.vp-rtl #vp-mobile-toggle{left:auto;right:12px}
+
+  /* Mobile breakpoint */
+  @media (max-width: 768px){
+    #vp-mobile-toggle{display:flex;align-items:center;justify-content:center}
+    .sidebar{
+      position:fixed;left:-100%;top:0;bottom:0;width:78%!important;max-width:300px;
+      z-index:150;transition:left .25s ease;overflow-y:auto;
+      box-shadow:0 0 40px rgba(0,0,0,.4);
+    }
+    body.vp-rtl .sidebar{left:auto;right:-100%;transition:right .25s ease}
+    .sidebar.vp-open{left:0!important}
+    body.vp-rtl .sidebar.vp-open{right:0!important;left:auto!important}
+    .sidebar.vp-open .sb-logo p,
+    .sidebar.vp-open .sb-item span,
+    .sidebar.vp-open .sb-badge,
+    .sidebar.vp-open .sb-footer-info,
+    .sidebar.vp-open .sb-footer-name,
+    .sidebar.vp-open .sb-footer-sub,
+    .sidebar.vp-open .sb-label,
+    .sidebar.vp-open .sb-version{display:block!important}
+    .sidebar.vp-open .sb-item{justify-content:flex-start;padding:10px 18px}
+    .main{margin-left:0!important;width:100%!important}
+    .topbar{padding-left:64px!important}
+    body.vp-rtl .topbar{padding-left:18px!important;padding-right:64px!important}
+
+    /* Stack grids */
+    .g2,.g3,.g4{grid-template-columns:1fr!important}
+    .kpi-row{grid-template-columns:1fr 1fr!important}
+    .stats-mini-grid,.feature-list,.pricing-wrap,.contact-grid{grid-template-columns:1fr!important}
+    .row2{grid-template-columns:1fr!important}
+
+    /* Tables become horizontally scrollable cards */
+    .tbl, table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
+
+    /* Touch-friendly */
+    .btn,.login-btn,.fchip,select.sel,input.inp,textarea.tex{min-height:44px;font-size:15px}
+    .btn{padding:12px 16px}
+
+    /* Modals fit screen */
+    .overlay .modal,.overlay > div{max-height:90vh!important;overflow-y:auto!important;width:94vw!important;max-width:94vw!important}
+
+    /* Page hero readable */
+    .page-hero h2{font-size:18px!important}
+    .page-hero p{font-size:12.5px!important}
+
+    /* Settings 2-column → 1-column */
+    #page-settings .g2{gap:14px}
+
+    /* Approvals row stacking */
+    .approval-row,.term-row{grid-template-columns:1fr!important;gap:6px!important}
+
+    /* Login card scroll */
+    #login-screen{padding:14px!important;align-items:flex-start!important}
+    .login-card{padding:24px 18px!important;margin-top:24px}
+    #login-screen .landing-shell{grid-template-columns:1fr!important;gap:18px}
+
+    /* Logout button bottom-right repositioned to avoid hamburger */
+    #logout-btn{bottom:14px!important;right:14px!important;font-size:11px!important;padding:7px 12px!important}
+  }
+
+  /* Very small phones */
+  @media (max-width: 400px){
+    .kpi-row{grid-template-columns:1fr!important}
+    .stat-card{flex-direction:column!important;text-align:center;gap:8px!important}
+    .topbar-title{font-size:14px!important}
+    .topbar-badge{display:none!important}
+  }
+
+  /* Welcome / pending / expired access screens */
+  .vp-access-gate{
+    position:fixed;inset:0;z-index:9000;
+    background:linear-gradient(135deg,#060E14 0%,#0F3D2A 50%,#0B1829 100%);
+    display:flex;align-items:center;justify-content:center;padding:24px;
+    font-family:'Outfit',sans-serif;color:#fff;
+  }
+  .vp-access-gate.vp-hidden{display:none}
+  .vp-access-card{
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+    border-radius:24px;padding:32px;max-width:440px;width:100%;text-align:center;
+    backdrop-filter:blur(20px);
+  }
+  .vp-access-card h2{font-family:'DM Serif Display',serif;font-size:24px;margin-bottom:10px}
+  .vp-access-card p{font-size:13.5px;line-height:1.6;color:rgba(255,255,255,.78);margin-bottom:18px}
+  .vp-access-card .vp-access-icon{font-size:48px;margin-bottom:14px;display:block}
+  .vp-access-card .vp-access-meta{font-size:11.5px;color:rgba(255,255,255,.5);margin-top:14px}
+  .vp-access-card button{
+    background:linear-gradient(135deg,#0F3D2A,#2E7D52);color:#fff;border:none;
+    border-radius:12px;padding:12px 22px;cursor:pointer;font-weight:700;
+    margin-top:8px;font-family:'Outfit',sans-serif;
+  }
+  .vp-access-card button.vp-secondary{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15)}
+
+  /* Approval admin actions */
+  .vp-approval-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .vp-approval-actions button{font-size:11.5px;padding:7px 11px}
+  .vp-approval-actions input[type=date],
+  .vp-approval-actions input[type=number]{font-size:12px;padding:6px 8px;border:1px solid var(--brd);border-radius:8px;width:120px}
+  .vp-status-badge{display:inline-block;padding:3px 9px;border-radius:8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+  .vp-status-pending{background:#FEF3C7;color:#92400E}
+  .vp-status-approved{background:#D1FAE5;color:#065F46}
+  .vp-status-rejected{background:#FEE2E2;color:#991B1B}
+  .vp-status-trial{background:#DBEAFE;color:#1E40AF}
+  .vp-status-expired{background:#F3F4F6;color:#374151}
+</style>
+
+<script id="vetpro-final-override-script">
+(function(){
+  'use strict';
+  if (window.__vetproFinalOverrideLoaded) return;
+  window.__vetproFinalOverrideLoaded = true;
+
+  // ── Constants the user provided ─────────────────────────────────────────
+  const VP_ADMIN_EMAIL_DEFAULT = 'waillacamora31@gmail.com';
+
+  // Make sure the legacy "vetpro-admin-email" localStorage value is set so
+  // the older code blocks (closure-captured ADMIN_EMAIL) keep working.
+  try {
+    if (!localStorage.getItem('vetpro-admin-email')) {
+      localStorage.setItem('vetpro-admin-email', VP_ADMIN_EMAIL_DEFAULT);
+    }
+  } catch (e) {}
+
+  // ── Supabase handle (re-use the global one created at top of <head>) ───
+  function sb(){ return (typeof _sb !== 'undefined' && _sb) ? _sb : null; }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 1) i18n MODULE — FR / EN / AR (with RTL)
+  // ────────────────────────────────────────────────────────────────────────
+  const I18N = {
+    fr: {
+      lang_label: 'Langue interface',
+      dashboard_title: 'Tableau de bord',
+      dashboard_welcome: 'Bonjour, {name} 👋',
+      dashboard_subtitle: 'Gestion clinique · IA LLaMA 3.3 70B · Hospitalisations · Médicaments',
+      sb_dashboard: 'Tableau de bord',
+      sb_cages: 'Cages & Hospit.',
+      sb_cas: 'Cas cliniques',
+      sb_historique: 'Historique',
+      sb_stats: 'Statistiques',
+      sb_ai: 'Assistant IA',
+      sb_clients: 'Clients & Animaux',
+      sb_meds: 'Médicaments',
+      sb_rdv: 'Rendez-vous',
+      sb_finances: 'Finances',
+      sb_settings: 'Paramètres',
+      sb_support: 'Support',
+      sb_approvals: 'Approbations',
+      sb_terms: 'Conditions',
+      sb_contacts: 'Contacts',
+      sb_vaccinations: 'Vaccinations',
+      settings_save: '💾 Sauvegarder',
+      settings_export: '💾 Exporter données',
+      settings_reset: '🗑️ Réinitialiser à 0',
+      settings_saved_ok: 'Paramètres enregistrés ✅',
+      reset_confirm: 'Effacer toutes vos données cliniques (clients, animaux, cas, finances, stock, etc.) ?\nCette action est irréversible.',
+      reset_done: 'Vos données ont été remises à zéro ✅',
+      reset_failed: 'Échec de la réinitialisation. Connexion ou base de données indisponible.',
+      access_pending_title: 'Compte en attente d\'approbation',
+      access_pending_msg: 'Votre demande a bien été enregistrée. Un administrateur doit valider votre accès. Vous recevrez une notification dès la validation.',
+      access_rejected_title: 'Accès refusé',
+      access_rejected_msg: 'Votre demande d\'accès a été refusée. Contactez l\'administration VetPro pour plus d\'informations.',
+      access_expired_title: 'Accès expiré',
+      access_expired_msg: 'Votre période d\'accès est terminée. Contactez l\'administration pour renouveler.',
+      access_trial_active: 'Période d\'essai active jusqu\'au {date}',
+      access_logout: 'Se déconnecter',
+      access_check_again: 'Vérifier à nouveau',
+      welcome_back: 'Heureux de vous revoir',
+    },
+    en: {
+      lang_label: 'Interface language',
+      dashboard_title: 'Dashboard',
+      dashboard_welcome: 'Welcome, {name} 👋',
+      dashboard_subtitle: 'Clinic management · LLaMA 3.3 70B AI · Hospitalizations · Medicines',
+      sb_dashboard: 'Dashboard',
+      sb_cages: 'Cages & Hospit.',
+      sb_cas: 'Clinical cases',
+      sb_historique: 'History',
+      sb_stats: 'Statistics',
+      sb_ai: 'AI Assistant',
+      sb_clients: 'Clients & Animals',
+      sb_meds: 'Medicines',
+      sb_rdv: 'Appointments',
+      sb_finances: 'Finances',
+      sb_settings: 'Settings',
+      sb_support: 'Support',
+      sb_approvals: 'Approvals',
+      sb_terms: 'Terms',
+      sb_contacts: 'Contacts',
+      sb_vaccinations: 'Vaccinations',
+      settings_save: '💾 Save',
+      settings_export: '💾 Export data',
+      settings_reset: '🗑️ Reset to 0',
+      settings_saved_ok: 'Settings saved ✅',
+      reset_confirm: 'Erase all your clinical data (clients, animals, cases, finances, stock, etc.)?\nThis action cannot be undone.',
+      reset_done: 'Your data has been reset to zero ✅',
+      reset_failed: 'Reset failed. Login or database unavailable.',
+      access_pending_title: 'Account pending approval',
+      access_pending_msg: 'Your request has been registered. An administrator must validate your access. You will be notified when approved.',
+      access_rejected_title: 'Access denied',
+      access_rejected_msg: 'Your access request was denied. Contact VetPro administration for more information.',
+      access_expired_title: 'Access expired',
+      access_expired_msg: 'Your access period has ended. Contact administration to renew.',
+      access_trial_active: 'Trial period active until {date}',
+      access_logout: 'Sign out',
+      access_check_again: 'Check again',
+      welcome_back: 'Welcome back',
+    },
+    ar: {
+      lang_label: 'لغة الواجهة',
+      dashboard_title: 'لوحة التحكم',
+      dashboard_welcome: 'مرحبا، {name} 👋',
+      dashboard_subtitle: 'إدارة العيادة · ذكاء اصطناعي LLaMA 3.3 70B · الاستشفاء · الأدوية',
+      sb_dashboard: 'لوحة التحكم',
+      sb_cages: 'الأقفاص والاستشفاء',
+      sb_cas: 'الحالات السريرية',
+      sb_historique: 'السجل',
+      sb_stats: 'الإحصاءات',
+      sb_ai: 'المساعد الذكي',
+      sb_clients: 'العملاء والحيوانات',
+      sb_meds: 'الأدوية',
+      sb_rdv: 'المواعيد',
+      sb_finances: 'المالية',
+      sb_settings: 'الإعدادات',
+      sb_support: 'الدعم',
+      sb_approvals: 'الموافقات',
+      sb_terms: 'الشروط',
+      sb_contacts: 'جهات الاتصال',
+      sb_vaccinations: 'التلقيحات',
+      settings_save: '💾 حفظ',
+      settings_export: '💾 تصدير البيانات',
+      settings_reset: '🗑️ إعادة الضبط',
+      settings_saved_ok: 'تم حفظ الإعدادات ✅',
+      reset_confirm: 'هل تريد محو جميع البيانات السريرية (العملاء، الحيوانات، الحالات، المالية، المخزون)؟\nلا يمكن التراجع عن هذا الإجراء.',
+      reset_done: 'تمت إعادة ضبط بياناتك ✅',
+      reset_failed: 'فشل إعادة الضبط. تأكد من الاتصال وقاعدة البيانات.',
+      access_pending_title: 'الحساب في انتظار الموافقة',
+      access_pending_msg: 'تم تسجيل طلبك. يجب على مسؤول التحقق من وصولك. ستصلك إشعار عند الموافقة.',
+      access_rejected_title: 'تم رفض الوصول',
+      access_rejected_msg: 'تم رفض طلب الوصول. يرجى الاتصال بإدارة VetPro لمزيد من المعلومات.',
+      access_expired_title: 'انتهت صلاحية الوصول',
+      access_expired_msg: 'انتهت فترة وصولك. اتصل بالإدارة للتجديد.',
+      access_trial_active: 'الفترة التجريبية نشطة حتى {date}',
+      access_logout: 'تسجيل الخروج',
+      access_check_again: 'تحقق مرة أخرى',
+      welcome_back: 'سعيد برؤيتك مجددا',
+    }
+  };
+
+  let currentLang = 'fr';
+  function t(key, vars){
+    const dict = I18N[currentLang] || I18N.fr;
+    let s = dict[key] || I18N.fr[key] || key;
+    if (vars) Object.keys(vars).forEach(k => { s = s.replace('{'+k+'}', vars[k]); });
+    return s;
+  }
+  window.vpT = t;
+
+  function applyLanguage(lang){
+    if (!I18N[lang]) lang = 'fr';
+    currentLang = lang;
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+    document.body.classList.toggle('vp-rtl', lang === 'ar');
+
+    // Sidebar items
+    const sbMap = {
+      'dashboard': 'sb_dashboard', 'cages': 'sb_cages', 'cas': 'sb_cas',
+      'historique': 'sb_historique', 'statistics': 'sb_stats', 'ai': 'sb_ai',
+      'clients': 'sb_clients', 'meds': 'sb_meds', 'rdv': 'sb_rdv',
+      'finances': 'sb_finances', 'settings': 'sb_settings', 'support': 'sb_support',
+      'approvals': 'sb_approvals', 'terms': 'sb_terms', 'contacts': 'sb_contacts',
+      'vaccinations': 'sb_vaccinations'
+    };
+    document.querySelectorAll('.sb-item').forEach(item => {
+      const onclick = item.getAttribute('onclick') || '';
+      const m = onclick.match(/nav\('([^']+)'\)/);
+      if (!m) return;
+      const key = sbMap[m[1]];
+      if (!key) return;
+      const span = item.querySelector('span:not(.sb-badge):not(.sb-ico-wrap)');
+      if (span) span.textContent = t(key);
+    });
+
+    // Topbar dashboard title
+    const tbTitle = document.getElementById('tb-title');
+    if (tbTitle && (tbTitle.textContent || '').match(/dashboard|tableau de bord|لوحة/i)) {
+      tbTitle.textContent = t('dashboard_title');
+    }
+
+    // Dashboard hero subtitle
+    const heroP = document.querySelector('#page-dashboard .page-hero p');
+    if (heroP) heroP.textContent = t('dashboard_subtitle');
+
+    // Settings buttons
+    const sBtn = document.getElementById('vp-settings-save-btn');
+    if (sBtn) sBtn.textContent = t('settings_save');
+    const eBtn = document.getElementById('vp-settings-export-btn');
+    if (eBtn) eBtn.textContent = t('settings_export');
+    const rBtn = document.getElementById('vp-settings-reset-btn');
+    if (rBtn) rBtn.textContent = t('settings_reset');
+    const lLbl = document.getElementById('vp-settings-lang-label');
+    if (lLbl) lLbl.textContent = t('lang_label');
+
+    // Welcome
+    refreshDashboardWelcome();
+
+    // Persist locally + remote
+    saveLanguagePreference(lang);
+  }
+  window.vpApplyLanguage = applyLanguage;
+
+  function saveLanguagePreference(lang){
+    try { localStorage.setItem('vetpro-language', lang); } catch (e) {}
+    persistUserSettings({ language: lang });
+  }
+
+  window.vpSetLanguage = function(lang){
+    applyLanguage(lang);
+    showToast(I18N[lang]?.settings_saved_ok || 'OK ✅');
+  };
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 2) WELCOME MESSAGE — once per session, otherwise show neutral title
+  // ────────────────────────────────────────────────────────────────────────
+  function getActiveDisplayName(){
+    if (typeof currentUserName === 'function') {
+      try { const n = currentUserName(); if (n) return n; } catch (e) {}
+    }
+    if (typeof getActiveUserName === 'function') {
+      try { const n = getActiveUserName(); if (n) return n; } catch (e) {}
+    }
+    const tbName = document.querySelector('.tb-name-main')?.textContent?.trim();
+    if (tbName) return tbName;
+    return 'Dr.';
+  }
+
+  function refreshDashboardWelcome(){
+    const hero = document.querySelector('#page-dashboard .page-hero h2');
+    if (!hero) return;
+    const welcomed = sessionStorage.getItem('vetpro-welcomed-once') === '1';
+    const firstName = (getActiveDisplayName().split(' ')[0]) || 'Dr.';
+    if (welcomed) {
+      hero.textContent = t('dashboard_title');
+    } else {
+      hero.textContent = t('dashboard_welcome', { name: firstName });
+    }
+  }
+  window.vpRefreshDashboardWelcome = refreshDashboardWelcome;
+
+  function markWelcomeShown(){
+    sessionStorage.setItem('vetpro-welcomed-once', '1');
+  }
+
+  // Hook into nav() to mark welcome as seen once user navigates away
+  function patchNav(){
+    if (typeof nav !== 'function' || nav.__vpPatched) return;
+    const original = nav;
+    const wrapped = function(id){
+      const r = original.apply(this, arguments);
+      // First time we land on dashboard (post-login), keep "Bonjour, X 👋".
+      // After that, switching to anything else marks it shown so subsequent
+      // returns to dashboard show a neutral title.
+      if (id !== 'dashboard') {
+        markWelcomeShown();
+      }
+      // Keep the dashboard h2 in sync with the (possibly new) welcomed state.
+      if (id === 'dashboard') refreshDashboardWelcome();
+      // Keep topbar title localized
+      const tbTitle = document.getElementById('tb-title');
+      if (tbTitle) {
+        const sbMap = {
+          'dashboard':'dashboard_title','cages':'sb_cages','cas':'sb_cas',
+          'historique':'sb_historique','statistics':'sb_stats','ai':'sb_ai',
+          'clients':'sb_clients','meds':'sb_meds','rdv':'sb_rdv',
+          'finances':'sb_finances','settings':'sb_settings','support':'sb_support',
+          'approvals':'sb_approvals','terms':'sb_terms','contacts':'sb_contacts',
+          'vaccinations':'sb_vaccinations'
+        };
+        if (sbMap[id]) tbTitle.textContent = t(sbMap[id]);
+      }
+      // Approvals page → render with our admin-aware UI
+      if (id === 'approvals' && typeof window.vpRenderApprovals === 'function') {
+        setTimeout(() => window.vpRenderApprovals(), 50);
+      }
+      return r;
+    };
+    wrapped.__vpPatched = true;
+    window.nav = wrapped;
+    // also rebind the closure-bound name for the function declaration
+    try { nav = wrapped; } catch (e) {}
+  }
+
+  // Reset the "welcomed" flag on logout
+  function patchDoLogout(){
+    if (typeof window.doLogout !== 'function' || window.doLogout.__vpPatched) return;
+    const original = window.doLogout;
+    const wrapped = async function(){
+      try { sessionStorage.removeItem('vetpro-welcomed-once'); } catch (e) {}
+      return await original.apply(this, arguments);
+    };
+    wrapped.__vpPatched = true;
+    window.doLogout = wrapped;
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 3) ADMIN DETECTION via Supabase profiles (not localStorage)
+  // ────────────────────────────────────────────────────────────────────────
+  let _cachedAdminFlag = null; // reset on auth change
+  async function isAdminFromProfile(){
+    if (_cachedAdminFlag !== null) return _cachedAdminFlag;
+    const client = sb();
+    if (!client) return false;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      const email = session?.user?.email?.toLowerCase();
+      if (!email) return false;
+      // Try profiles table first
+      const { data, error } = await client
+        .from('profiles')
+        .select('role')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (!error && data?.role === 'admin') {
+        _cachedAdminFlag = true; return true;
+      }
+      // Fallback: hardcoded admin email match
+      if (email === VP_ADMIN_EMAIL_DEFAULT) { _cachedAdminFlag = true; return true; }
+      _cachedAdminFlag = false; return false;
+    } catch (e) {
+      return false;
+    }
+  }
+  window.vpIsAdmin = isAdminFromProfile;
+
+  function invalidateAdminCache(){ _cachedAdminFlag = null; }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 4) ACCESS GATE — pending / rejected / trial-expired / expired screens
+  // ────────────────────────────────────────────────────────────────────────
+  async function fetchAccessStatus(){
+    const client = sb();
+    if (!client) return null;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) return null;
+      // Use the my_access_status view (RLS limits it to the user's own row).
+      const { data, error } = await client
+        .from('my_access_status')
+        .select('*')
+        .maybeSingle();
+      if (error) {
+        // Fallback: query the raw table
+        const { data: row } = await client
+          .from('vetpro_access_requests')
+          .select('*')
+          .ilike('email', session.user.email)
+          .maybeSingle();
+        return row || null;
+      }
+      return data;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function effectiveStatusOf(row){
+    if (!row) return null;
+    if (row.effective_status) return row.effective_status;
+    const now = Date.now();
+    if (row.status === 'approved' && row.access_expires_at && new Date(row.access_expires_at).getTime() < now) return 'expired';
+    if (row.status === 'trial' && row.trial_ends_at && new Date(row.trial_ends_at).getTime() < now) return 'expired';
+    return row.status;
+  }
+
+  function showAccessGate(kind, row){
+    let host = document.getElementById('vp-access-gate');
+    if (!host) {
+      host = document.createElement('div');
+      host.id = 'vp-access-gate';
+      host.className = 'vp-access-gate';
+      document.body.appendChild(host);
+    }
+    const expiry = row?.access_expires_at || row?.trial_ends_at;
+    const expiryStr = expiry ? new Date(expiry).toLocaleDateString() : '';
+    const titles = {
+      pending:  { icon:'⏳', title:t('access_pending_title'),  msg:t('access_pending_msg') },
+      rejected: { icon:'🚫', title:t('access_rejected_title'), msg:t('access_rejected_msg') },
+      expired:  { icon:'⌛', title:t('access_expired_title'),  msg:t('access_expired_msg') }
+    };
+    const info = titles[kind] || titles.pending;
+    host.innerHTML = `
+      <div class="vp-access-card">
+        <span class="vp-access-icon">${info.icon}</span>
+        <h2>${info.title}</h2>
+        <p>${info.msg}</p>
+        ${expiryStr ? `<div class="vp-access-meta">${expiry ? new Date(expiry).toLocaleString() : ''}</div>` : ''}
+        <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px">
+          <button onclick="window.vpCheckAccess()">${t('access_check_again')}</button>
+          <button class="vp-secondary" onclick="window.doLogout && window.doLogout()">${t('access_logout')}</button>
+        </div>
+      </div>
+    `;
+    host.classList.remove('vp-hidden');
+    // hide main app
+    document.querySelectorAll('.shell').forEach(s => s.style.display = 'none');
+  }
+
+  function hideAccessGate(){
+    const host = document.getElementById('vp-access-gate');
+    if (host) host.classList.add('vp-hidden');
+    document.querySelectorAll('.shell').forEach(s => s.style.display = '');
+  }
+
+  async function checkAccessAfterLogin(){
+    const client = sb();
+    if (!client) return true;
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) return true; // nothing to gate; login screen handles it
+    if (await isAdminFromProfile()) { hideAccessGate(); return true; }
+    const row = await fetchAccessStatus();
+    const eff = effectiveStatusOf(row);
+    if (!row) {
+      // No request row — auto-create a pending one so the admin can act
+      try {
+        await client.from('vetpro_access_requests').insert({
+          email: session.user.email.toLowerCase(),
+          full_name: session.user.user_metadata?.full_name || session.user.email,
+          role: session.user.user_metadata?.role || 'veterinaire',
+          status: 'pending',
+          user_id: session.user.id
+        });
+      } catch (e) {}
+      showAccessGate('pending');
+      return false;
+    }
+    if (eff === 'approved' || eff === 'trial' || eff === 'admin') {
+      hideAccessGate();
+      return true;
+    }
+    if (eff === 'rejected') { showAccessGate('rejected', row); return false; }
+    if (eff === 'expired')  { showAccessGate('expired',  row); return false; }
+    showAccessGate('pending', row);
+    return false;
+  }
+  window.vpCheckAccess = checkAccessAfterLogin;
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 5) APPROVALS UI (admin) — trial / until / N days / permanent / reject
+  // ────────────────────────────────────────────────────────────────────────
+  async function vpRenderApprovals(){
+    const host = document.getElementById('approvals-list');
+    if (!host) return;
+    const client = sb();
+    if (!client) { host.innerHTML = '<p style="color:var(--muted)">Supabase non disponible.</p>'; return; }
+    if (!(await isAdminFromProfile())) {
+      host.innerHTML = '<p style="color:var(--muted)">Réservé aux administrateurs.</p>';
+      return;
+    }
+    const { data, error } = await client
+      .from('vetpro_access_requests')
+      .select('*')
+      .order('requested_at', { ascending:false });
+    if (error) {
+      host.innerHTML = `<p style="color:var(--danger)">${error.message}</p>`;
+      return;
+    }
+    if (!data || !data.length) {
+      host.innerHTML = '<p style="color:var(--muted)">Aucune demande pour le moment.</p>';
+      return;
+    }
+    host.innerHTML = data.map(r => {
+      const eff = effectiveStatusOf(r) || r.status || 'pending';
+      const expiryHtml = r.access_expires_at
+        ? `<div class="approval-meta">Expire: ${new Date(r.access_expires_at).toLocaleDateString()}</div>`
+        : '';
+      const trialHtml = r.trial_ends_at && r.status === 'trial'
+        ? `<div class="approval-meta">Essai jusqu'au: ${new Date(r.trial_ends_at).toLocaleDateString()}</div>`
+        : '';
+      const safeEmail = (r.email || '').replace(/'/g, '&#39;');
+      return `
+        <div class="approval-row" data-email="${safeEmail}">
+          <div>
+            <div style="font-weight:700">${escapeHtml(r.full_name || r.email)}</div>
+            <div class="approval-meta">${escapeHtml(r.email || '')}<br>${escapeHtml(r.phone || '—')}</div>
+            <div class="vp-status-badge vp-status-${eff}">${eff}</div>
+          </div>
+          <div class="approval-meta">
+            <strong>Profil</strong><br>${escapeHtml(r.role || '-')}<br>
+            ${r.requested_at ? new Date(r.requested_at).toLocaleDateString() : '-'}
+            ${expiryHtml}${trialHtml}
+          </div>
+          <div class="approval-meta">
+            <strong>N° ordre</strong><br>${escapeHtml(r.order_number || '—')}
+          </div>
+          <div class="approval-meta">
+            <strong>Justificatif</strong><br>${escapeHtml(r.student_proof || '—')}
+          </div>
+          <div class="vp-approval-actions">
+            <button class="btn btn-p" onclick="window.vpApprove('${safeEmail}','permanent')">Approuver</button>
+            <button class="btn btn-ghost" onclick="window.vpApprove('${safeEmail}','trial')">Essai 15j</button>
+            <input type="number" min="1" max="3650" placeholder="Jours" id="vp-days-${slug(safeEmail)}" />
+            <button class="btn btn-ghost" onclick="window.vpApproveDays('${safeEmail}')">Approuver N jours</button>
+            <input type="date" id="vp-until-${slug(safeEmail)}" />
+            <button class="btn btn-ghost" onclick="window.vpApproveUntil('${safeEmail}')">Jusqu'à date</button>
+            <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="window.vpApprove('${safeEmail}','reject')">Refuser</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+  window.vpRenderApprovals = vpRenderApprovals;
+  // Override the older renderApprovalsPage to call our admin-aware version
+  window.renderApprovalsPage = vpRenderApprovals;
+
+  function escapeHtml(s){
+    return (s == null ? '' : String(s))
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function slug(s){ return (s||'').replace(/[^a-z0-9]/gi,'_'); }
+
+  window.vpApprove = async function(email, mode){
+    const client = sb();
+    if (!client) return;
+    if (mode === 'reject' && !confirm('Refuser le compte ' + email + ' ?')) return;
+    const { error } = await client.rpc('approve_user', {
+      target_email: email, mode: mode, duration_days: null, until_date: null
+    });
+    if (error) { showToast('Erreur: ' + error.message); return; }
+    showToast(mode === 'reject' ? 'Compte refusé' : 'Compte approuvé');
+    vpRenderApprovals();
+  };
+  window.vpApproveDays = async function(email){
+    const days = parseInt(document.getElementById('vp-days-' + slug(email))?.value, 10);
+    if (!days || days <= 0) { showToast('Saisir un nombre de jours.'); return; }
+    const client = sb(); if (!client) return;
+    const { error } = await client.rpc('approve_user', {
+      target_email: email, mode: 'days', duration_days: days, until_date: null
+    });
+    if (error) { showToast('Erreur: ' + error.message); return; }
+    showToast(`Approuvé pour ${days} jours`);
+    vpRenderApprovals();
+  };
+  window.vpApproveUntil = async function(email){
+    const date = document.getElementById('vp-until-' + slug(email))?.value;
+    if (!date) { showToast('Saisir une date.'); return; }
+    const client = sb(); if (!client) return;
+    const iso = new Date(date + 'T23:59:59').toISOString();
+    const { error } = await client.rpc('approve_user', {
+      target_email: email, mode: 'until', duration_days: null, until_date: iso
+    });
+    if (error) { showToast('Erreur: ' + error.message); return; }
+    showToast(`Approuvé jusqu'au ${date}`);
+    vpRenderApprovals();
+  };
+
+  async function ensureAdminVisibility(){
+    const isAdmin = await isAdminFromProfile();
+    const entry = document.getElementById('sb-approvals');
+    if (entry) entry.style.display = isAdmin ? '' : 'none';
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 6) USER SETTINGS — persist to Supabase, restore on login
+  // ────────────────────────────────────────────────────────────────────────
+  async function loadUserSettings(){
+    const client = sb();
+    if (!client) return null;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) return null;
+      const { data, error } = await client
+        .from('vetpro_user_settings')
+        .select('*')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (error || !data) return null;
+      return data;
+    } catch (e) { return null; }
+  }
+
+  async function persistUserSettings(patch){
+    const client = sb();
+    if (!client) return;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) return;
+      const payload = {
+        user_id: session.user.id,
+        email: session.user.email.toLowerCase(),
+        ...patch,
+        updated_at: new Date().toISOString()
+      };
+      await client.from('vetpro_user_settings').upsert(payload, { onConflict: 'user_id' });
+    } catch (e) {}
+  }
+  window.vpPersistUserSettings = persistUserSettings;
+
+  window.vpSaveSettings = async function(){
+    const langSel = document.getElementById('vp-settings-language');
+    const lang = langSel?.value || currentLang;
+    // Collect generic clinic + notifications snapshot from existing form
+    const page = document.getElementById('page-settings');
+    const inputs = page ? Array.from(page.querySelectorAll('input.inp, textarea.tex')) : [];
+    const clinic = {
+      first_name: inputs[0]?.value || '',
+      last_name:  inputs[1]?.value || '',
+      title:      inputs[2]?.value || '',
+      order_number: inputs[3]?.value || '',
+      email:      inputs[4]?.value || '',
+      phone:      inputs[5]?.value || '',
+      clinic_name:    inputs[7]?.value || '',
+      clinic_address: inputs[8]?.value || '',
+      clinic_phone:   inputs[9]?.value || '',
+      clinic_hours:   inputs[10]?.value || '',
+      footer:         inputs[11]?.value || ''
+    };
+    const notif = {};
+    page?.querySelectorAll('.toggle-wrap').forEach((tw, i) => {
+      const sw = tw.querySelector('.toggle-switch');
+      const label = tw.querySelector('.toggle-info strong')?.textContent?.trim() || ('toggle_' + i);
+      notif[label] = !!sw?.classList.contains('on');
+    });
+    await persistUserSettings({ language: lang, clinic, notifications: notif });
+    applyLanguage(lang);
+    showToast(t('settings_saved_ok'));
+  };
+
+  window.vpExportData = async function(){
+    const client = sb(); if (!client) { showToast('Hors ligne'); return; }
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session) { showToast('Non connecté'); return; }
+      const { data } = await client.from('vetpro_user_state').select('state').eq('user_id', session.user.id).maybeSingle();
+      const payload = { exported_at: new Date().toISOString(), email: session.user.email, state: data?.state || {} };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `vetpro-export-${Date.now()}.json`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Export JSON téléchargé ✅');
+    } catch (e) { showToast('Échec export: ' + e.message); }
+  };
+
+  // Apply settings to UI (called after login & on settings page open)
+  async function applySettingsToUI(){
+    const settings = await loadUserSettings();
+    const lang = settings?.language || (function(){ try { return localStorage.getItem('vetpro-language') || 'fr'; } catch(e){ return 'fr'; } })();
+    const sel = document.getElementById('vp-settings-language');
+    if (sel) sel.value = lang;
+    applyLanguage(lang);
+  }
+  window.vpApplySettingsToUI = applySettingsToUI;
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 7) RESET TO 0
+  // ────────────────────────────────────────────────────────────────────────
+  window.vpResetToZero = async function(){
+    if (!confirm(t('reset_confirm'))) return;
+    const client = sb();
+    if (!client) { showToast(t('reset_failed')); return; }
+    try {
+      const { data, error } = await client.rpc('reset_user_data', { include_settings: false });
+      if (error) throw error;
+      // Wipe in-memory + local fallback
+      try {
+        const k = (typeof getUserStateStorageKey === 'function') ? getUserStateStorageKey() : null;
+        if (k) localStorage.removeItem(k);
+      } catch (e) {}
+      // Re-init persistent state with defaults
+      try {
+        if (typeof initializePersistentState === 'function') initializePersistentState();
+        if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+      } catch (e) {}
+      showToast(t('reset_done'));
+      setTimeout(() => location.reload(), 800);
+    } catch (e) {
+      showToast(t('reset_failed') + ' (' + (e.message || e) + ')');
+    }
+  };
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 8) MOBILE NAV (hamburger)
+  // ────────────────────────────────────────────────────────────────────────
+  function injectMobileNav(){
+    if (document.getElementById('vp-mobile-toggle')) return;
+    const btn = document.createElement('button');
+    btn.id = 'vp-mobile-toggle';
+    btn.type = 'button';
+    btn.setAttribute('aria-label', 'Menu');
+    btn.textContent = '☰';
+    btn.onclick = function(){
+      const sidebar = document.querySelector('.sidebar');
+      if (sidebar) sidebar.classList.toggle('vp-open');
+    };
+    document.body.appendChild(btn);
+    // Close sidebar on item click on mobile
+    document.addEventListener('click', function(e){
+      if (window.innerWidth > 768) return;
+      const sidebar = document.querySelector('.sidebar');
+      if (!sidebar?.classList.contains('vp-open')) return;
+      if (e.target.closest('.sb-item')) sidebar.classList.remove('vp-open');
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────────────────
+  // 9) WIRING — bootstrap + auth listener
+  // ────────────────────────────────────────────────────────────────────────
+  function showToast(msg){
+    if (typeof toast === 'function') return toast(msg);
+    console.log('[VetPro]', msg);
+  }
+
+  async function bootstrap(){
+    patchNav();
+    patchDoLogout();
+    injectMobileNav();
+    // Initial language from localStorage (fast path before remote load)
+    let lang = 'fr';
+    try { lang = localStorage.getItem('vetpro-language') || 'fr'; } catch (e) {}
+    applyLanguage(lang);
+    // Wait a moment for the session to settle, then check access
+    setTimeout(async () => {
+      const client = sb();
+      if (!client) return;
+      const { data: { session } } = await client.auth.getSession();
+      if (session) {
+        invalidateAdminCache();
+        await checkAccessAfterLogin();
+        await applySettingsToUI();
+        await ensureAdminVisibility();
+      }
+    }, 600);
+  }
+
+  // Hook auth state changes
+  function wireAuthListener(){
+    const client = sb();
+    if (!client?.auth?.onAuthStateChange) return;
+    client.auth.onAuthStateChange(async (event, session) => {
+      invalidateAdminCache();
+      if (event === 'SIGNED_IN') {
+        try { sessionStorage.removeItem('vetpro-welcomed-once'); } catch (e) {}
+        await checkAccessAfterLogin();
+        await applySettingsToUI();
+        await ensureAdminVisibility();
+        refreshDashboardWelcome();
+      } else if (event === 'SIGNED_OUT') {
+        try { sessionStorage.removeItem('vetpro-welcomed-once'); } catch (e) {}
+        hideAccessGate();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { bootstrap(); wireAuthListener(); });
+  } else {
+    bootstrap();
+    wireAuthListener();
+  }
+  // Also run after window load to ensure all earlier IIFEs finished
+  window.addEventListener('load', () => {
+    setTimeout(() => { patchNav(); patchDoLogout(); injectMobileNav(); ensureAdminVisibility(); refreshDashboardWelcome(); }, 200);
+  });
 })();
 </script>
 
