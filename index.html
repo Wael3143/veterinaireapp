@@ -13285,5 +13285,538 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     Dashboard v2 — Pet Health Dashboard layout per ui-ux-pro-max-skill
+     Replaces #page-dashboard markup with a modern, data-bound layout.
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-dashboard-v2-style">
+  .vp-dash {
+    display: flex; flex-direction: column; gap: 16px;
+    font-family: 'Outfit', sans-serif;
+  }
+
+  /* Hero — caring teal gradient with warm orange accent (skill recommendation) */
+  .vp-hero {
+    position: relative;
+    background:
+      radial-gradient(1200px 300px at 100% -50%, rgba(234,88,12,.18), transparent 60%),
+      linear-gradient(135deg, #0F3D2A 0%, #0D9488 60%, #0B6E66 100%);
+    color: #fff;
+    border-radius: 24px;
+    padding: 22px 24px;
+    box-shadow: 0 16px 40px rgba(15,61,42,.25), inset 0 1px 0 rgba(255,255,255,.12);
+    overflow: hidden;
+  }
+  .vp-hero::before {
+    content: ''; position: absolute; right: -40px; top: -40px; width: 220px; height: 220px;
+    background: radial-gradient(circle, rgba(234,88,12,.4), transparent 70%);
+    filter: blur(20px); pointer-events: none;
+  }
+  .vp-hero-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600; letter-spacing: .3px;
+    background: rgba(255,255,255,.15); padding: 5px 12px; border-radius: 999px;
+    backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.18);
+    margin-bottom: 10px;
+  }
+  .vp-hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(22px, 4vw, 30px); line-height: 1.15; margin: 0 0 6px;
+    font-weight: 400;
+  }
+  .vp-hero p {
+    font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.78); margin: 0;
+    max-width: 540px;
+  }
+  .vp-hero-meta {
+    display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px;
+    font-size: 11.5px; color: rgba(255,255,255,.7);
+  }
+  .vp-hero-meta strong { color: #fff; }
+
+  /* KPI grid — 4 cols desktop / 2 cols tablet / 1 col phone */
+  .vp-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+  @media (max-width: 980px) { .vp-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 480px) { .vp-kpis { grid-template-columns: 1fr; } }
+
+  .vp-kpi {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    border: 1px solid rgba(15,61,42,.06);
+    box-shadow: 0 1px 2px rgba(15,61,42,.04), 0 8px 22px rgba(15,61,42,.07), inset 0 1px 0 rgba(255,255,255,.8);
+    display: flex; align-items: flex-start; gap: 14px;
+    cursor: pointer;
+    transition: transform .18s var(--vp-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+                box-shadow .22s ease;
+    min-width: 0;
+  }
+  .vp-kpi:hover { transform: translateY(-3px); box-shadow: 0 4px 8px rgba(15,61,42,.06), 0 16px 36px rgba(15,61,42,.14); }
+  .vp-kpi:focus-visible { outline: 3px solid #0D9488; outline-offset: 2px; }
+  .vp-kpi-ico {
+    width: 46px; height: 46px; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 22px; flex-shrink: 0;
+    background: linear-gradient(135deg, #E8F1F4, #D1FAE5);
+  }
+  .vp-kpi.warm .vp-kpi-ico { background: linear-gradient(135deg, #FFF7ED, #FED7AA); }
+  .vp-kpi.danger .vp-kpi-ico { background: linear-gradient(135deg, #FEF2F2, #FECACA); }
+  .vp-kpi.info .vp-kpi-ico { background: linear-gradient(135deg, #EFF6FF, #DBEAFE); }
+  .vp-kpi-body { flex: 1; min-width: 0; }
+  .vp-kpi-val {
+    font-size: clamp(22px, 4vw, 28px); line-height: 1; font-weight: 700;
+    color: #0F3D2A; letter-spacing: -.02em; margin-bottom: 4px;
+    font-family: 'DM Serif Display', serif; font-weight: 400;
+  }
+  .vp-kpi.warm .vp-kpi-val { color: #C2410C; }
+  .vp-kpi.danger .vp-kpi-val { color: #B91C1C; }
+  .vp-kpi.info .vp-kpi-val { color: #1D4ED8; }
+  .vp-kpi-lbl { font-size: 12px; color: #4b5b65; font-weight: 600; line-height: 1.3; margin-bottom: 4px; }
+  .vp-kpi-trend { font-size: 11px; color: #5b6b73; line-height: 1.3; display: flex; align-items: center; gap: 4px; }
+
+  /* Two-column row: real cases + sidebar (cages + AI) */
+  .vp-row {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 16px;
+  }
+  @media (max-width: 980px) { .vp-row { grid-template-columns: 1fr; } }
+
+  .vp-panel {
+    background: #fff;
+    border-radius: 20px;
+    padding: 18px 20px;
+    border: 1px solid rgba(15,61,42,.06);
+    box-shadow: 0 1px 2px rgba(15,61,42,.04), 0 6px 18px rgba(15,61,42,.06), inset 0 1px 0 rgba(255,255,255,.8);
+    min-width: 0;
+  }
+  .vp-panel-h {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px; gap: 12px;
+  }
+  .vp-panel-title {
+    font-family: 'DM Serif Display', serif;
+    font-weight: 400; font-size: 16px; color: #0F3D2A;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .vp-panel-link {
+    font-size: 12px; color: #0D9488; font-weight: 600; cursor: pointer;
+    background: none; border: none; padding: 6px 10px; border-radius: 8px;
+    transition: background .15s ease;
+  }
+  .vp-panel-link:hover { background: rgba(13,148,136,.08); }
+
+  /* Mini case row */
+  .vp-case-row {
+    display: grid; grid-template-columns: 1.2fr 1fr auto auto; gap: 12px; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid rgba(15,61,42,.05);
+  }
+  .vp-case-row:last-child { border-bottom: none; }
+  .vp-case-row strong { font-size: 13px; color: #0F3D2A; font-weight: 600; }
+  .vp-case-row small { font-size: 11px; color: #5b6b73; display: block; margin-top: 2px; }
+  .vp-case-row .vp-diag { font-size: 12.5px; color: #1f3b2c; }
+  .vp-bdg {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 999px; font-size: 10.5px; font-weight: 700;
+    letter-spacing: .2px;
+  }
+  .vp-bdg.crit { background: #FEF2F2; color: #B91C1C; }
+  .vp-bdg.urg  { background: #FFFBEB; color: #B45309; }
+  .vp-bdg.norm { background: #ECFDF5; color: #047857; }
+  .vp-pay { font-size: 11px; font-weight: 700; }
+  .vp-pay-ok { color: #047857; }
+  .vp-pay-pt { color: #B45309; }
+  .vp-pay-no { color: #B91C1C; }
+
+  /* Cage mini grid */
+  .vp-cage-grid {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+  }
+  @media (max-width: 480px) { .vp-cage-grid { grid-template-columns: repeat(3, 1fr); } }
+  .vp-cage {
+    aspect-ratio: 1; border-radius: 12px; padding: 8px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    cursor: pointer; transition: transform .15s ease, box-shadow .15s ease;
+    text-align: center; min-width: 0;
+  }
+  .vp-cage:hover { transform: scale(1.05); }
+  .vp-cage-num { font-size: 13px; font-weight: 700; color: inherit; }
+  .vp-cage-mini { font-size: 9.5px; opacity: .85; margin-top: 2px; line-height: 1.1; }
+  .vp-cage.busy   { background: linear-gradient(135deg, #FEF2F2, #FECACA); color: #B91C1C; }
+  .vp-cage.free   { background: linear-gradient(135deg, #ECFDF5, #D1FAE5); color: #047857; }
+  .vp-cage.clean  { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); color: #B45309; }
+
+  /* AI panel */
+  .vp-ai-panel {
+    background: linear-gradient(135deg, #0F3D2A, #134E4A);
+    color: #fff;
+    border-radius: 18px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: transform .18s ease, box-shadow .22s ease;
+    border: 1px solid rgba(255,255,255,.06);
+  }
+  .vp-ai-panel:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(15,61,42,.4); }
+  .vp-ai-panel-h {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .vp-ai-avatar {
+    width: 38px; height: 38px; border-radius: 12px;
+    background: linear-gradient(135deg, #0D9488, #14B8A6);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    box-shadow: 0 4px 12px rgba(13,148,136,.5);
+  }
+  .vp-ai-panel h4 { font-size: 13px; margin: 0; font-weight: 600; }
+  .vp-ai-panel small { font-size: 10.5px; color: rgba(255,255,255,.5); }
+  .vp-ai-panel p { font-size: 11.5px; color: rgba(255,255,255,.65); margin: 0 0 12px; line-height: 1.5; }
+  .vp-ai-cta {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: 100%;
+    background: rgba(234,88,12,.95); color: #fff; border: none;
+    padding: 10px 14px; border-radius: 12px; font-weight: 700; font-size: 12.5px;
+    cursor: pointer; font-family: 'Outfit', sans-serif;
+    transition: background .15s ease, transform .12s ease;
+  }
+  .vp-ai-cta:hover { background: #EA580C; transform: translateY(-1px); }
+  .vp-ai-live {
+    display: inline-flex; align-items: center; gap: 5px; margin-left: auto;
+    font-size: 10px; color: #4ADE80; font-weight: 600;
+  }
+  .vp-ai-live-dot { width: 6px; height: 6px; border-radius: 999px; background: #4ADE80; box-shadow: 0 0 8px #4ADE80; animation: vp-pulse 1.6s infinite; }
+  @keyframes vp-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* Quick actions row */
+  .vp-quick {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;
+  }
+  @media (max-width: 700px) { .vp-quick { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 480px) { .vp-quick { grid-template-columns: 1fr; } }
+  .vp-quick-btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 14px 18px; border-radius: 16px; font-weight: 700; font-size: 13.5px;
+    cursor: pointer; border: none; font-family: 'Outfit', sans-serif;
+    transition: transform .15s var(--vp-spring, cubic-bezier(0.34, 1.56, 0.64, 1)),
+                box-shadow .18s ease;
+    min-height: 52px;
+  }
+  .vp-quick-btn.primary {
+    background: linear-gradient(135deg, #F97316, #EA580C); color: #fff;
+    box-shadow: 0 6px 16px rgba(234,88,12,.32);
+  }
+  .vp-quick-btn.primary:hover { box-shadow: 0 10px 24px rgba(234,88,12,.45); transform: translateY(-2px); }
+  .vp-quick-btn.secondary {
+    background: linear-gradient(135deg, #0F3D2A, #0D9488); color: #fff;
+    box-shadow: 0 6px 16px rgba(15,61,42,.25);
+  }
+  .vp-quick-btn.secondary:hover { box-shadow: 0 10px 24px rgba(15,61,42,.35); transform: translateY(-2px); }
+  .vp-quick-btn.tertiary {
+    background: #fff; color: #0F3D2A; border: 1px solid rgba(15,61,42,.1);
+    box-shadow: 0 1px 2px rgba(15,61,42,.04), 0 4px 12px rgba(15,61,42,.06);
+  }
+  .vp-quick-btn.tertiary:hover { background: #F0FDFA; transform: translateY(-2px); }
+  .vp-quick-btn:active { transform: scale(.97); }
+
+  /* Phone tweaks */
+  @media (max-width: 480px) {
+    .vp-hero { padding: 18px 18px; border-radius: 20px; }
+    .vp-hero h1 { font-size: 20px; }
+    .vp-hero p { font-size: 12px; }
+    .vp-kpi { padding: 14px; gap: 10px; }
+    .vp-kpi-ico { width: 40px; height: 40px; font-size: 18px; border-radius: 12px; }
+    .vp-kpi-val { font-size: 22px; }
+    .vp-kpi-lbl { font-size: 11px; }
+    .vp-kpi-trend { font-size: 10px; }
+    .vp-panel { padding: 14px 16px; border-radius: 16px; }
+    .vp-case-row { grid-template-columns: 1fr auto; gap: 6px; }
+    .vp-case-row .vp-diag, .vp-case-row .vp-pay { display: none; }
+    .vp-cage { padding: 6px; }
+    .vp-cage-num { font-size: 11px; }
+    .vp-cage-mini { font-size: 8.5px; }
+  }
+</style>
+
+<script id="vetpro-dashboard-v2-script">
+(function(){
+  'use strict';
+  if (window.__vetproDashV2Loaded) return;
+  window.__vetproDashV2Loaded = true;
+
+  function safeGet(name) {
+    try { return window[name]; } catch(e) { return undefined; }
+  }
+  function asArr(v){ return Array.isArray(v) ? v : []; }
+
+  function getUserName(){
+    try {
+      const sb = window._sb;
+      // Fallback chain
+      const ls = (typeof localStorage !== 'undefined' && localStorage.getItem('vetpro-user-name')) || '';
+      if (ls) return ls;
+    } catch(e) {}
+    return 'Dr. Kherbache Wail';
+  }
+
+  async function getUserNameAsync(){
+    try {
+      if (window._sb?.auth?.getSession) {
+        const { data: { session } } = await window._sb.auth.getSession();
+        const meta = session?.user?.user_metadata || {};
+        const fullName = meta.full_name || meta.name || '';
+        if (fullName) return fullName;
+        if (session?.user?.email) {
+          const userPart = session.user.email.split('@')[0];
+          return userPart.charAt(0).toUpperCase() + userPart.slice(1);
+        }
+      }
+    } catch(e) {}
+    return getUserName();
+  }
+
+  function fmt(n){ return Number(n||0).toLocaleString('fr-FR'); }
+  function todayDA(){
+    const d = new Date();
+    return d.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' });
+  }
+
+  function computeKPIs(){
+    const cages = asArr(safeGet('CAGES'));
+    const drugs = asArr(safeGet('DRUGS'));
+    const patients = asArr(safeGet('PATIENTS'));
+    const appts = asArr(safeGet('APPOINTMENTS'));
+    const reminders = asArr(safeGet('VACCINE_REMINDERS'));
+
+    const occupied = cages.filter(c => c?.statut === 'occupée').length;
+    const free = cages.filter(c => c?.statut === 'libre').length;
+    const total = cages.length;
+
+    const lowStock = drugs.filter(d => Number(d?.s) <= Number(d?.smin || 0)).length;
+    const ruptures = drugs.filter(d => Number(d?.s) === 0).length;
+
+    const today = new Date().toISOString().slice(0,10);
+    const upcomingAppts = appts.filter(a => (a?.date || '').slice(0,10) >= today).length;
+
+    return {
+      patients: patients.length,
+      cases: patients.length, // active patient ≈ active case in this app
+      hospitalized: occupied,
+      cagesFree: free,
+      cagesTotal: total,
+      lowStock,
+      ruptures,
+      appts: upcomingAppts,
+      reminders: reminders.length,
+    };
+  }
+
+  function recentCases(){
+    const patients = asArr(safeGet('PATIENTS'));
+    if (!patients.length) return null;
+    return patients.slice(-4).reverse().map(p => ({
+      name: p?.nom || p?.name || 'Animal',
+      species: p?.espece || '',
+      owner: p?.proprietaire || p?.owner || '',
+      diag: p?.diagnostic || p?.motif || 'En consultation',
+      severity: p?.urgence || 'normal',
+      pay: p?.paiement || 'unknown',
+    }));
+  }
+
+  function renderRecentCases(){
+    const items = recentCases();
+    if (!items) {
+      return `
+        <div class="vp-empty" style="padding:24px 12px">
+          <div class="vp-empty-icon">🐾</div>
+          <div class="vp-empty-title">Aucun cas pour le moment</div>
+          <div class="vp-empty-msg">Créez votre premier cas clinique pour commencer le suivi.</div>
+          <button class="btn btn-p" onclick="nav('cas')">+ Nouveau cas</button>
+        </div>`;
+    }
+    return items.map(c => {
+      const sevCls = c.severity === 'critique' ? 'crit' : c.severity === 'urgent' ? 'urg' : 'norm';
+      const sevTxt = c.severity === 'critique' ? '🚨 Critique' : c.severity === 'urgent' ? '⚠️ Urgent' : '✅ Normal';
+      const payTxt = c.pay === 'paid' ? '<span class="vp-pay vp-pay-ok">✅ Payé</span>'
+        : c.pay === 'partial' ? '<span class="vp-pay vp-pay-pt">⚠ 50%</span>'
+        : c.pay === 'unpaid' ? '<span class="vp-pay vp-pay-no">❌ Impayé</span>'
+        : '<span class="vp-pay" style="color:#94a3b8">—</span>';
+      return `
+        <div class="vp-case-row">
+          <div><strong>${c.species ? c.species + ' ' : ''}${c.name}</strong>${c.owner ? `<small>${c.owner}</small>` : ''}</div>
+          <div class="vp-diag">${c.diag}</div>
+          <span class="vp-bdg ${sevCls}">${sevTxt}</span>
+          ${payTxt}
+        </div>`;
+    }).join('');
+  }
+
+  function renderCageMini(){
+    const cages = asArr(safeGet('CAGES'));
+    const sample = cages.slice(0, 8);
+    if (!sample.length) {
+      return `<div class="vp-empty" style="padding:12px 4px"><div class="vp-empty-icon" style="font-size:28px">🏥</div><div class="vp-empty-msg">Aucune cage configurée.</div></div>`;
+    }
+    return `<div class="vp-cage-grid">` + sample.map(c => {
+      const cls = c.statut === 'occupée' ? 'busy' : c.statut === 'nettoyage' ? 'clean' : 'free';
+      const lbl = c.statut === 'occupée' ? 'Occupée' : c.statut === 'nettoyage' ? 'Nettoyage' : 'Libre';
+      const animal = c.animal ? `<div class="vp-cage-mini">${c.animal}</div>` : `<div class="vp-cage-mini">${lbl}</div>`;
+      return `<div class="vp-cage ${cls}" onclick="nav('cages')" title="${c.id} — ${lbl}">
+        <div class="vp-cage-num">${c.id}</div>${animal}
+      </div>`;
+    }).join('') + `</div>`;
+  }
+
+  function renderDashboard(name){
+    const k = computeKPIs();
+    const greeting = (() => {
+      const h = new Date().getHours();
+      if (h < 5) return 'Bonne nuit';
+      if (h < 12) return 'Bonjour';
+      if (h < 18) return 'Bon après-midi';
+      return 'Bonsoir';
+    })();
+
+    return `
+    <div class="vp-dash">
+      <!-- HERO -->
+      <div class="vp-hero">
+        <div class="vp-hero-tag">🌿 Algérie 🇩🇿 · VétérinApp Pro</div>
+        <h1>${greeting}, ${name} 👋</h1>
+        <p>Voici l'aperçu de votre clinique aujourd'hui · Diagnostics · Hospitalisations · Stocks · IA gratuite</p>
+        <div class="vp-hero-meta">
+          <span>📅 <strong>${todayDA()}</strong></span>
+          <span>🏥 <strong>${k.hospitalized}</strong> hospitalisé${k.hospitalized > 1 ? 's' : ''}</span>
+          <span>📅 <strong>${k.appts}</strong> RDV à venir</span>
+        </div>
+      </div>
+
+      <!-- KPI grid -->
+      <div class="vp-kpis">
+        <div class="vp-kpi info" tabindex="0" onclick="nav('cas')" onkeypress="if(event.key==='Enter')nav('cas')">
+          <div class="vp-kpi-ico">📋</div>
+          <div class="vp-kpi-body">
+            <div class="vp-kpi-val">${fmt(k.cases)}</div>
+            <div class="vp-kpi-lbl">Patients suivis</div>
+            <div class="vp-kpi-trend">📈 ${k.cases ? 'Voir tous les cas' : 'Aucun pour l\\'instant'}</div>
+          </div>
+        </div>
+        <div class="vp-kpi" tabindex="0" onclick="nav('cages')" onkeypress="if(event.key==='Enter')nav('cages')">
+          <div class="vp-kpi-ico">🏥</div>
+          <div class="vp-kpi-body">
+            <div class="vp-kpi-val">${fmt(k.hospitalized)}</div>
+            <div class="vp-kpi-lbl">Animaux hospitalisés</div>
+            <div class="vp-kpi-trend">${k.cagesFree}/${k.cagesTotal} cages libres</div>
+          </div>
+        </div>
+        <div class="vp-kpi warm" tabindex="0" onclick="nav('rdv')" onkeypress="if(event.key==='Enter')nav('rdv')">
+          <div class="vp-kpi-ico">📅</div>
+          <div class="vp-kpi-body">
+            <div class="vp-kpi-val">${fmt(k.appts)}</div>
+            <div class="vp-kpi-lbl">RDV à venir</div>
+            <div class="vp-kpi-trend">${k.reminders} rappels vaccin</div>
+          </div>
+        </div>
+        <div class="vp-kpi danger" tabindex="0" onclick="nav('meds')" onkeypress="if(event.key==='Enter')nav('meds')">
+          <div class="vp-kpi-ico">💊</div>
+          <div class="vp-kpi-body">
+            <div class="vp-kpi-val">${fmt(k.lowStock)}</div>
+            <div class="vp-kpi-lbl">Stocks faibles</div>
+            <div class="vp-kpi-trend">${k.ruptures} rupture${k.ruptures > 1 ? 's' : ''}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-col row -->
+      <div class="vp-row">
+        <div class="vp-panel">
+          <div class="vp-panel-h">
+            <div class="vp-panel-title">📋 Cas récents</div>
+            <button class="vp-panel-link" onclick="nav('cas')">Voir tout →</button>
+          </div>
+          ${renderRecentCases()}
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+          <div class="vp-panel">
+            <div class="vp-panel-h">
+              <div class="vp-panel-title">🏥 Cages</div>
+              <button class="vp-panel-link" onclick="nav('cages')">Gérer →</button>
+            </div>
+            ${renderCageMini()}
+          </div>
+
+          <div class="vp-ai-panel" onclick="nav('ai')">
+            <div class="vp-ai-panel-h">
+              <div class="vp-ai-avatar">🤖</div>
+              <div style="min-width:0">
+                <h4>Assistant IA Vétérinaire</h4>
+                <small>LLaMA 3.3 70B · OpenRouter</small>
+              </div>
+              <span class="vp-ai-live"><span class="vp-ai-live-dot"></span>En ligne</span>
+            </div>
+            <p>Diagnostics différentiels · Posologie · Chirurgie · Algérie 🇩🇿</p>
+            <button class="vp-ai-cta">💬 Poser une question →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="vp-quick">
+        <button class="vp-quick-btn primary" onclick="nav('cas')">➕ Nouveau cas clinique</button>
+        <button class="vp-quick-btn secondary" onclick="nav('ai')">🤖 Assistant IA</button>
+        <button class="vp-quick-btn tertiary" onclick="nav('cages')">🏥 Gérer les cages</button>
+      </div>
+    </div>`;
+  }
+
+  async function paint(){
+    const page = document.getElementById('page-dashboard');
+    if (!page) return;
+    const name = await getUserNameAsync();
+    page.innerHTML = renderDashboard(name);
+  }
+
+  // Re-paint on every nav('dashboard') call.
+  function patchNavForDashboard(){
+    if (typeof window.nav !== 'function' || window.nav.__vpDashPatched) return false;
+    const orig = window.nav;
+    const wrapped = function(p){
+      const r = orig.apply(this, arguments);
+      if (p === 'dashboard' || p === 'home' || p === 'accueil') {
+        setTimeout(paint, 50);
+      }
+      return r;
+    };
+    wrapped.__vpDashPatched = true;
+    window.nav = wrapped;
+    return true;
+  }
+
+  let attempts = 0;
+  const t = setInterval(() => {
+    if (patchNavForDashboard() || ++attempts > 30) clearInterval(t);
+  }, 200);
+
+  // Initial paint
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(paint, 400));
+  } else {
+    setTimeout(paint, 400);
+  }
+  // Re-paint when data changes (e.g., after persistAppState)
+  window.__vpRepaintDashboard = paint;
+  document.addEventListener('change', () => {
+    clearTimeout(window.__vpDashRepaintTimer);
+    window.__vpDashRepaintTimer = setTimeout(() => {
+      const dash = document.getElementById('page-dashboard');
+      if (dash && dash.classList.contains('active')) paint();
+    }, 800);
+  }, true);
+})();
+</script>
+
 </body>
 </html>
