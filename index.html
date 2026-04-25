@@ -12738,5 +12738,294 @@ function saveAdmission() {
 })();
 </script>
 
+<style id="vetpro-uiux-polish-style">
+  /* ─── No horizontal overflow, ever ─────────────────────────────────────── */
+  html, body { max-width: 100vw; overflow-x: hidden; }
+  *, *::before, *::after { box-sizing: border-box; }
+
+  /* Common containers shouldn't push the layout wider than the viewport */
+  .main, .topbar, .page, .page-hero, .card, .stat-card,
+  .g2, .g3, .g4, .row2, .kpi-row, .feature-list, .pricing-wrap,
+  .stats-mini-grid, .contact-grid {
+    max-width: 100%;
+    min-width: 0;
+  }
+  .g2 > *, .g3 > *, .g4 > *, .row2 > *, .kpi-row > * { min-width: 0; }
+
+  /* Long words/URLs/emails wrap instead of overflowing */
+  .card, .stat-card, .page-hero, .ai-bubble, .lbl, p, h1, h2, h3, td, th {
+    word-break: break-word; overflow-wrap: anywhere;
+  }
+
+  /* Tables: keep responsive scroll on mobile, stay inside viewport on desktop */
+  .tbl, table { max-width: 100%; }
+
+  /* Modals never exceed viewport */
+  .overlay { padding: 12px; }
+  .overlay > div, .overlay .modal { max-width: min(640px, 96vw); max-height: 92vh; overflow: auto; }
+
+  /* Focus rings for accessibility */
+  button:focus-visible, a:focus-visible, input:focus-visible,
+  select:focus-visible, textarea:focus-visible, .sb-item:focus-visible {
+    outline: 2px solid #2E7D52; outline-offset: 2px; border-radius: 8px;
+  }
+
+  /* Smoother card hover */
+  .card, .stat-card { transition: transform .18s ease, box-shadow .18s ease; }
+  .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(15, 61, 42, .12); }
+
+  /* Save indicator (top-right toast) */
+  #vp-save-indicator {
+    position: fixed; top: 14px; right: 14px; z-index: 250;
+    background: rgba(15, 61, 42, .92); color: #d1fae5;
+    padding: 8px 14px; border-radius: 999px; font-size: 12px; font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .25);
+    opacity: 0; transform: translateY(-8px); transition: opacity .2s ease, transform .2s ease;
+    pointer-events: none;
+  }
+  #vp-save-indicator.vp-show { opacity: 1; transform: translateY(0); }
+  body.vp-rtl #vp-save-indicator { right: auto; left: 14px; }
+
+  /* AI error banner */
+  .vp-ai-error-banner {
+    background: linear-gradient(135deg, rgba(239,68,68,.15), rgba(239,68,68,.05));
+    border: 1px solid rgba(239,68,68,.4);
+    color: #fca5a5; padding: 12px 14px; border-radius: 12px;
+    font-size: 12.5px; line-height: 1.5; margin: 8px 0;
+  }
+  .vp-ai-error-banner strong { color: #fff; display: block; margin-bottom: 4px; }
+
+  /* ─── Dashboard mobile fix (16:9 phone, 360–414 wide) ───────────────────── */
+  @media (max-width: 768px) {
+    /* All the inline-styled grid-template-columns: repeat(N, 1fr) on dashboard */
+    #page-dashboard [style*="grid-template-columns:repeat(4,1fr)"],
+    #page-dashboard [style*="grid-template-columns:repeat(3,1fr)"] {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+    .stat-card { padding: 14px !important; }
+    .stat-val { font-size: 22px !important; }
+    .stat-lbl { font-size: 11px !important; }
+    .stat-trend { font-size: 10px !important; }
+
+    /* Page hero compact + no overflow */
+    .page-hero { padding: 18px 16px !important; border-radius: 16px !important; }
+    .page-hero .tag { font-size: 10.5px !important; }
+
+    /* Dashboard quick actions stack */
+    .g3 .btn-lg { font-size: 13px !important; padding: 12px !important; }
+
+    /* Cage cards on dashboard fit phone width */
+    .cage-card { padding: 8px !important; min-width: 0 !important; }
+    .cage-num { font-size: 14px !important; }
+
+    /* AI quick-question chips wrap better */
+    .ai-qbtn { font-size: 11px !important; padding: 7px 10px !important; }
+
+    /* Settings inputs full width */
+    #page-settings .sel, #page-settings .inp, #page-settings .tex { width: 100% !important; }
+  }
+
+  @media (max-width: 414px) {
+    .topbar-title { font-size: 13px !important; }
+    .stat-val { font-size: 18px !important; }
+    .page-hero h2 { font-size: 16px !important; line-height: 1.25; }
+    .page-hero p { font-size: 11.5px !important; }
+    .btn { font-size: 13px !important; }
+    .card { padding: 14px !important; border-radius: 14px !important; }
+    .card-title { font-size: 14px !important; }
+  }
+
+  @media (max-width: 360px) {
+    /* Tightest phones — keep cards readable, drop optional decoration */
+    #page-dashboard [style*="grid-template-columns:repeat(4,1fr)"],
+    #page-dashboard [style*="grid-template-columns:repeat(3,1fr)"] {
+      grid-template-columns: 1fr 1fr !important; gap: 6px !important;
+    }
+    .topbar-badge, .ai-live span { display: none !important; }
+  }
+
+  /* ─── 16:9 landscape phone (e.g. 720x405 ratio) ────────────────────────── */
+  @media (max-height: 480px) and (orientation: landscape) {
+    .page-hero { padding: 12px 14px !important; }
+    .page-hero h2 { font-size: 16px !important; }
+    .sidebar { width: 220px !important; }
+  }
+</style>
+
+<script id="vetpro-uiux-polish-script">
+(function(){
+  'use strict';
+  if (window.__vetproUIUXPolishLoaded) return;
+  window.__vetproUIUXPolishLoaded = true;
+
+  const SETTINGS_TABLE = 'vetpro_user_settings';
+  const STATE_TABLE = 'vetpro_user_state';
+
+  function sb(){ return (typeof _sb !== 'undefined') ? _sb : null; }
+
+  // ── Save indicator ──────────────────────────────────────────────────────
+  function ensureSaveIndicator(){
+    let el = document.getElementById('vp-save-indicator');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'vp-save-indicator';
+      el.textContent = '✓ Sauvegardé';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function showSaveIndicator(text){
+    const el = ensureSaveIndicator();
+    el.textContent = text || '✓ Sauvegardé dans le cloud';
+    el.classList.add('vp-show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('vp-show'), 1600);
+  }
+  window.__vpShowSaveIndicator = showSaveIndicator;
+
+  // ── Hook the existing persistAppState wrapper to surface a save toast ──
+  function instrumentPersist(){
+    if (typeof window.persistAppState !== 'function') return false;
+    const original = window.persistAppState;
+    if (original.__vpInstrumented) return true;
+    const wrapped = function(){
+      const r = original.apply(this, arguments);
+      try { showSaveIndicator('💾 Sauvegarde…'); } catch(e){}
+      // Cloud save is debounced 350ms inside the existing wrapper —
+      // show "saved" after a slightly longer delay.
+      clearTimeout(window.__vpSavedTick);
+      window.__vpSavedTick = setTimeout(() => {
+        try { showSaveIndicator('✓ Sauvegardé'); } catch(e){}
+      }, 700);
+      return r;
+    };
+    wrapped.__vpInstrumented = true;
+    window.persistAppState = wrapped;
+    return true;
+  }
+
+  // Try a few times in case persistAppState is wired up after this script.
+  let attempts = 0;
+  const persistTimer = setInterval(() => {
+    if (instrumentPersist() || ++attempts > 20) clearInterval(persistTimer);
+  }, 250);
+
+  // ── Listen for any input change in clinic-data forms and trigger save ──
+  function broadcastDataChange(){
+    if (typeof window.persistAppState === 'function') {
+      try { window.persistAppState(); } catch(e){}
+    }
+  }
+  document.addEventListener('change', (ev) => {
+    const t = ev.target;
+    if (!t) return;
+    // Only trigger save for form elements inside a real clinic page (not auth/landing)
+    const page = t.closest && t.closest('.page');
+    if (!page || !page.id) return;
+    if (/^page-(login|terms|conditions|approvals|landing)$/.test(page.id)) return;
+    broadcastDataChange();
+  }, true);
+
+  // ── Friendly AI error display ───────────────────────────────────────────
+  if (typeof window.sendAI === 'function' && !window.sendAI.__vpWrapped) {
+    const originalSend = window.sendAI;
+    const wrappedSend = async function(){
+      // The original sendAI uses `_sb.functions.invoke('vetpro-ai', …)`.
+      // Wrap appendAIMsg so we can detect error markers and prettify them.
+      const originalAppend = window.appendAIMsg;
+      if (originalAppend && !originalAppend.__vpWrapped) {
+        const wrappedAppend = function(role, text){
+          if (role === 'bot' && typeof text === 'string' && /Erreur Edge Function|Erreur OpenRouter|Erreur de connexion/.test(text)) {
+            const msgs = document.getElementById('ai-msgs');
+            if (msgs) {
+              const div = document.createElement('div');
+              div.className = 'ai-msg bot';
+              const friendly = /429|rate.?limit|saturé/i.test(text)
+                ? `<strong>🛑 Limite gratuite atteinte</strong>Tous les modèles OpenRouter gratuits sont saturés en ce moment. Réessayez dans 30–60 secondes — un autre modèle gratuit sera tenté automatiquement. Pour un usage intensif, vous pouvez ajouter du crédit OpenRouter (≈ 1$ couvre des milliers de requêtes).`
+                : `<strong>⚠️ Service IA momentanément indisponible</strong>${text.replace(/^❌\s*/, '')}`;
+              div.innerHTML = `<div class="ai-msg-av">🤖</div><div class="ai-bubble"><div class="vp-ai-error-banner">${friendly}</div></div>`;
+              msgs.appendChild(div);
+              msgs.scrollTop = msgs.scrollHeight;
+              return;
+            }
+          }
+          return originalAppend.apply(this, arguments);
+        };
+        wrappedAppend.__vpWrapped = true;
+        window.appendAIMsg = wrappedAppend;
+      }
+      return originalSend.apply(this, arguments);
+    };
+    wrappedSend.__vpWrapped = true;
+    window.sendAI = wrappedSend;
+  }
+
+  // ── Force the existing inline grids on the dashboard to use min-width:0 ─
+  function fixGridChildren(){
+    document.querySelectorAll('#page-dashboard [style*="grid-template-columns"]').forEach(grid => {
+      Array.from(grid.children).forEach(child => {
+        if (!child.style.minWidth) child.style.minWidth = '0';
+      });
+    });
+  }
+  document.addEventListener('DOMContentLoaded', fixGridChildren);
+  window.addEventListener('load', fixGridChildren);
+
+  // ── Persist a "last open page" hint in Supabase user_settings.ui ────────
+  async function persistUIPref(key, value){
+    const client = sb();
+    if (!client?.auth?.getSession) return;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return;
+      const email = (session.user.email || '').toLowerCase();
+      const { data } = await client.from(SETTINGS_TABLE).select('ui').eq('user_id', session.user.id).maybeSingle();
+      const ui = (data?.ui && typeof data.ui === 'object') ? data.ui : {};
+      ui[key] = value;
+      await client.from(SETTINGS_TABLE).upsert({
+        user_id: session.user.id, email, ui, updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+    } catch (e) {}
+  }
+  // Hook nav() to record the current page server-side (debounced)
+  function patchNavForUIPref(){
+    if (typeof window.nav !== 'function' || window.nav.__vpUIPatched) return false;
+    const orig = window.nav;
+    let timer = null;
+    const wrapped = function(p){
+      const r = orig.apply(this, arguments);
+      clearTimeout(timer);
+      timer = setTimeout(() => persistUIPref('lastPage', p), 600);
+      return r;
+    };
+    wrapped.__vpUIPatched = true;
+    window.nav = wrapped;
+    return true;
+  }
+  let navAttempts = 0;
+  const navTimer = setInterval(() => {
+    if (patchNavForUIPref() || ++navAttempts > 20) clearInterval(navTimer);
+  }, 250);
+
+  // ── Restore last page after login ──────────────────────────────────────
+  async function restoreLastPage(){
+    const client = sb();
+    if (!client?.auth?.getSession) return;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return;
+      const { data } = await client.from(SETTINGS_TABLE).select('ui').eq('user_id', session.user.id).maybeSingle();
+      const last = data?.ui?.lastPage;
+      if (last && typeof window.nav === 'function' && document.getElementById('page-' + last)) {
+        // Don't auto-jump to AI on first session load — could be confusing if errors appear.
+        if (last !== 'ai') window.nav(last);
+      }
+    } catch (e) {}
+  }
+  window.addEventListener('load', () => setTimeout(restoreLastPage, 1500));
+})();
+</script>
+
 </body>
 </html>
