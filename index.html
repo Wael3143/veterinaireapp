@@ -13027,5 +13027,263 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     UI/UX Pro Max layer — applied per ui-ux-pro-max-skill
+     Product type: Veterinary Clinic (row 61)
+     Style: Claymorphism + Accessible & Ethical (soft, friendly, WCAG AA)
+     Color: Caring teal #0D9488 primary + warm orange #EA580C accent
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-design-system-style">
+  :root {
+    /* Pet-friendly accent (per skill recommendation) — layered alongside existing forest greens */
+    --vp-accent-warm: #EA580C;
+    --vp-accent-warm-soft: #FED7AA;
+    --vp-care-teal: #0D9488;
+    --vp-care-teal-soft: #99F6E4;
+    --vp-success: #16A34A;
+    --vp-warning: #D97706;
+    --vp-danger: #DC2626;
+
+    /* Claymorphism-influenced shadow tokens (subtle for clinical context) */
+    --vp-shadow-clay: 0 1px 2px rgba(15,61,42,.04), 0 4px 16px rgba(15,61,42,.08), inset 0 1px 0 rgba(255,255,255,.7);
+    --vp-shadow-clay-hover: 0 2px 4px rgba(15,61,42,.06), 0 12px 28px rgba(15,61,42,.14), inset 0 1px 0 rgba(255,255,255,.8);
+    --vp-shadow-pressed: inset 0 2px 6px rgba(15,61,42,.12), 0 1px 2px rgba(15,61,42,.04);
+
+    /* Spring easing (per Claymorphism guidance) */
+    --vp-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --vp-ease: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* ── Soft-UI cards (additive — keeps existing brand) ─────────────────── */
+  .card, .stat-card {
+    border-radius: 18px !important;
+    box-shadow: var(--vp-shadow-clay);
+    transition: transform .18s var(--vp-ease), box-shadow .22s var(--vp-ease);
+  }
+  .card:hover, .stat-card:hover {
+    box-shadow: var(--vp-shadow-clay-hover);
+  }
+  .stat-card { padding: 18px; gap: 12px; }
+  .stat-ico {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+
+  /* ── Spring press microinteraction on buttons ────────────────────────── */
+  .btn, button.btn, .login-btn {
+    transition: transform .15s var(--vp-spring), box-shadow .18s var(--vp-ease), background .15s var(--vp-ease);
+    border-radius: 14px;
+  }
+  .btn:active, button.btn:active, .login-btn:active {
+    transform: scale(.96);
+    box-shadow: var(--vp-shadow-pressed);
+  }
+  .btn:focus-visible, button.btn:focus-visible {
+    outline: 2px solid var(--vp-care-teal);
+    outline-offset: 2px;
+  }
+
+  /* ── Pet-friendly warm-orange CTA accent (use sparingly) ─────────────── */
+  .btn-warm, .btn.btn-warm {
+    background: linear-gradient(135deg, #F97316, var(--vp-accent-warm)) !important;
+    color: #fff !important; border: none !important;
+    box-shadow: 0 6px 16px rgba(234,88,12,.28);
+  }
+  .btn-warm:hover { box-shadow: 0 8px 22px rgba(234,88,12,.4); transform: translateY(-1px); }
+
+  /* Promote the dashboard "Nouveau cas clinique" CTA to warm accent */
+  #page-dashboard .g3 .btn.btn-p { background: linear-gradient(135deg, #F97316, var(--vp-accent-warm)) !important; }
+
+  /* ── Inputs: bigger radius, softer focus, accessible contrast ────────── */
+  .inp, .sel, .tex, input.inp, select.sel, textarea.tex {
+    border-radius: 12px !important;
+    transition: border-color .15s var(--vp-ease), box-shadow .15s var(--vp-ease);
+  }
+  .inp:focus, .sel:focus, .tex:focus, input:focus, select:focus, textarea:focus {
+    border-color: var(--vp-care-teal) !important;
+    box-shadow: 0 0 0 4px rgba(13,148,136,.14) !important;
+    outline: none !important;
+  }
+
+  /* ── Status chips: icon + color (not color alone, per UX rule 37) ────── */
+  .bdg, .pay-ok, .pay-pt, .pay-no, .vp-status-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    border-radius: 999px; font-weight: 700; letter-spacing: .2px;
+  }
+
+  /* ── Skeleton loaders (per UX rule 10) ───────────────────────────────── */
+  .vp-skeleton {
+    background: linear-gradient(90deg, #E8F1F4 0%, #F0F9F6 50%, #E8F1F4 100%);
+    background-size: 200% 100%; animation: vp-shimmer 1.4s linear infinite;
+    border-radius: 8px; min-height: 14px;
+  }
+  .vp-skeleton.tall { min-height: 60px; border-radius: 14px; }
+  @keyframes vp-shimmer {
+    0% { background-position: 100% 0; }
+    100% { background-position: -100% 0; }
+  }
+
+  /* ── Empty state (per UX rule 79) ────────────────────────────────────── */
+  .vp-empty {
+    text-align: center; padding: 36px 18px;
+    color: #5b6b73; font-family: 'Outfit', sans-serif;
+  }
+  .vp-empty-icon { font-size: 42px; margin-bottom: 8px; opacity: .6; }
+  .vp-empty-title { font-weight: 700; font-size: 15px; color: var(--ink); margin-bottom: 4px; }
+  .vp-empty-msg { font-size: 12.5px; line-height: 1.5; max-width: 320px; margin: 0 auto 12px; }
+  .vp-empty .btn { font-size: 13px; padding: 9px 18px; }
+
+  /* ── Sidebar refinement: rounded items, smoother active state ────────── */
+  .sb-item {
+    border-radius: 12px; margin: 1px 8px; padding: 9px 12px;
+    transition: background .15s var(--vp-ease), color .15s var(--vp-ease), transform .12s var(--vp-spring);
+  }
+  .sb-item:hover { background: rgba(13,148,136,.08); }
+  .sb-item.active {
+    background: linear-gradient(135deg, rgba(13,148,136,.16), rgba(15,61,42,.12));
+    color: var(--vp-care-teal); font-weight: 600;
+  }
+
+  /* ── Topbar polish ───────────────────────────────────────────────────── */
+  .topbar {
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    background: rgba(255,255,255,.78) !important;
+    border-bottom: 1px solid rgba(15,61,42,.06);
+  }
+
+  /* ── Modal polish: rounded, subtle entrance ──────────────────────────── */
+  .overlay .modal, .overlay > div {
+    border-radius: 22px !important;
+    box-shadow: 0 24px 60px rgba(15,61,42,.28), 0 4px 12px rgba(15,61,42,.08);
+    animation: vp-modal-in .22s var(--vp-spring);
+  }
+  @keyframes vp-modal-in {
+    from { opacity: 0; transform: translateY(12px) scale(.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* ── Reduced motion (per UX rule 9 — accessibility mandatory) ────────── */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* ── High-contrast safety: ensure muted text hits 4.5:1 (per UX rule 36) ─ */
+  .stat-trend, small, .tag, .stat-lbl {
+    color: #4b5b65;
+  }
+
+  /* ── Improved AI bubble feel (chat) ──────────────────────────────────── */
+  .ai-bubble {
+    border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 22px rgba(0,0,0,.06);
+  }
+  .ai-msg.user .ai-bubble {
+    background: linear-gradient(135deg, var(--vp-care-teal), #0F3D2A);
+    color: #fff;
+  }
+
+  /* ── Logout button polish ────────────────────────────────────────────── */
+  #logout-btn {
+    border-radius: 999px;
+    transition: transform .15s var(--vp-spring), box-shadow .18s var(--vp-ease);
+  }
+  #logout-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+</style>
+
+<script id="vetpro-design-system-script">
+(function(){
+  'use strict';
+  if (window.__vetproDesignSystemLoaded) return;
+  window.__vetproDesignSystemLoaded = true;
+
+  // ── Empty-state injection helper ─────────────────────────────────────
+  function emptyHTML(icon, title, msg, ctaLabel, ctaHandler){
+    const cta = ctaLabel
+      ? `<button class="btn btn-p" onclick="${ctaHandler}">${ctaLabel}</button>`
+      : '';
+    return `
+      <div class="vp-empty">
+        <div class="vp-empty-icon">${icon}</div>
+        <div class="vp-empty-title">${title}</div>
+        <div class="vp-empty-msg">${msg}</div>
+        ${cta}
+      </div>`;
+  }
+
+  // After the app's initial render, scan tables that ended up with zero rows
+  // inside clinic-data sections and replace them with an empty state.
+  function decorateEmptyTables(){
+    const map = [
+      ['#page-clients table tbody', '👥', 'Aucun client',           'Ajoutez votre premier client pour commencer le suivi.', 'Nouveau client', "openModal('modal-client')"],
+      ['#page-rdv table tbody',     '📅', 'Aucun rendez-vous',      'Planifiez votre premier rendez-vous.',                    'Nouveau RDV',    "openModal('modal-rdv')"],
+      ['#page-finances table tbody','💰', 'Aucune transaction',     'Enregistrez votre première recette ou dépense.',           'Nouvelle entrée', "openModal('modal-finance')"],
+      ['#page-cas table tbody',     '📋', 'Aucun cas clinique',     'Créez votre premier cas pour commencer.',                 'Nouveau cas',     "openModal('modal-cas')"],
+    ];
+    map.forEach(([selector, icon, title, msg, ctaLbl, ctaFn]) => {
+      const tbody = document.querySelector(selector);
+      if (!tbody) return;
+      if (tbody.children.length > 0) return;
+      const table = tbody.closest('table');
+      if (!table) return;
+      const wrap = table.parentElement;
+      if (!wrap || wrap.querySelector('.vp-empty')) return;
+      const placeholder = document.createElement('div');
+      placeholder.innerHTML = emptyHTML(icon, title, msg, ctaLbl, ctaFn);
+      wrap.appendChild(placeholder.firstElementChild);
+    });
+  }
+  // Re-run after navigation — the existing nav() may re-render content.
+  function patchNavForEmpty(){
+    if (typeof window.nav !== 'function' || window.nav.__vpEmptyPatched) return false;
+    const orig = window.nav;
+    const wrapped = function(){
+      const r = orig.apply(this, arguments);
+      setTimeout(decorateEmptyTables, 200);
+      return r;
+    };
+    wrapped.__vpEmptyPatched = true;
+    window.nav = wrapped;
+    return true;
+  }
+  let attempts = 0;
+  const t = setInterval(() => {
+    if (patchNavForEmpty() || ++attempts > 20) clearInterval(t);
+  }, 250);
+  window.addEventListener('load', () => setTimeout(decorateEmptyTables, 800));
+
+  // ── Skeleton placeholder while async data hydrates ────────────────────
+  // Show a skeleton briefly when the page mounts; remove once data arrives.
+  function paintSkeletons(){
+    document.querySelectorAll('.card[data-async-pending="true"]').forEach(card => {
+      if (card.querySelector('.vp-skeleton')) return;
+      const skeletonRows = Array.from({length: 4}).map(() =>
+        `<div class="vp-skeleton" style="height:14px;margin:8px 0"></div>`
+      ).join('');
+      const slot = document.createElement('div');
+      slot.className = 'vp-async-skeleton';
+      slot.innerHTML = skeletonRows;
+      card.appendChild(slot);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', paintSkeletons);
+
+  // ── Add "warm" CTA class to the primary dashboard buttons ─────────────
+  function highlightPrimaryCTA(){
+    const dash = document.getElementById('page-dashboard');
+    if (!dash) return;
+    const ctas = dash.querySelectorAll('.g3 .btn-p');
+    ctas.forEach(b => b.classList.add('btn-warm'));
+  }
+  window.addEventListener('load', () => setTimeout(highlightPrimaryCTA, 400));
+})();
+</script>
+
 </body>
 </html>
