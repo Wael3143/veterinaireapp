@@ -14810,6 +14810,275 @@ function saveAdmission() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
+     MOBILE UI + MONTANT v3 — definitive fixes for:
+     · stuck UI on phone (excessive intervals + missing touch-action)
+     · letter-per-line vertical text on mobile (aggressive writing-mode)
+     · montant/paid not saving (defensive extract-from-form, post-save patch)
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-mobile-ui-v3-style">
+  /* ── Force horizontal text on EVERY element (kills vertical letter stack) ─ */
+  html, body, * {
+    writing-mode: horizontal-tb !important;
+    text-orientation: mixed !important;
+    -webkit-text-orientation: mixed !important;
+  }
+  /* But allow truly intentional RTL (Arabic) */
+  body.vp-rtl, body.vp-rtl * { direction: rtl; }
+
+  /* ── Touch responsiveness ───────────────────────────────────────────── */
+  button, .btn, .login-btn, .landing-btn, a, .sb-item,
+  .vp-quick-btn, .vp-kpi, .vp-cage, .vp-contact-item,
+  .stat-card, .card, input, select, textarea, label {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(13,148,136,.18);
+  }
+
+  /* ── Smooth momentum scrolling on iOS ───────────────────────────────── */
+  #login-screen, .main, .content, body, html, .overlay > div,
+  .sidebar, .ai-msgs, .ai-window {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Mobile: never let inline text become a column ──────────────────── */
+  @media (max-width: 768px) {
+    /* Anything that looks like a label/title/badge keeps text on one line */
+    .lbl, .stat-lbl, .vp-kpi-lbl, .vp-panel-title,
+    .card-title, .topbar-title, .topbar-badge,
+    .sb-item span, .sb-item strong,
+    .lang-switch button, .login-tag, .fchip,
+    .vp-status-badge, .approval-meta strong,
+    .login-divider span, .vp-trust-pill,
+    .landing-topnav-links button,
+    .landing-topnav-links a,
+    .vetpro-pricing-label, .vetpro-pricing-name,
+    .stat-trend, .vp-kpi-trend {
+      white-space: nowrap !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: inline-block;
+      max-width: 100%;
+    }
+    /* Numerical values + paragraphs wrap normally */
+    p, td, th, textarea, .vp-empty-msg, .login-sub,
+    .stat-val, .vp-kpi-val, .pricing-price, .vetpro-pricing-price,
+    .landing-copy {
+      white-space: normal !important;
+      word-break: normal !important;
+      overflow-wrap: break-word;
+    }
+    /* Sidebar items: row layout, never column */
+    .sidebar.vp-open .sb-item {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center !important;
+      gap: 10px !important;
+    }
+    .sidebar.vp-open .sb-item span,
+    .sidebar.vp-open .sb-item strong {
+      flex: 1 1 auto !important;
+      min-width: 0 !important;
+      max-width: none !important;
+    }
+    /* Some inline-flex containers on mobile cause one-letter columns:
+       force their text-bearing children to be inline-block */
+    .stat-card > div, .vp-kpi-body > div {
+      display: block !important;
+    }
+    /* Topbar children stay horizontal */
+    .topbar { flex-direction: row !important; align-items: center !important; }
+  }
+
+  /* AI debug status badge in the AI page corner */
+  .vp-ai-debug {
+    position: fixed; bottom: 14px; left: 14px; z-index: 1000;
+    background: rgba(15,61,42,.92); color: #d1fae5;
+    padding: 6px 12px; border-radius: 999px;
+    font-size: 11px; font-weight: 600; font-family: 'Outfit', sans-serif;
+    pointer-events: none; opacity: 0;
+    transition: opacity .25s ease;
+  }
+  .vp-ai-debug.show { opacity: 1; }
+</style>
+
+<script id="vetpro-mobile-ui-v3-script">
+(function(){
+  'use strict';
+  if (window.__vetproMobileUIV3) return;
+  window.__vetproMobileUIV3 = true;
+
+  function sb(){ return (typeof _sb !== 'undefined') ? _sb : null; }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * MONTANT FIX v3 — defensive: extract values BEFORE save, patch AFTER
+   * ──────────────────────────────────────────────────────────────────── */
+  function findInputByLabelText(needle){
+    const page = document.getElementById('page-cas');
+    if (!page) return null;
+    const lc = needle.toLowerCase();
+    const labels = page.querySelectorAll('label, .lbl');
+    for (const lbl of labels) {
+      const t = (lbl.textContent || '').trim().toLowerCase();
+      if (!t.includes(lc)) continue;
+      const fg = lbl.closest('.fg') || lbl.parentElement;
+      if (!fg) continue;
+      const input = fg.querySelector('input, select, textarea');
+      if (input) return input;
+    }
+    return null;
+  }
+
+  function readMontantValuesFromForm(){
+    const a = findInputByLabelText('Montant consultation') || findInputByLabelText('Montant');
+    const p = findInputByLabelText('Paiement re') || findInputByLabelText('Paiement');
+    const amount = parseInt((a?.value || '0').replace(/\D/g, ''), 10) || 0;
+    const paid = parseInt((p?.value || '0').replace(/\D/g, ''), 10) || 0;
+    if (a) a.id = 'case-amount';
+    if (p) p.id = 'case-paid';
+    return { amount, paid, amountInput: a, paidInput: p };
+  }
+
+  function patchSaveNewCaseV3(){
+    if (typeof window.saveNewCase !== 'function') return false;
+    if (window.saveNewCase.__vpV3) return true;
+    const orig = window.saveNewCase;
+    const wrapped = function(){
+      const captured = readMontantValuesFromForm();
+      const before = (window.HISTORIQUE_DATA || []).length;
+      const result = orig.apply(this, arguments);
+      // After the save, patch the newly-inserted history entry to ensure
+      // montant + paidAmount are correct, no matter what the original did.
+      setTimeout(() => {
+        const after = window.HISTORIQUE_DATA || [];
+        if (!after.length || after.length < before + 1) return;
+        const inserted = after[0];
+        if (!inserted) return;
+        if (!inserted.montant || inserted.montant === 0) inserted.montant = captured.amount;
+        if (inserted.paidAmount == null || inserted.paidAmount === 0) inserted.paidAmount = captured.paid;
+        // Recompute paiement state
+        if (captured.paid <= 0) inserted.paiement = 'impaye';
+        else if (captured.paid < captured.amount) inserted.paiement = 'partiel';
+        else inserted.paiement = 'paye';
+        // Persist + show toast
+        try { window.persistAppState && window.persistAppState(); } catch(e){}
+        try { window.vpSaveRemoteFixed && window.vpSaveRemoteFixed(); } catch(e){}
+        if (window.__vpShowSaveIndicator) {
+          window.__vpShowSaveIndicator(`💰 ${captured.amount.toLocaleString('fr-FR')} DA / payé ${captured.paid.toLocaleString('fr-FR')} DA`);
+        }
+      }, 100);
+      return result;
+    };
+    wrapped.__vpV3 = true;
+    window.saveNewCase = wrapped;
+    // Rebind any save button onclick
+    document.querySelectorAll('#page-cas button').forEach(b => {
+      const t = (b.textContent || '').toLowerCase();
+      if (t.includes('enregistrer') && t.includes('cas')) b.onclick = window.saveNewCase;
+    });
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * AI debug indicator — shows in the corner of the AI page so the user
+   * can confirm requests/responses without opening DevTools
+   * ──────────────────────────────────────────────────────────────────── */
+  function ensureAIDebug(){
+    let el = document.getElementById('vp-ai-debug');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'vp-ai-debug';
+      el.className = 'vp-ai-debug';
+      document.body.appendChild(el);
+    }
+    return el;
+  }
+  function showAIDebug(text, ms){
+    const el = ensureAIDebug();
+    el.textContent = text;
+    el.classList.add('show');
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), ms || 2200);
+  }
+  // Wrap sendAI to record state
+  function patchSendAIDebug(){
+    if (typeof window.sendAI !== 'function' || window.sendAI.__vpDebug) return false;
+    const orig = window.sendAI;
+    const wrapped = async function(){
+      showAIDebug('🛰️ Envoi vers Edge Function…', 5000);
+      const r = await orig.apply(this, arguments);
+      showAIDebug('✓ Réponse reçue', 1800);
+      return r;
+    };
+    wrapped.__vpDebug = true;
+    window.sendAI = wrapped;
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * Initialization with MutationObserver instead of polling
+   * ──────────────────────────────────────────────────────────────────── */
+  function tryAll(){
+    patchSaveNewCaseV3();
+    patchSendAIDebug();
+    readMontantValuesFromForm(); // also assigns IDs as a side effect
+  }
+
+  function init(){
+    tryAll();
+    const obs = new MutationObserver(() => { tryAll(); });
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Expose helpers
+  window.vpReadMontant = readMontantValuesFromForm;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * LANDING "Clients actifs" — base 13 + count of access_requests rows
+   * (approved + pending + trial) so the badge grows as VetPro adopts
+   * ──────────────────────────────────────────────────────────────────── */
+  const CLIENTS_BASE = 13;
+  async function fetchActiveClientsCount(){
+    const client = sb();
+    if (!client) return CLIENTS_BASE;
+    try {
+      const { count, error } = await client
+        .from('vetpro_access_requests')
+        .select('*', { count: 'exact', head: true });
+      if (error) return CLIENTS_BASE;
+      return CLIENTS_BASE + (count || 0);
+    } catch (e) { return CLIENTS_BASE; }
+  }
+  function updateClientsBadge(value){
+    // The hero-stat <strong> on landing page (inside .landing-card or .hero-stat)
+    document.querySelectorAll('#login-screen .hero-stat strong, #login-screen .landing-card strong').forEach(el => {
+      // Only overwrite if it currently shows a small integer (or 0)
+      const cur = (el.textContent || '').trim();
+      if (/^\d{0,4}$/.test(cur)) el.textContent = String(value);
+    });
+  }
+  async function refreshClientsBadge(){
+    const v = await fetchActiveClientsCount();
+    updateClientsBadge(v);
+  }
+  // Initial + periodic refresh
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(refreshClientsBadge, 1500));
+  } else {
+    setTimeout(refreshClientsBadge, 1500);
+  }
+  setInterval(refreshClientsBadge, 60000); // refresh every minute
+  // Expose
+  window.vpRefreshClientsBadge = refreshClientsBadge;
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
      MONTANT FIX v2 — bulletproof label-based ID assignment for the
      nouveau cas form. Previous version found inputs by index in cards[3]
      which can break when other IIFEs reshape the form.
