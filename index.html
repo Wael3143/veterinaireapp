@@ -14810,6 +14810,62 @@ function saveAdmission() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
+     LANDING TOPNAV FIX
+     The topnav links use plain anchors (href="#landing-pricing" etc.) but
+     #login-screen is `position: fixed; overflow: auto`, so anchor jumps
+     never reach the scroll container. Intercept clicks and use scrollIntoView.
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-landing-nav-fix-style">
+  /* Add scroll-margin so sections aren't hidden behind sticky topnav */
+  #login-screen .longform-section,
+  #login-screen .vetpro-center-section,
+  #login-screen [id^="landing-"] {
+    scroll-margin-top: 80px;
+  }
+  /* Make topnav buttons feel clickable + show pointer */
+  .landing-topnav-links a, .landing-topnav-links button {
+    cursor: pointer;
+    transition: color .15s ease, background .15s ease, transform .12s ease;
+  }
+  .landing-topnav-links a:hover, .landing-topnav-links button:hover {
+    transform: translateY(-1px);
+  }
+</style>
+<script id="vetpro-landing-nav-fix-script">
+(function(){
+  'use strict';
+  if (window.__vetproLandingNavFix) return;
+  window.__vetproLandingNavFix = true;
+
+  // Delegated click on the entire #login-screen — handles both initial
+  // render and any later re-render of .landing-topnav.
+  document.addEventListener('click', function(ev){
+    const screen = document.getElementById('login-screen');
+    if (!screen || !screen.contains(ev.target)) return;
+    const a = ev.target.closest('a[href^="#"]');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (href.length < 2 || href === '#') return;
+    const targetId = href.slice(1);
+    const target = document.getElementById(targetId);
+    if (!target) return;
+    ev.preventDefault();
+    // scrollIntoView walks up the scroll-parent tree, so it works inside
+    // the fixed #login-screen container that has overflow:auto.
+    try {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      target.scrollIntoView();
+    }
+    // Update the URL hash without triggering native scroll-to-anchor
+    if (history.replaceState) {
+      try { history.replaceState(null, '', '#' + targetId); } catch(e) {}
+    }
+  }, true);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
      COMPREHENSIVE FIX PACK v3
        1. Paiement save in nouveau cas (force IDs + wrap save)
        2. First reset button: actually wipes all + drug stock = 0
