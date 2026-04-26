@@ -14810,6 +14810,114 @@ function saveAdmission() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
+     MONTANT FIX v2 — bulletproof label-based ID assignment for the
+     nouveau cas form. Previous version found inputs by index in cards[3]
+     which can break when other IIFEs reshape the form.
+     ═══════════════════════════════════════════════════════════════════ -->
+<script id="vetpro-montant-fix-v2-script">
+(function(){
+  'use strict';
+  if (window.__vetproMontantFixV2) return;
+  window.__vetproMontantFixV2 = true;
+
+  // Find an input by its visible label text, anywhere inside #page-cas.
+  // This is bulletproof: doesn't depend on card index or sibling order.
+  function findInputByLabel(labelText){
+    const page = document.getElementById('page-cas');
+    if (!page) return null;
+    const labels = page.querySelectorAll('label, .lbl');
+    for (const label of labels) {
+      const text = (label.textContent || '').trim().toLowerCase();
+      if (!text.includes(labelText.toLowerCase())) continue;
+      // Sibling input? (label + input pattern in .fg)
+      let input = label.parentElement?.querySelector('input, select, textarea');
+      if (input && input !== label) return input;
+      // Or following sibling
+      let n = label.nextElementSibling;
+      while (n && !/^(INPUT|SELECT|TEXTAREA)$/.test(n.tagName)) n = n.nextElementSibling;
+      if (n) return n;
+    }
+    return null;
+  }
+
+  function ensureMontantIds(){
+    const page = document.getElementById('page-cas');
+    if (!page) return false;
+
+    const amount = findInputByLabel('Montant consultation') || findInputByLabel('Montant');
+    const paid   = findInputByLabel('Paiement re')          || findInputByLabel('Paiement');
+    const next   = findInputByLabel('Prochain RDV');
+    const email  = findInputByLabel('Email client');
+
+    if (amount) {
+      amount.id = 'case-amount';
+      amount.setAttribute('data-vp-bound', 'amount');
+    }
+    if (paid) {
+      paid.id = 'case-paid';
+      paid.setAttribute('data-vp-bound', 'paid');
+    }
+    if (next)  { next.id  = 'case-next-rdv'; }
+    if (email) { email.id = 'case-client-email'; }
+
+    return !!(amount && paid);
+  }
+
+  // Wrap saveNewCase to ALWAYS run ensureMontantIds first
+  function patchSaveNewCase(){
+    if (typeof window.saveNewCase !== 'function') return false;
+    if (window.saveNewCase.__vpMontantPatched) return true;
+    const orig = window.saveNewCase;
+    const wrapped = function(){
+      ensureMontantIds();
+      // Tiny delay to ensure DOM mutations settle, then call original
+      return orig.apply(this, arguments);
+    };
+    wrapped.__vpMontantPatched = true;
+    window.saveNewCase = wrapped;
+    // Also rebind any save button onclick that captured the old reference
+    document.querySelectorAll('#page-cas button').forEach(b => {
+      const text = (b.textContent || '').toLowerCase();
+      if (text.includes('enregistrer') && text.includes('cas')) {
+        b.onclick = window.saveNewCase;
+      }
+    });
+    return true;
+  }
+
+  // Run continuously: assign IDs, patch save, rebind button
+  let attempts = 0;
+  const t = setInterval(() => {
+    ensureMontantIds();
+    patchSaveNewCase();
+    if (++attempts > 60) clearInterval(t);
+  }, 300);
+
+  // Also run on every nav('cas') so IDs are fresh when the page becomes visible
+  function patchNav(){
+    if (typeof window.nav !== 'function' || window.nav.__vpMontantNav) return false;
+    const orig = window.nav;
+    const wrapped = function(p){
+      const r = orig.apply(this, arguments);
+      if (p === 'cas') {
+        setTimeout(() => { ensureMontantIds(); patchSaveNewCase(); }, 50);
+        setTimeout(() => { ensureMontantIds(); patchSaveNewCase(); }, 300);
+      }
+      return r;
+    };
+    wrapped.__vpMontantNav = true;
+    window.nav = wrapped;
+    return true;
+  }
+  let nAtt = 0;
+  const nT = setInterval(() => { if (patchNav() || ++nAtt > 30) clearInterval(nT); }, 250);
+
+  // Expose for debugging
+  window.vpFixMontant = ensureMontantIds;
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
      LANDING TOPNAV FIX v2 — rebuild buttons with explicit handlers,
      re-inject the Conditions section that renderCenteredAccueil deletes,
      and force scroll on the actual scroll container (#login-screen).
