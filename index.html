@@ -14810,7 +14810,200 @@ function saveAdmission() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
-     LANDING TOPNAV FIX
+     LANDING TOPNAV FIX v2 — rebuild buttons with explicit handlers,
+     re-inject the Conditions section that renderCenteredAccueil deletes,
+     and force scroll on the actual scroll container (#login-screen).
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-landing-nav-fix-v2-style">
+  #login-screen .longform-section,
+  #login-screen .vetpro-center-section,
+  #login-screen [id^="landing-"] {
+    scroll-margin-top: 90px;
+  }
+  /* Ensure topnav is above everything during scroll */
+  .landing-topnav { z-index: 50 !important; }
+</style>
+<script id="vetpro-landing-nav-fix-v2-script">
+(function(){
+  'use strict';
+  if (window.__vetproLandingNavFixV2) return;
+  window.__vetproLandingNavFixV2 = true;
+
+  function getScrollContainer(){
+    return document.getElementById('login-screen');
+  }
+
+  // Robust scroll: tries scrollIntoView first, then falls back to manual
+  // scrollTop manipulation on the actual scroll container.
+  function scrollToTarget(targetId){
+    const target = document.getElementById(targetId);
+    const container = getScrollContainer();
+    if (!target || !container) return false;
+
+    try {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (e) {
+      target.scrollIntoView();
+    }
+
+    // Manual fallback: compute target's position relative to container
+    // and scroll the container directly. Covers cases where scrollIntoView
+    // walks to the wrong scroll parent or is blocked by flex centering.
+    setTimeout(() => {
+      try {
+        const cRect = container.getBoundingClientRect();
+        const tRect = target.getBoundingClientRect();
+        const offset = tRect.top - cRect.top + container.scrollTop - 80;
+        if (Math.abs(container.scrollTop - offset) > 10) {
+          container.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+        }
+      } catch (e) {}
+    }, 50);
+
+    return true;
+  }
+  window.vpScrollLandingTo = scrollToTarget;
+
+  // Find the right target IDs (in case of duplicates, prefer the visible one)
+  function resolveTargetId(wantedId){
+    // Special handling for "contacts" — both the original section and the
+    // small download card use IDs like landing-contact / landing-contacts.
+    // Prefer landing-contact-card, otherwise landing-contact.
+    const candidates = {
+      'landing-pricing': ['landing-pricing'],
+      'landing-functions': ['landing-functions'],
+      'landing-contact': ['landing-contact', 'landing-contacts', 'landing-downloads'],
+      'landing-conditions': ['landing-conditions', 'vp-injected-conditions'],
+    };
+    const tries = candidates[wantedId] || [wantedId];
+    for (const id of tries) {
+      const el = document.getElementById(id);
+      if (el) return id;
+    }
+    return wantedId;
+  }
+
+  // The "Conditions" section may have been deleted by renderCenteredAccueil.
+  // Re-inject a small dedicated section into the longform wrapper so the
+  // Conditions button has somewhere to scroll to.
+  function ensureConditionsSection(){
+    if (document.getElementById('landing-conditions')) return true;
+    if (document.getElementById('vp-injected-conditions')) return true;
+    const wrapper = document.getElementById('landing-longform');
+    if (!wrapper) return false;
+
+    const section = document.createElement('section');
+    section.id = 'vp-injected-conditions';
+    section.className = 'vetpro-center-section';
+    section.style.cssText = 'background:#fff;color:#0d2b1b;border-radius:24px;padding:32px;margin:18px 0';
+    section.innerHTML = `
+      <div class="vetpro-center-title" style="color:#0d2b1b">📜 Conditions d'utilisation</div>
+      <div class="vetpro-center-sub" style="color:#5b6b73;margin-bottom:18px">
+        VetPro est une plateforme professionnelle d'aide vétérinaire. Voici les points essentiels.
+      </div>
+      <ul style="font-size:13.5px;line-height:1.7;color:#1f3b2c;padding-left:20px;text-align:left;max-width:800px;margin:0 auto 18px">
+        <li><strong>Éligibilité.</strong> Réservé aux vétérinaires et stagiaires encadrés. Validation manuelle requise.</li>
+        <li><strong>Approbation.</strong> Tout compte reste en attente jusqu'à validation par un administrateur.</li>
+        <li><strong>Données.</strong> Vos données cliniques sont chiffrées et isolées par utilisateur (RLS Supabase).</li>
+        <li><strong>Documents.</strong> VetPro peut demander un diplôme ou justificatif professionnel à tout moment.</li>
+        <li><strong>Responsabilité clinique.</strong> Les suggestions IA sont des aides à la décision uniquement. Toute décision médicale relève du praticien.</li>
+        <li><strong>Propriété intellectuelle.</strong> Le design, le code, et les contenus VetPro sont protégés. Toute reproduction est interdite.</li>
+        <li><strong>Suspension.</strong> VetPro peut suspendre ou supprimer un compte à tout moment en cas de violation.</li>
+      </ul>
+      <button class="btn btn-p" type="button" data-vp-action="open-signup" style="margin-top:8px">J'accepte et je m'inscris</button>
+    `;
+    wrapper.appendChild(section);
+    return true;
+  }
+
+  // Rebuild the topnav with proper button handlers (the original has plain
+  // <a href="#..."> which the browser tries to scroll the document, not the
+  // fixed scroll container).
+  function rebuildTopnav(){
+    const screen = document.getElementById('login-screen');
+    if (!screen) return false;
+    const links = screen.querySelector('.landing-topnav-links');
+    if (!links) return false;
+    if (links.dataset.vpRebuilt === '1') return true;
+
+    links.innerHTML = `
+      <button type="button" data-vp-scroll="landing-functions">Fonctions</button>
+      <button type="button" data-vp-scroll="landing-pricing">Tarifs</button>
+      <button type="button" data-vp-scroll="landing-contact">Contacts</button>
+      <button type="button" data-vp-scroll="landing-conditions">Conditions</button>
+      <button type="button" data-vp-action="open-login">Sign in</button>
+      <button type="button" data-vp-action="open-signup">Sign up</button>
+    `;
+    links.dataset.vpRebuilt = '1';
+    return true;
+  }
+
+  // Single delegated click handler covers buttons (data-vp-scroll /
+  // data-vp-action) AND any leftover anchor with href="#..." inside
+  // #login-screen.
+  document.addEventListener('click', function(ev){
+    const screen = document.getElementById('login-screen');
+    if (!screen || !screen.contains(ev.target)) return;
+
+    // Button: scroll to section
+    const scrollBtn = ev.target.closest('[data-vp-scroll]');
+    if (scrollBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const wanted = scrollBtn.getAttribute('data-vp-scroll');
+      // Make sure Conditions section exists before trying to scroll there
+      if (wanted === 'landing-conditions') ensureConditionsSection();
+      const targetId = resolveTargetId(wanted);
+      scrollToTarget(targetId);
+      return;
+    }
+
+    // Button: action (signup / login)
+    const actBtn = ev.target.closest('[data-vp-action]');
+    if (actBtn) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      const action = actBtn.getAttribute('data-vp-action');
+      if (action === 'open-login' && typeof window.openAuthCard === 'function') window.openAuthCard('login');
+      if (action === 'open-signup' && typeof window.openAuthCard === 'function') window.openAuthCard('signup');
+      return;
+    }
+
+    // Legacy anchor links (in case they survive)
+    const a = ev.target.closest('a[href^="#"]');
+    if (!a) return;
+    const href = a.getAttribute('href') || '';
+    if (href.length < 2 || href === '#') return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const wanted = href.slice(1);
+    if (wanted === 'landing-conditions') ensureConditionsSection();
+    scrollToTarget(resolveTargetId(wanted));
+  }, true);
+
+  // Re-run rebuild + ensureConditions when DOM changes (the landing is
+  // injected/replaced by various IIFEs at different lifecycle points).
+  function setupObserver(){
+    const screen = document.getElementById('login-screen');
+    if (!screen) return false;
+    const obs = new MutationObserver(() => {
+      rebuildTopnav();
+      ensureConditionsSection();
+    });
+    obs.observe(screen, { childList: true, subtree: true });
+    rebuildTopnav();
+    ensureConditionsSection();
+    return true;
+  }
+  let obsAtt = 0;
+  const obsT = setInterval(() => {
+    if (setupObserver() || ++obsAtt > 60) clearInterval(obsT);
+  }, 250);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     LANDING TOPNAV FIX (v1 - kept inert; v2 above takes over)
      The topnav links use plain anchors (href="#landing-pricing" etc.) but
      #login-screen is `position: fixed; overflow: auto`, so anchor jumps
      never reach the scroll container. Intercept clicks and use scrollIntoView.
