@@ -14204,5 +14204,326 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     Bug fixes pack — case form persistence, total reset, contacts on landing,
+     aggressive auto-save, and friendlier AI error display
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-bugfix-style">
+  /* Contacts card on landing page */
+  .vp-landing-contacts {
+    background: rgba(255,255,255,.96) !important;
+    border-radius: 22px;
+    padding: 22px;
+    color: #0F3D2A;
+    border: 1px solid rgba(13,148,136,.18);
+    box-shadow: 0 1px 2px rgba(5,15,10,.05), 0 18px 44px rgba(5,15,10,.18);
+    backdrop-filter: blur(20px);
+  }
+  .vp-landing-contacts h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    margin: 0 0 14px;
+    color: #0F3D2A;
+  }
+  .vp-contact-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+  @media (max-width: 700px) {
+    .vp-contact-grid { grid-template-columns: 1fr; }
+  }
+  .vp-contact-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(13,148,136,.08), rgba(94,234,212,.04));
+    border: 1px solid rgba(13,148,136,.14);
+    border-radius: 14px;
+    text-decoration: none;
+    color: #0F3D2A;
+    font-size: 12.5px;
+    font-weight: 600;
+    transition: transform .15s ease, box-shadow .18s ease;
+  }
+  .vp-contact-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(13,148,136,.15);
+  }
+  .vp-contact-item .ico { font-size: 18px; }
+  .vp-contact-item .lbl { font-size: 10.5px; opacity: .7; font-weight: 500; }
+  .vp-contact-item .val { font-size: 13px; font-weight: 700; }
+
+  /* Hide Contacts in sidebar (it's now on the landing page) */
+  .sb-item[data-vp-hidden="true"] { display: none !important; }
+</style>
+
+<script id="vetpro-bugfix-script">
+(function(){
+  'use strict';
+  if (window.__vetproBugfixLoaded) return;
+  window.__vetproBugfixLoaded = true;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 1) FIX nouveau cas form — assign missing IDs to amount/paid inputs
+   *    (the existing ensureCaseFormEnhancements assigned them by index
+   *    on the wrong card, so amount & paid never got an ID and never saved)
+   * ──────────────────────────────────────────────────────────────────── */
+  function fixCaseFormIds(){
+    const page = document.getElementById('page-cas');
+    if (!page) return false;
+    const cards = page.querySelectorAll('.card');
+    if (cards.length < 4) return false;
+    const diagCard = cards[3]; // "Diagnostic & Traitement" — the one with money inputs
+
+    // The two number inputs in the row "Montant consultation" / "Paiement reçu"
+    const numberInputs = diagCard.querySelectorAll('input[type="number"]');
+    if (numberInputs.length >= 2) {
+      if (!numberInputs[0].id) numberInputs[0].id = 'case-amount';
+      if (!numberInputs[1].id) numberInputs[1].id = 'case-paid';
+    }
+    const dateInput = diagCard.querySelector('input[type="date"]');
+    if (dateInput && !dateInput.id) dateInput.id = 'case-next-rdv';
+    const emailInput = diagCard.querySelector('input[type="email"]');
+    if (emailInput && !emailInput.id) emailInput.id = 'case-client-email';
+
+    // The exams textarea (was supposed to be examInputs[8])
+    const textareas = diagCard.querySelectorAll('textarea');
+    if (textareas[0] && !textareas[0].id) textareas[0].id = 'case-exams';
+
+    return true;
+  }
+
+  // Run repeatedly because the page may not be in DOM yet, and the existing
+  // ensureCaseFormEnhancements may run later and override.
+  let fixAttempts = 0;
+  const fixTimer = setInterval(() => {
+    if (fixCaseFormIds() || ++fixAttempts > 30) clearInterval(fixTimer);
+  }, 250);
+  // Also re-run on every nav('cas')
+  function patchNavForCaseFix(){
+    if (typeof window.nav !== 'function' || window.nav.__vpCaseFixPatched) return false;
+    const orig = window.nav;
+    const wrapped = function(p){
+      const r = orig.apply(this, arguments);
+      if (p === 'cas') setTimeout(fixCaseFormIds, 80);
+      return r;
+    };
+    wrapped.__vpCaseFixPatched = true;
+    window.nav = wrapped;
+    return true;
+  }
+  let navAtt = 0;
+  const navT = setInterval(() => {
+    if (patchNavForCaseFix() || ++navAtt > 30) clearInterval(navT);
+  }, 250);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 2) AGGRESSIVE auto-save on every input/blur in clinic forms
+   *    Existing layer only fires on `change`. Add `input` (typing)
+   *    debounced 1s + immediate save on `blur`.
+   * ──────────────────────────────────────────────────────────────────── */
+  function debouncedPersist(){
+    if (typeof window.persistAppState !== 'function') return;
+    clearTimeout(window.__vpPersistTimer);
+    window.__vpPersistTimer = setTimeout(() => {
+      try { window.persistAppState(); } catch(e) {}
+    }, 1000);
+  }
+  function isClinicTarget(t){
+    if (!t) return false;
+    if (!/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return false;
+    const page = t.closest && t.closest('.page');
+    if (!page || !page.id) return false;
+    if (/^page-(login|terms|conditions|approvals|landing|support|contacts|references|maladies|chirurgie|nutrition|preop|urgences|labo|perfusion|anesthesie|ai|ordonnances)$/.test(page.id)) return false;
+    return true;
+  }
+  document.addEventListener('input', (ev) => {
+    if (isClinicTarget(ev.target)) debouncedPersist();
+  }, true);
+  document.addEventListener('blur', (ev) => {
+    if (isClinicTarget(ev.target)) {
+      try { window.persistAppState && window.persistAppState(); } catch(e) {}
+    }
+  }, true);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 3) RESET TO 0 — wipe ALL clinical data arrays so a fresh user
+   *    starts with empty sections (no demo Rex/Misty/Karim)
+   * ──────────────────────────────────────────────────────────────────── */
+  function wipeAllArrays(){
+    const wipeArr = (name) => {
+      try {
+        const a = window[name];
+        if (Array.isArray(a)) a.splice(0, a.length);
+      } catch(e) {}
+    };
+    const wipeObj = (name) => {
+      try {
+        const o = window[name];
+        if (o && typeof o === 'object' && !Array.isArray(o)) {
+          Object.keys(o).forEach(k => delete o[k]);
+        }
+      } catch(e) {}
+    };
+    wipeArr('PATIENTS');
+    wipeArr('CLIENTS');
+    wipeArr('APPOINTMENTS');
+    wipeArr('VACCINE_REMINDERS');
+    wipeArr('HISTORIQUE_DATA');
+    wipeArr('ORDOS');
+    wipeObj('SUIVI_HISTORY');
+    // Empty cages: keep cage IDs but clear occupancy
+    try {
+      const cages = window.CAGES;
+      if (Array.isArray(cages)) {
+        cages.forEach(c => {
+          c.statut = 'libre';
+          c.animal = null;
+          c.motif = null;
+          c.depuis = null;
+          c.notes = null;
+        });
+      }
+    } catch(e) {}
+    // Reset drug stocks to default min levels (or zero out usage)
+    try {
+      const drugs = window.DRUGS;
+      if (Array.isArray(drugs)) {
+        // Keep drug catalog but no consumption history — leave stocks intact since they're inventory
+      }
+    } catch(e) {}
+  }
+
+  // Wrap the existing reset
+  const originalReset = window.vpResetToZero;
+  window.vpResetToZero = async function(){
+    if (!confirm('⚠️ Cette action va EFFACER TOUTES vos donnees cliniques (cas, clients, animaux, RDV, hospitalisations, finances, historique, ordonnances). Vos parametres et votre langue seront conserves. Continuer ?')) return;
+    try {
+      const client = window._sb;
+      if (client?.rpc) {
+        const { error } = await client.rpc('reset_user_data', { include_settings: false });
+        if (error) throw error;
+      }
+      // Wipe in-memory arrays
+      wipeAllArrays();
+      // Wipe local cache
+      try {
+        const k = (typeof getUserStateStorageKey === 'function') ? getUserStateStorageKey() : null;
+        if (k) localStorage.removeItem(k);
+      } catch (e) {}
+      // Force-save the wiped state to cloud immediately
+      try { window.persistAppState && window.persistAppState(); } catch(e) {}
+      // Re-render every list view so empty states show up
+      try {
+        if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+        if (typeof renderHist === 'function') renderHist('all');
+        if (typeof renderClients === 'function') renderClients();
+        if (typeof renderRdv === 'function') renderRdv();
+        if (typeof renderCages === 'function') renderCages();
+        if (typeof renderFinances === 'function') renderFinances();
+        if (window.__vpRepaintDashboard) window.__vpRepaintDashboard();
+      } catch (e) {}
+      alert('✅ Donnees effacees. La page va se recharger.');
+      setTimeout(() => location.reload(), 600);
+    } catch (e) {
+      alert('❌ Echec: ' + (e?.message || e));
+    }
+  };
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 4) MOVE CONTACTS to landing page + hide from sidebar
+   * ──────────────────────────────────────────────────────────────────── */
+  function injectContactsOnLanding(){
+    const screen = document.getElementById('login-screen');
+    if (!screen) return false;
+    const right = screen.querySelector('.landing-right');
+    if (!right) return false;
+    if (right.querySelector('.vp-landing-contacts')) return true;
+
+    const card = document.createElement('div');
+    card.className = 'vp-landing-contacts';
+    card.innerHTML = `
+      <h3>📞 Contactez-nous</h3>
+      <div class="vp-contact-grid">
+        <a class="vp-contact-item" href="mailto:w.kherbache@etud.ensv.dz">
+          <span class="ico">📧</span>
+          <div>
+            <div class="lbl">Email</div>
+            <div class="val">w.kherbache@etud.ensv.dz</div>
+          </div>
+        </a>
+        <a class="vp-contact-item" href="tel:+213781236686">
+          <span class="ico">📱</span>
+          <div>
+            <div class="lbl">Telephone</div>
+            <div class="val">+213 781 236 686</div>
+          </div>
+        </a>
+        <a class="vp-contact-item" href="https://www.instagram.com/vetpro.dz/" target="_blank" rel="noopener">
+          <span class="ico">📸</span>
+          <div>
+            <div class="lbl">Instagram</div>
+            <div class="val">@vetpro.dz</div>
+          </div>
+        </a>
+      </div>
+    `;
+    right.appendChild(card);
+    return true;
+  }
+
+  function hideContactsInSidebar(){
+    document.querySelectorAll('.sb-item').forEach(item => {
+      const txt = (item.textContent || '').toLowerCase();
+      if (txt.includes('contact')) item.setAttribute('data-vp-hidden', 'true');
+    });
+  }
+
+  let contactAtt = 0;
+  const contactT = setInterval(() => {
+    const ok1 = injectContactsOnLanding();
+    hideContactsInSidebar();
+    if (ok1 || ++contactAtt > 40) clearInterval(contactT);
+  }, 300);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 5) Better AI error display — when the Edge Function returns an
+   *    error in the body (200 status now), show a nice banner
+   * ──────────────────────────────────────────────────────────────────── */
+  // The Edge Function now always returns 200; sendAI in the existing code
+  // checks data?.error first, so it should already display correctly.
+  // We just intercept appendAIMsg to render hint + tried list when present.
+  function patchAppendForRichError(){
+    const orig = window.appendAIMsg;
+    if (typeof orig !== 'function' || orig.__vpRichErr) return false;
+    const wrapped = function(role, text){
+      // If the text already came pre-formatted by the previous polish layer,
+      // don't double-wrap.
+      if (role === 'bot' && typeof text === 'string' && /Service IA momentanement|Service IA temporairement/i.test(text)) {
+        const msgs = document.getElementById('ai-msgs');
+        if (msgs) {
+          const div = document.createElement('div');
+          div.className = 'ai-msg bot';
+          div.innerHTML = `<div class="ai-msg-av">🤖</div><div class="ai-bubble"><div class="vp-ai-error-banner"><strong>⚠️ ${text.replace(/^❌\s*/, '')}</strong>L'application essaie automatiquement plusieurs modeles gratuits OpenRouter. Reessayez dans 30-60 secondes.</div></div>`;
+          msgs.appendChild(div);
+          msgs.scrollTop = msgs.scrollHeight;
+          return;
+        }
+      }
+      return orig.apply(this, arguments);
+    };
+    wrapped.__vpRichErr = true;
+    window.appendAIMsg = wrapped;
+    return true;
+  }
+  let aiAtt = 0;
+  const aiT = setInterval(() => {
+    if (patchAppendForRichError() || ++aiAtt > 30) clearInterval(aiT);
+  }, 300);
+})();
+</script>
+
 </body>
 </html>

@@ -7,20 +7,24 @@ const corsHeaders = {
 };
 
 const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const PRIMARY_MODEL = Deno.env.get("OPENROUTER_MODEL") ?? "meta-llama/llama-3.3-70b-instruct:free";
+const PRIMARY_MODEL = Deno.env.get("OPENROUTER_MODEL") ?? "google/gemini-2.0-flash-exp:free";
 const FALLBACK_MODELS = (Deno.env.get("OPENROUTER_FALLBACK_MODELS") ?? [
-  "meta-llama/llama-3.3-70b-instruct:free",
   "google/gemini-2.0-flash-exp:free",
-  "meta-llama/llama-3.2-3b-instruct:free",
+  "deepseek/deepseek-chat-v3-0324:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
   "qwen/qwen-2.5-72b-instruct:free",
-  "mistralai/mistral-7b-instruct:free",
+  "mistralai/mistral-small-3.2-24b-instruct:free",
+  "meta-llama/llama-3.2-3b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
 ].join(",")).split(",").map(s => s.trim()).filter(Boolean);
 const APP_NAME = Deno.env.get("OPENROUTER_APP_NAME") ?? "VetPro";
 const SITE_URL = Deno.env.get("OPENROUTER_SITE_URL") ?? "https://vetpro.dz";
 
-function json(data: unknown, status = 200) {
+// Always 200 so the supabase-js SDK doesn't throw "non-2xx status code".
+// The frontend reads `error` / `content` from the body.
+function json(data: unknown, _httpStatus = 200) {
   return new Response(JSON.stringify(data), {
-    status,
+    status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -42,7 +46,7 @@ async function callOpenRouter(apiKey: string, model: string, messages: unknown, 
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (req.method !== "POST") return json({ error: "Method not allowed" });
 
   try {
     const openRouterApiKey = Deno.env.get("OPENROUTER_API_KEY");
@@ -50,14 +54,14 @@ Deno.serve(async (req) => {
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const authHeader = req.headers.get("Authorization");
 
-    if (!openRouterApiKey) return json({ error: "Missing OPENROUTER_API_KEY secret" }, 500);
-    if (!supabaseUrl || !supabaseAnonKey) return json({ error: "Missing Supabase environment" }, 500);
-    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Missing Authorization header" }, 401);
+    if (!openRouterApiKey) return json({ error: "Configuration manquante: OPENROUTER_API_KEY n'est pas defini dans les secrets de la fonction." });
+    if (!supabaseUrl || !supabaseAnonKey) return json({ error: "Configuration Supabase manquante" });
+    if (!authHeader?.startsWith("Bearer ")) return json({ error: "Authentification requise" });
 
     const token = authHeader.replace("Bearer ", "").trim();
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData?.user?.email) return json({ error: "Unauthorized" }, 401);
+    if (userError || !userData?.user?.email) return json({ error: "Session expiree, reconnectez-vous" });
 
     const body = await req.json().catch(() => null);
     const messages = Array.isArray(body?.messages) ? body.messages : [];
@@ -65,7 +69,7 @@ Deno.serve(async (req) => {
     const max_tokens = Number.isFinite(body?.max_tokens) ? body.max_tokens : 1024;
     const temperature = Number.isFinite(body?.temperature) ? body.temperature : 0.35;
 
-    if (!messages.length) return json({ error: "Missing messages" }, 400);
+    if (!messages.length) return json({ error: "Aucun message envoye" });
 
     const tried: string[] = [];
     const candidates = [requestedModel, ...FALLBACK_MODELS.filter(m => m !== requestedModel)];
@@ -74,44 +78,45 @@ Deno.serve(async (req) => {
 
     for (const model of candidates) {
       tried.push(model);
-      const { res, payload } = await callOpenRouter(openRouterApiKey, model, messages, max_tokens, temperature);
-
-      if (res.ok && payload?.choices?.[0]?.message?.content) {
-        return json({
-          model: payload?.model ?? model,
-          usage: payload?.usage ?? null,
-          content: payload.choices[0].message.content,
-          choices: payload.choices,
-          tried,
-        });
+      try {
+        const { res, payload } = await callOpenRouter(openRouterApiKey, model, messages, max_tokens, temperature);
+        if (res.ok && payload?.choices?.[0]?.message?.content) {
+          return json({
+            model: payload?.model ?? model,
+            usage: payload?.usage ?? null,
+            content: payload.choices[0].message.content,
+            choices: payload.choices,
+            tried,
+          });
+        }
+        lastError = {
+          status: res.status,
+          message: payload?.error?.message ?? `OpenRouter ${res.status}`,
+          details: payload,
+        };
+      } catch (callErr) {
+        lastError = {
+          status: 0,
+          message: callErr instanceof Error ? callErr.message : "network error",
+        };
       }
-
-      lastError = {
-        status: res.status,
-        message: payload?.error?.message ?? `OpenRouter ${res.status}`,
-        details: payload,
-      };
-
-      const retryable = res.status === 429 || res.status === 502 || res.status === 503 || res.status === 504;
-      if (!retryable) break;
     }
 
-    return json(
-      {
-        error: lastError?.message ?? "OpenRouter request failed",
-        status: lastError?.status ?? 500,
-        tried,
-        hint: lastError?.status === 429
-          ? "Tous les modèles gratuits OpenRouter sont saturés (rate limit). Réessayez dans quelques minutes ou ajoutez du crédit OpenRouter."
-          : undefined,
-        details: lastError?.details,
-      },
-      lastError?.status ?? 500,
-    );
+    const hint = lastError?.status === 429
+      ? "Tous les modeles gratuits OpenRouter sont satures. Reessayez dans 30-60 secondes ou ajoutez du credit."
+      : lastError?.status === 404
+      ? "Tous les modeles ont ete refuses (404). Verifiez que la cle OpenRouter est valide."
+      : lastError?.status === 401 || lastError?.status === 403
+      ? "Cle OpenRouter invalide ou non autorisee. Mettez a jour le secret OPENROUTER_API_KEY."
+      : "Service IA temporairement indisponible. Reessayez plus tard.";
+
+    return json({
+      error: lastError?.message ?? "OpenRouter request failed",
+      status: lastError?.status ?? 500,
+      tried,
+      hint,
+    });
   } catch (error) {
-    return json(
-      { error: error instanceof Error ? error.message : "Unexpected server error" },
-      500,
-    );
+    return json({ error: error instanceof Error ? error.message : "Unexpected server error" });
   }
 });
