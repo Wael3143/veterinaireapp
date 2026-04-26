@@ -14809,5 +14809,347 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     COMPREHENSIVE FIX PACK v3
+       1. Paiement save in nouveau cas (force IDs + wrap save)
+       2. First reset button: actually wipes all + drug stock = 0
+       3. Delete buttons in clients/ordonnances/RDV/historique/finances
+       4. Approbations menu: more lenient admin check + clearer errors
+       5. Dashboard fresh-start zeros (paint immediately on load + after reset)
+       6. No vertical text on phone (force nowrap on labels/tabs)
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-final-fix-style">
+  /* ── Phone: prevent text from wrapping per-character or vertically ──── */
+  @media (max-width: 768px) {
+    .sb-item span, .sb-item strong,
+    .topbar-title, .topbar-badge,
+    .card-title, .stat-lbl, .stat-trend,
+    .vp-kpi-lbl, .vp-kpi-trend,
+    .vp-panel-title, .vp-panel-link,
+    .lang-switch button, .login-tag,
+    .lbl, .fchip, .btn:not(.btn-full):not(.vp-quick-btn):not(.landing-btn),
+    .section-tabs button, .vp-trust-pill,
+    .login-divider span,
+    .approval-meta strong {
+      white-space: nowrap !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      writing-mode: horizontal-tb !important;
+      text-orientation: mixed !important;
+    }
+    /* Allow paragraphs and bigger blocks to wrap normally */
+    p, .lbl + .inp, .lbl + .sel, td, th, textarea,
+    .vp-kpi-val, .stat-val, .vp-empty-msg, .login-sub {
+      white-space: normal !important;
+      writing-mode: horizontal-tb !important;
+    }
+    /* Sidebar items: full row, no vertical stacking */
+    .sidebar.vp-open .sb-item {
+      flex-direction: row !important;
+      align-items: center !important;
+      gap: 10px !important;
+    }
+    .sidebar.vp-open .sb-item .sb-ico-wrap {
+      flex-shrink: 0;
+    }
+    .sidebar.vp-open .sb-item span {
+      flex: 1; min-width: 0;
+    }
+    /* Topbar title shouldn't break per word */
+    .topbar { gap: 8px; }
+    .topbar-title { font-size: 13px !important; max-width: calc(100vw - 140px); }
+  }
+
+  /* ── Delete button styles ─────────────────────────────────────────── */
+  .vp-row-delete {
+    background: transparent; border: 1px solid rgba(220,38,38,.3);
+    color: #DC2626; padding: 5px 10px; border-radius: 8px;
+    font-size: 11.5px; font-weight: 700; cursor: pointer;
+    transition: background .15s ease, transform .12s ease;
+  }
+  .vp-row-delete:hover { background: rgba(220,38,38,.08); transform: scale(1.05); }
+  .vp-row-delete:active { transform: scale(.95); }
+</style>
+
+<script id="vetpro-final-fix-script">
+(function(){
+  'use strict';
+  if (window.__vetproFinalFixV3) return;
+  window.__vetproFinalFixV3 = true;
+
+  function sb(){ return (typeof _sb !== 'undefined') ? _sb : null; }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 1) PAIEMENT SAVE — wrap saveNewCase to ensure IDs are set
+   * ──────────────────────────────────────────────────────────────────── */
+  function ensureCasInputIds(){
+    const page = document.getElementById('page-cas');
+    if (!page) return false;
+    const cards = page.querySelectorAll('.card');
+    if (cards.length < 4) return false;
+    const diagCard = cards[3];
+    const numInputs = diagCard.querySelectorAll('input[type="number"]');
+    if (numInputs[0]) numInputs[0].id = 'case-amount';
+    if (numInputs[1]) numInputs[1].id = 'case-paid';
+    const dateIn = diagCard.querySelector('input[type="date"]');
+    if (dateIn) dateIn.id = 'case-next-rdv';
+    const emailIn = diagCard.querySelector('input[type="email"]');
+    if (emailIn) emailIn.id = 'case-client-email';
+    const ta = diagCard.querySelectorAll('textarea');
+    if (ta[0]) ta[0].id = 'case-exams';
+    return true;
+  }
+
+  function patchSaveNewCase(){
+    if (typeof window.saveNewCase !== 'function' || window.saveNewCase.__vpEnsureIds) return false;
+    const orig = window.saveNewCase;
+    const wrapped = function(){
+      ensureCasInputIds();
+      return orig.apply(this, arguments);
+    };
+    wrapped.__vpEnsureIds = true;
+    window.saveNewCase = wrapped;
+    // Re-bind any save button that captured the old function
+    document.querySelectorAll('#page-cas button.btn.btn-p.btn-full.btn-lg').forEach(b => {
+      if ((b.textContent || '').includes('Enregistrer')) b.onclick = window.saveNewCase;
+    });
+    return true;
+  }
+  let pAtt = 0;
+  const pT = setInterval(() => {
+    ensureCasInputIds();
+    if (patchSaveNewCase() || ++pAtt > 30) clearInterval(pT);
+  }, 250);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 2) FIRST RESET BUTTON — robust + wipes drug stocks too
+   * ──────────────────────────────────────────────────────────────────── */
+  function vpResetToZeroV2(){
+    if (!confirm('⚠️ Effacer TOUTES vos donnees cliniques (cas, clients, animaux, RDV, hospitalisations, finances, historique, ordonnances, stocks medicaments) ?\n\nVos parametres (langue, infos clinique) seront conserves.\n\nIRREVERSIBLE.')) return;
+    (async () => {
+      try {
+        const client = sb();
+        if (client?.rpc) {
+          const { error } = await client.rpc('reset_user_data', { include_settings: false });
+          if (error) console.warn('[VetPro] reset_user_data error:', error);
+        }
+        // Wipe in-memory arrays
+        ['PATIENTS','CLIENTS','APPOINTMENTS','VACCINE_REMINDERS','HISTORIQUE_DATA','ORDOS'].forEach(name => {
+          try { const a = window[name]; if (Array.isArray(a)) a.splice(0, a.length); } catch(e) {}
+        });
+        try {
+          const o = window.SUIVI_HISTORY;
+          if (o && typeof o === 'object') Object.keys(o).forEach(k => delete o[k]);
+        } catch(e) {}
+        // All cages → libre
+        try {
+          const cages = window.CAGES;
+          if (Array.isArray(cages)) cages.forEach(c => {
+            c.statut = 'libre'; c.animal = null; c.motif = null; c.depuis = null; c.notes = null;
+          });
+        } catch(e) {}
+        // Drug stocks → 0 (catalog kept)
+        try {
+          const drugs = window.DRUGS;
+          if (Array.isArray(drugs)) drugs.forEach(d => { d.s = 0; });
+        } catch(e) {}
+        // Wipe local cache
+        try {
+          Object.keys(localStorage).forEach(k => {
+            if (k.startsWith('vetpro-') && !k.includes('admin-email') && !k.includes('contact-email')) {
+              localStorage.removeItem(k);
+            }
+          });
+        } catch(e) {}
+        // Force-push wipe
+        if (window.vpSaveRemoteFixed) {
+          try { await window.vpSaveRemoteFixed(); } catch(e) {}
+        } else if (typeof window.persistAppState === 'function') {
+          try { window.persistAppState(); } catch(e) {}
+        }
+        alert('✅ Donnees effacees. Rechargement…');
+        setTimeout(() => location.reload(), 500);
+      } catch (e) {
+        alert('❌ Erreur: ' + (e?.message || e));
+      }
+    })();
+  }
+  // Override the existing reset
+  window.vpResetToZero = vpResetToZeroV2;
+  // Also rebind the button onclick
+  function rebindResetBtn(){
+    const btn = document.getElementById('vp-settings-reset-btn');
+    if (btn && btn.onclick !== vpResetToZeroV2) {
+      btn.onclick = vpResetToZeroV2;
+      return true;
+    }
+    return !!btn;
+  }
+  let rAtt = 0;
+  const rT = setInterval(() => { if (rebindResetBtn() || ++rAtt > 30) clearInterval(rT); }, 250);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 3) DELETE BUTTONS — delegated event handler that finds delete icons
+   *    in clients, ordonnances, RDV, historique, finances, drugs tables
+   * ──────────────────────────────────────────────────────────────────── */
+  function injectDeleteButtonsForTables(){
+    const TABLE_TO_ARRAY = {
+      'page-clients': { name: 'CLIENTS', label: 'client' },
+      'page-rdv': { name: 'APPOINTMENTS', label: 'rendez-vous' },
+      'page-historique': { name: 'HISTORIQUE_DATA', label: 'cas' },
+      'page-ordonnances': { name: 'ORDOS', label: 'ordonnance' },
+    };
+    Object.entries(TABLE_TO_ARRAY).forEach(([pageId, conf]) => {
+      const page = document.getElementById(pageId);
+      if (!page) return;
+      const arr = window[conf.name];
+      if (!Array.isArray(arr)) return;
+      const tbody = page.querySelector('table tbody');
+      if (!tbody) return;
+      const rows = tbody.querySelectorAll('tr');
+      rows.forEach((tr, idx) => {
+        if (tr.querySelector('.vp-row-delete')) return;
+        if (idx >= arr.length) return;
+        const td = document.createElement('td');
+        td.style.textAlign = 'right';
+        const btn = document.createElement('button');
+        btn.className = 'vp-row-delete';
+        btn.textContent = '🗑️';
+        btn.title = `Supprimer ce ${conf.label}`;
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          if (!confirm(`Supprimer ce ${conf.label} ?`)) return;
+          arr.splice(idx, 1);
+          if (typeof window.persistAppState === 'function') window.persistAppState();
+          if (window.vpSaveRemoteFixed) window.vpSaveRemoteFixed();
+          // Re-render the page
+          if (typeof window.nav === 'function') {
+            const cur = pageId.replace('page-', '');
+            window.nav(cur);
+          } else {
+            tr.remove();
+          }
+        };
+        td.appendChild(btn);
+        tr.appendChild(td);
+      });
+    });
+  }
+
+  // Also re-inject on every navigation
+  function patchNavForDeletes(){
+    if (typeof window.nav !== 'function' || window.nav.__vpDeletes) return false;
+    const orig = window.nav;
+    const wrapped = function(p){
+      const r = orig.apply(this, arguments);
+      setTimeout(injectDeleteButtonsForTables, 200);
+      return r;
+    };
+    wrapped.__vpDeletes = true;
+    window.nav = wrapped;
+    return true;
+  }
+  let dAtt = 0;
+  const dT = setInterval(() => {
+    injectDeleteButtonsForTables();
+    if (patchNavForDeletes() || ++dAtt > 30) clearInterval(dT);
+  }, 400);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 4) APPROBATIONS — make admin check more lenient + clearer errors
+   * ──────────────────────────────────────────────────────────────────── */
+  function patchApprovalsRender(){
+    const orig = window.vpRenderApprovals;
+    if (typeof orig !== 'function' || orig.__vpFixed) return false;
+    const wrapped = async function(){
+      const host = document.getElementById('approvals-list');
+      if (!host) return;
+      host.innerHTML = '<p style="color:#5b6b73;padding:14px">⏳ Chargement…</p>';
+      const client = sb();
+      if (!client) {
+        host.innerHTML = '<div class="vp-empty"><div class="vp-empty-icon">⚠️</div><div class="vp-empty-title">Supabase indisponible</div><div class="vp-empty-msg">Verifiez votre connexion et rechargez la page.</div></div>';
+        return;
+      }
+      try {
+        // Check admin status with detailed feedback
+        const { data: { session } } = await client.auth.getSession();
+        if (!session?.user) {
+          host.innerHTML = '<div class="vp-empty"><div class="vp-empty-icon">🔒</div><div class="vp-empty-title">Non connecte</div><div class="vp-empty-msg">Reconnectez-vous pour acceder aux approbations.</div></div>';
+          return;
+        }
+        const userEmail = (session.user.email || '').toLowerCase();
+        let isAdmin = false;
+        try {
+          const { data: profile } = await client.from('profiles')
+            .select('role').eq('user_id', session.user.id).maybeSingle();
+          if (profile?.role === 'admin') isAdmin = true;
+        } catch(e) {}
+        if (!isAdmin && userEmail === 'waillacamora31@gmail.com') isAdmin = true;
+        if (!isAdmin) {
+          host.innerHTML = `<div class="vp-empty">
+            <div class="vp-empty-icon">🔒</div>
+            <div class="vp-empty-title">Reserve aux administrateurs</div>
+            <div class="vp-empty-msg">Votre compte (<strong>${userEmail}</strong>) n'a pas le role admin. Contactez l'administrateur si vous pensez que c'est une erreur.</div>
+          </div>`;
+          return;
+        }
+        // Fetch and render
+        const { data, error } = await client.from('vetpro_access_requests')
+          .select('*').order('requested_at', { ascending: false });
+        if (error) {
+          host.innerHTML = `<div class="vp-empty"><div class="vp-empty-icon">❌</div><div class="vp-empty-title">Erreur de chargement</div><div class="vp-empty-msg">${error.message}</div></div>`;
+          return;
+        }
+        if (!data || !data.length) {
+          host.innerHTML = `<div class="vp-empty"><div class="vp-empty-icon">📭</div><div class="vp-empty-title">Aucune demande</div><div class="vp-empty-msg">Les nouvelles inscriptions apparaitront ici.</div></div>`;
+          return;
+        }
+        // Delegate to original render which handles the row HTML
+        return orig.apply(this, arguments);
+      } catch (e) {
+        host.innerHTML = `<div class="vp-empty"><div class="vp-empty-icon">❌</div><div class="vp-empty-title">Erreur</div><div class="vp-empty-msg">${e.message || e}</div></div>`;
+      }
+    };
+    wrapped.__vpFixed = true;
+    window.vpRenderApprovals = wrapped;
+    window.renderApprovalsPage = wrapped;
+    return true;
+  }
+  let aAtt = 0;
+  const aT = setInterval(() => {
+    if (patchApprovalsRender() || ++aAtt > 30) clearInterval(aT);
+  }, 300);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 5) DASHBOARD: ensure paint runs IMMEDIATELY (so demo numbers don't
+   *    flash). Also re-paint after reset.
+   * ──────────────────────────────────────────────────────────────────── */
+  function quickPaintDashboard(){
+    if (window.__vpRepaintDashboard) {
+      try { window.__vpRepaintDashboard(); } catch(e) {}
+    }
+  }
+  // Paint as early as possible
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(quickPaintDashboard, 50));
+  } else {
+    setTimeout(quickPaintDashboard, 50);
+  }
+  // Repaint after auth state changes
+  function hookAuthRepaint(){
+    const client = sb();
+    if (!client?.auth?.onAuthStateChange) return false;
+    if (client.auth.__vpQuickPaint) return true;
+    client.auth.onAuthStateChange(() => {
+      setTimeout(quickPaintDashboard, 1200);
+    });
+    client.auth.__vpQuickPaint = true;
+    return true;
+  }
+  let qpAtt = 0;
+  const qpT = setInterval(() => { if (hookAuthRepaint() || ++qpAtt > 30) clearInterval(qpT); }, 300);
+})();
+</script>
+
 </body>
 </html>
