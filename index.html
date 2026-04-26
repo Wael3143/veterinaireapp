@@ -14525,5 +14525,289 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CRITICAL FIXES v2:
+       1. Persistence: bypass broken `onConflict:'email'` upsert by using
+          user_id (the actual PK) — the prior code silently lost EVERY save
+       2. Force-save on logout (no debounce loss)
+       3. Second reset button: TOTAL wipe (data + settings)
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-persistence-fix-style">
+  .vp-danger-box {
+    margin-top: 14px; padding: 16px; border-radius: 14px;
+    background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+    border: 1px solid rgba(220,38,38,.25);
+  }
+  .vp-danger-box h4 {
+    color: #991B1B; font-size: 13px; font-weight: 700;
+    margin: 0 0 6px; display: flex; align-items: center; gap: 6px;
+  }
+  .vp-danger-box p {
+    color: #7F1D1D; font-size: 11.5px; margin: 0 0 10px; line-height: 1.5;
+  }
+  .vp-btn-danger {
+    background: linear-gradient(135deg, #DC2626, #991B1B) !important;
+    color: #fff !important; border: none !important;
+    padding: 10px 16px; border-radius: 12px;
+    font-weight: 700; font-size: 12.5px; cursor: pointer;
+    box-shadow: 0 6px 16px rgba(220,38,38,.3);
+    transition: transform .15s ease, box-shadow .18s ease;
+  }
+  .vp-btn-danger:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(220,38,38,.45); }
+  .vp-btn-danger:active { transform: scale(.97); }
+</style>
+
+<script id="vetpro-persistence-fix-script">
+(function(){
+  'use strict';
+  if (window.__vetproPersistFixLoaded) return;
+  window.__vetproPersistFixLoaded = true;
+
+  const STATE_TABLE = 'vetpro_user_state';
+
+  function sb(){ return (typeof _sb !== 'undefined') ? _sb : null; }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 1) FIXED REMOTE SAVE — uses user_id (PK) not email (no unique constraint
+   *    on email in the original table → every prior upsert silently failed
+   *    with "no unique or exclusion constraint matching ON CONFLICT")
+   * ──────────────────────────────────────────────────────────────────── */
+  async function saveRemoteFixed(){
+    const client = sb();
+    if (!client) return { ok: false, reason: 'no client' };
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return { ok: false, reason: 'no session' };
+      const email = (session.user.email || '').toLowerCase();
+      const snapshot = (typeof window.collectAppStateSnapshot === 'function')
+        ? window.collectAppStateSnapshot() : null;
+      if (!snapshot) return { ok: false, reason: 'no snapshot fn' };
+      const { error } = await client.from(STATE_TABLE).upsert({
+        user_id: session.user.id,
+        email,
+        state: snapshot,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+      if (error) {
+        console.warn('[VetPro] remote save error:', error);
+        return { ok: false, reason: error.message };
+      }
+      try { window.__vpShowSaveIndicator && window.__vpShowSaveIndicator('✓ Sauvegardé cloud'); } catch(e) {}
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, reason: e.message };
+    }
+  }
+  window.vpSaveRemoteFixed = saveRemoteFixed;
+
+  async function loadRemoteFixed(){
+    const client = sb();
+    if (!client) return null;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return null;
+      const { data, error } = await client.from(STATE_TABLE)
+        .select('state').eq('user_id', session.user.id).maybeSingle();
+      if (error) {
+        console.warn('[VetPro] remote load error:', error);
+        return null;
+      }
+      return data?.state || null;
+    } catch (e) { return null; }
+  }
+  window.vpLoadRemoteFixed = loadRemoteFixed;
+
+  // Hook persistAppState so that EVERY call also writes via the fixed path
+  function patchPersist(){
+    if (typeof window.persistAppState !== 'function') return false;
+    if (window.persistAppState.__vpFixedSave) return true;
+    const orig = window.persistAppState;
+    const wrapped = function(){
+      const r = orig.apply(this, arguments);
+      // Debounce to avoid hammering on every keystroke
+      clearTimeout(window.__vpFixedSaveTimer);
+      window.__vpFixedSaveTimer = setTimeout(() => { saveRemoteFixed(); }, 400);
+      return r;
+    };
+    wrapped.__vpFixedSave = true;
+    window.persistAppState = wrapped;
+    return true;
+  }
+  let pAtt = 0;
+  const pT = setInterval(() => {
+    if (patchPersist() || ++pAtt > 30) clearInterval(pT);
+  }, 250);
+
+  // On login, also pull via the fixed path and apply (in case the original
+  // load path failed because it filtered by email match)
+  async function applyRemoteOnLogin(){
+    try {
+      const remote = await loadRemoteFixed();
+      if (!remote) return;
+      if (typeof window.applyAppStateSnapshot === 'function'
+          && typeof window.getDefaultState === 'function') {
+        const defaults = window.getDefaultState();
+        window.applyAppStateSnapshot(remote, defaults);
+        if (typeof window.refreshPersistentViews === 'function') {
+          window.refreshPersistentViews();
+        }
+        if (window.__vpRepaintDashboard) window.__vpRepaintDashboard();
+        try { window.__vpShowSaveIndicator && window.__vpShowSaveIndicator('☁️ Données chargées'); } catch(e) {}
+      }
+    } catch (e) {
+      console.warn('[VetPro] applyRemoteOnLogin failed:', e);
+    }
+  }
+  function hookAuthForLoad(){
+    const client = sb();
+    if (!client?.auth?.onAuthStateChange) return false;
+    if (client.auth.__vpFixedLoadHooked) return true;
+    client.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        setTimeout(applyRemoteOnLogin, 800);
+      }
+    });
+    client.auth.__vpFixedLoadHooked = true;
+    // Also run once now in case we're already signed in
+    setTimeout(applyRemoteOnLogin, 1500);
+    return true;
+  }
+  let hAtt = 0;
+  const hT = setInterval(() => {
+    if (hookAuthForLoad() || ++hAtt > 30) clearInterval(hT);
+  }, 300);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 2) FORCE SAVE ON LOGOUT (synchronous before signOut)
+   * ──────────────────────────────────────────────────────────────────── */
+  function patchLogout(){
+    if (typeof window.doLogout !== 'function' || window.doLogout.__vpForceSave) return false;
+    const orig = window.doLogout;
+    const wrapped = async function(){
+      try {
+        // Flush any pending debounced saves
+        clearTimeout(window.__vpFixedSaveTimer);
+        clearTimeout(window.__vpPersistTimer);
+        await saveRemoteFixed();
+      } catch (e) {}
+      return orig.apply(this, arguments);
+    };
+    wrapped.__vpForceSave = true;
+    window.doLogout = wrapped;
+    // Also rebind any logout button onclick
+    document.querySelectorAll('#logout-btn').forEach(b => { b.onclick = window.doLogout; });
+    return true;
+  }
+  let lAtt = 0;
+  const lT = setInterval(() => {
+    if (patchLogout() || ++lAtt > 30) clearInterval(lT);
+  }, 300);
+
+  // Also save on tab close
+  window.addEventListener('beforeunload', () => {
+    try {
+      // Use sendBeacon-like fire-and-forget; await isn't reliable here
+      saveRemoteFixed();
+    } catch (e) {}
+  });
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 3) SECOND RESET BUTTON: TOTAL wipe (data + settings + language)
+   *    Two-step confirmation
+   * ──────────────────────────────────────────────────────────────────── */
+  function injectTotalResetButton(){
+    const settingsPage = document.getElementById('page-settings');
+    if (!settingsPage) return false;
+    if (settingsPage.querySelector('#vp-total-reset-btn')) return true;
+
+    // Find the existing reset button to anchor near it
+    const existingReset = settingsPage.querySelector('#vp-settings-reset-btn');
+    if (!existingReset) return false;
+
+    const box = document.createElement('div');
+    box.className = 'vp-danger-box';
+    box.innerHTML = `
+      <h4>⚠️ Zone dangereuse — Réinitialisation TOTALE</h4>
+      <p>Efface <strong>toutes</strong> vos données cliniques (cas, clients, animaux, RDV, hospitalisations, finances, historique, ordonnances, médicaments, examens labo) <strong>ET</strong> remet vos paramètres à zéro (langue, thème, infos clinique, notifications). Action irréversible. Demande deux confirmations.</p>
+      <button class="vp-btn-danger" id="vp-total-reset-btn">🔥 RÉINITIALISER ABSOLUMENT TOUT À 0</button>
+    `;
+
+    // Insert after the existing reset button's closest container
+    const anchor = existingReset.closest('.card') || existingReset.parentElement;
+    if (anchor) {
+      anchor.insertAdjacentElement('afterend', box);
+    } else {
+      settingsPage.appendChild(box);
+    }
+
+    document.getElementById('vp-total-reset-btn').addEventListener('click', vpTotalReset);
+    return true;
+  }
+
+  async function vpTotalReset(){
+    if (!confirm('⚠️ ÉTAPE 1/2 — Confirmez-vous vouloir EFFACER TOUTES vos données ET TOUS vos paramètres ?\n\n• Cas cliniques\n• Clients & animaux\n• Rendez-vous\n• Hospitalisations & cages\n• Finances & paiements\n• Historique\n• Ordonnances\n• Médicaments (stocks)\n• Langue, thème, infos clinique\n\nCette action est IRRÉVERSIBLE.')) return;
+    if (!confirm('🔴 ÉTAPE 2/2 — DERNIÈRE CONFIRMATION\n\nÊtes-vous absolument sûr ? Vos données ne pourront pas être récupérées. Tapez OK pour confirmer.')) return;
+
+    try {
+      const client = sb();
+      if (client?.rpc) {
+        const { error } = await client.rpc('reset_user_data', { include_settings: true });
+        if (error) throw error;
+      }
+      // Wipe in-memory arrays
+      ['PATIENTS','CLIENTS','APPOINTMENTS','VACCINE_REMINDERS','HISTORIQUE_DATA','ORDOS'].forEach(name => {
+        try { const a = window[name]; if (Array.isArray(a)) a.splice(0, a.length); } catch(e) {}
+      });
+      try {
+        const o = window.SUIVI_HISTORY;
+        if (o && typeof o === 'object') Object.keys(o).forEach(k => delete o[k]);
+      } catch(e) {}
+      try {
+        const cages = window.CAGES;
+        if (Array.isArray(cages)) cages.forEach(c => {
+          c.statut = 'libre'; c.animal = null; c.motif = null; c.depuis = null; c.notes = null;
+        });
+      } catch(e) {}
+      // Clear localStorage caches
+      try {
+        Object.keys(localStorage).forEach(k => {
+          if (k.startsWith('vetpro-') || k.includes('vetpro')) localStorage.removeItem(k);
+        });
+      } catch(e) {}
+      try { sessionStorage.clear(); } catch(e) {}
+      // Force-push the empty state
+      try { await saveRemoteFixed(); } catch(e) {}
+      alert('✅ Tout a été effacé. La page va se recharger.');
+      setTimeout(() => location.reload(), 600);
+    } catch (e) {
+      alert('❌ Erreur: ' + (e?.message || e));
+    }
+  }
+  window.vpTotalReset = vpTotalReset;
+
+  let rAtt = 0;
+  const rT = setInterval(() => {
+    if (injectTotalResetButton() || ++rAtt > 30) clearInterval(rT);
+  }, 300);
+  // Also re-inject on every nav('settings')
+  function patchNavForResetBtn(){
+    if (typeof window.nav !== 'function' || window.nav.__vpResetBtnPatched) return false;
+    const orig = window.nav;
+    const wrapped = function(p){
+      const r = orig.apply(this, arguments);
+      if (p === 'settings') setTimeout(injectTotalResetButton, 100);
+      return r;
+    };
+    wrapped.__vpResetBtnPatched = true;
+    window.nav = wrapped;
+    return true;
+  }
+  let rnAtt = 0;
+  const rnT = setInterval(() => {
+    if (patchNavForResetBtn() || ++rnAtt > 30) clearInterval(rnT);
+  }, 300);
+})();
+</script>
+
 </body>
 </html>

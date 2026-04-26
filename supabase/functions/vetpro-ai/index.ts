@@ -10,12 +10,15 @@ const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
 const PRIMARY_MODEL = Deno.env.get("OPENROUTER_MODEL") ?? "google/gemini-2.0-flash-exp:free";
 const FALLBACK_MODELS = (Deno.env.get("OPENROUTER_FALLBACK_MODELS") ?? [
   "google/gemini-2.0-flash-exp:free",
+  "deepseek/deepseek-r1-distill-llama-70b:free",
   "deepseek/deepseek-chat-v3-0324:free",
-  "meta-llama/llama-3.3-70b-instruct:free",
+  "tngtech/deepseek-r1t-chimera:free",
+  "qwen/qwen3-30b-a3b:free",
   "qwen/qwen-2.5-72b-instruct:free",
-  "mistralai/mistral-small-3.2-24b-instruct:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
   "meta-llama/llama-3.2-3b-instruct:free",
-  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "microsoft/mai-ds-r1:free",
+  "mistralai/mistral-7b-instruct:free",
 ].join(",")).split(",").map(s => s.trim()).filter(Boolean);
 const APP_NAME = Deno.env.get("OPENROUTER_APP_NAME") ?? "VetPro";
 const SITE_URL = Deno.env.get("OPENROUTER_SITE_URL") ?? "https://vetpro.dz";
@@ -38,7 +41,14 @@ async function callOpenRouter(apiKey: string, model: string, messages: unknown, 
       "HTTP-Referer": SITE_URL,
       "X-Title": APP_NAME,
     },
-    body: JSON.stringify({ model, messages, max_tokens, temperature }),
+    body: JSON.stringify({
+      model,
+      messages,
+      max_tokens,
+      temperature,
+      // Allow OpenRouter to route to any available provider for free models
+      provider: { allow_fallbacks: true, require_parameters: false },
+    }),
   });
   const payload = await res.json().catch(() => null);
   return { res, payload };
@@ -108,6 +118,8 @@ Deno.serve(async (req) => {
       ? "Tous les modeles ont ete refuses (404). Verifiez que la cle OpenRouter est valide."
       : lastError?.status === 401 || lastError?.status === 403
       ? "Cle OpenRouter invalide ou non autorisee. Mettez a jour le secret OPENROUTER_API_KEY."
+      : /provider returned error|provider error/i.test(lastError?.message || "")
+      ? "Tous les fournisseurs gratuits OpenRouter sont actuellement en panne. Verifiez https://status.openrouter.ai ou ajoutez 1$ de credit pour debloquer les modeles payants."
       : "Service IA temporairement indisponible. Reessayez plus tard.";
 
     return json({
