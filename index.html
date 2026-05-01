@@ -17285,5 +17285,551 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     BULLETPROOF PERSISTENCE — phases 1+2+3 (cross-device save/load)
+     · Lab exams in snapshot
+     · Settings auto-load on auth events
+     · Notifications synced to vetpro_user_settings.ui
+     · Sync status badge on topbar
+     · Force-sync button in settings
+     · visibilitychange save
+     · Retry queue for failed saves
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-persist-bulletproof-style">
+  /* Sync status badge */
+  .vp-sync-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    background: rgba(13,148,136,.1);
+    border: 1px solid rgba(13,148,136,.18);
+    color: #0F3D2A;
+    transition: all .2s ease;
+    margin-right: 8px;
+    cursor: default;
+  }
+  .vp-sync-badge .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #16A34A;
+    box-shadow: 0 0 6px #16A34A;
+  }
+  .vp-sync-badge.syncing { background: rgba(217,119,6,.12); border-color: rgba(217,119,6,.3); color: #92400E; }
+  .vp-sync-badge.syncing .dot { background: #F59E0B; box-shadow: 0 0 6px #F59E0B; animation: vp-sync-pulse 1s ease-in-out infinite; }
+  .vp-sync-badge.error { background: rgba(220,38,38,.12); border-color: rgba(220,38,38,.3); color: #991B1B; }
+  .vp-sync-badge.error .dot { background: #DC2626; box-shadow: 0 0 6px #DC2626; }
+  .vp-sync-badge.offline { background: rgba(100,116,139,.12); border-color: rgba(100,116,139,.3); color: #475569; }
+  .vp-sync-badge.offline .dot { background: #94A3B8; box-shadow: none; }
+  @keyframes vp-sync-pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  @media (max-width: 480px) {
+    .vp-sync-badge { padding: 4px 9px; font-size: 10px; }
+    .vp-sync-badge .label { display: none; }
+  }
+
+  /* Force-sync button in settings */
+  .vp-sync-actions {
+    margin-top: 14px; padding: 14px;
+    background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+    border: 1px solid rgba(13,148,136,.2);
+    border-radius: 14px;
+  }
+  .vp-sync-actions h4 {
+    color: #0F3D2A; font-size: 13px; font-weight: 700;
+    margin: 0 0 6px; display: flex; align-items: center; gap: 6px;
+  }
+  .vp-sync-actions p { color: #1f3b2c; font-size: 11.5px; margin: 0 0 10px; line-height: 1.5; }
+  .vp-btn-sync {
+    background: linear-gradient(135deg, #0D9488, #134E4A);
+    color: #fff; border: none;
+    padding: 10px 16px; border-radius: 12px;
+    font-weight: 700; font-size: 12.5px;
+    cursor: pointer;
+    box-shadow: 0 6px 14px rgba(13,148,136,.25);
+    transition: transform .15s ease;
+  }
+  .vp-btn-sync:hover { transform: translateY(-1px); }
+  .vp-btn-sync:active { transform: scale(.97); }
+</style>
+
+<script id="vetpro-persist-bulletproof-script">
+(function(){
+  'use strict';
+  if (window.__vetproPersistBulletproof) return;
+  window.__vetproPersistBulletproof = true;
+
+  const STATE_TABLE = 'vetpro_user_state';
+  const SETTINGS_TABLE = 'vetpro_user_settings';
+
+  function sb(){ return (typeof _sb !== 'undefined') ? _sb : null; }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * SYNC STATUS BADGE
+   * ──────────────────────────────────────────────────────────────────── */
+  function ensureSyncBadge(){
+    let badge = document.getElementById('vp-sync-badge');
+    if (badge) return badge;
+    const topbar = document.querySelector('.topbar');
+    if (!topbar) return null;
+    badge = document.createElement('div');
+    badge.id = 'vp-sync-badge';
+    badge.className = 'vp-sync-badge';
+    badge.innerHTML = `<span class="dot"></span><span class="label">Synchronisé</span>`;
+    badge.title = 'Statut de synchronisation cloud';
+    // Insert before the bell if present
+    const bell = topbar.querySelector('#vp-notif-bell');
+    if (bell) topbar.insertBefore(badge, bell);
+    else topbar.appendChild(badge);
+    return badge;
+  }
+  function setSyncStatus(state, message){
+    const badge = ensureSyncBadge();
+    if (!badge) return;
+    badge.classList.remove('syncing','error','offline');
+    const labels = {
+      ok: 'Synchronisé',
+      syncing: 'Sauvegarde…',
+      error: 'Erreur',
+      offline: 'Hors ligne',
+    };
+    if (state !== 'ok') badge.classList.add(state);
+    const lbl = badge.querySelector('.label');
+    if (lbl) lbl.textContent = labels[state] || state;
+    if (message) badge.title = message;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * RETRY QUEUE
+   * ──────────────────────────────────────────────────────────────────── */
+  const retryQueue = [];
+  let retryTimer = null;
+
+  function processQueue(){
+    if (!retryQueue.length) return;
+    const task = retryQueue[0];
+    task.attempts = (task.attempts || 0) + 1;
+    task.fn().then(ok => {
+      if (ok) {
+        retryQueue.shift();
+        setSyncStatus('ok', 'Sauvegardé après réessai');
+        try { window.vpAddNotification && window.vpAddNotification('☁️ Donnée resynchronisée après reconnexion', { icon: '✅' }); } catch(e){}
+        if (retryQueue.length) scheduleRetry();
+      } else if (task.attempts >= 8) {
+        retryQueue.shift();
+        setSyncStatus('error', 'Echec après 8 essais — vérifiez votre connexion');
+        if (retryQueue.length) scheduleRetry();
+      } else {
+        scheduleRetry();
+      }
+    }).catch(() => {
+      if (task.attempts >= 8) retryQueue.shift();
+      scheduleRetry();
+    });
+  }
+  function scheduleRetry(){
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(processQueue, 30000);
+  }
+  function enqueueRetry(fn){
+    retryQueue.push({ fn });
+    if (retryQueue.length === 1) scheduleRetry();
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * COMPREHENSIVE SAVE — wraps everything: snapshot + settings + notifs
+   * ──────────────────────────────────────────────────────────────────── */
+  async function fullSave(){
+    const client = sb();
+    if (!client) { setSyncStatus('offline'); return false; }
+    if (!navigator.onLine) { setSyncStatus('offline'); return false; }
+    setSyncStatus('syncing');
+
+    let allOK = true;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) { setSyncStatus('offline', 'Non connecté'); return false; }
+      const userId = session.user.id;
+      const email = (session.user.email || '').toLowerCase();
+
+      // 1) Snapshot to vetpro_user_state
+      try {
+        const snapshot = (typeof window.collectAppStateSnapshot === 'function')
+          ? window.collectAppStateSnapshot() : null;
+        if (snapshot) {
+          // Include lab exams (Phase 1.1)
+          if (Array.isArray(window.LAB_EXAMS)) snapshot.labExams = window.LAB_EXAMS;
+          const { error } = await client.from(STATE_TABLE).upsert({
+            user_id: userId,
+            email,
+            state: snapshot,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'user_id' });
+          if (error) { allOK = false; console.warn('[VP] snapshot save failed:', error); }
+        }
+      } catch (e) { allOK = false; }
+
+      // 2) Notifications synced to vetpro_user_settings.ui (Phase 1.3)
+      try {
+        const notifs = Array.isArray(window.__vpNotifications) ? window.__vpNotifications.slice(0, 50) : [];
+        // Read current settings to merge
+        const { data: cur } = await client.from(SETTINGS_TABLE)
+          .select('ui').eq('user_id', userId).maybeSingle();
+        const ui = (cur?.ui && typeof cur.ui === 'object') ? cur.ui : {};
+        ui.notifications = notifs;
+        await client.from(SETTINGS_TABLE).upsert({
+          user_id: userId, email, ui,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+      } catch (e) { /* non-critical */ }
+
+      if (allOK) {
+        setSyncStatus('ok');
+        try { window.__vpShowSaveIndicator && window.__vpShowSaveIndicator('☁️ Sauvegardé cloud'); } catch(e){}
+      } else {
+        setSyncStatus('error', 'Sauvegarde partielle — réessayer');
+        enqueueRetry(fullSave);
+      }
+      return allOK;
+    } catch (e) {
+      setSyncStatus('error', e.message || 'Erreur réseau');
+      enqueueRetry(fullSave);
+      return false;
+    }
+  }
+  window.vpFullSave = fullSave;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * COMPREHENSIVE LOAD — snapshot + settings + notifs
+   * ──────────────────────────────────────────────────────────────────── */
+  async function fullLoad(){
+    const client = sb();
+    if (!client) return false;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return false;
+      const userId = session.user.id;
+
+      // 1) Snapshot
+      const { data: stateRow } = await client.from(STATE_TABLE)
+        .select('state').eq('user_id', userId).maybeSingle();
+      const state = stateRow?.state;
+      if (state && typeof window.applyAppStateSnapshot === 'function'
+          && typeof window.getDefaultState === 'function') {
+        const defaults = window.getDefaultState();
+        window.applyAppStateSnapshot(state, defaults);
+        // Apply lab exams (Phase 1.1)
+        if (Array.isArray(state.labExams)) {
+          window.LAB_EXAMS = state.labExams.slice();
+        }
+        if (typeof window.refreshPersistentViews === 'function') window.refreshPersistentViews();
+        if (window.__vpRepaintDashboard) window.__vpRepaintDashboard();
+        renderLabExams();
+      }
+
+      // 2) Settings
+      const { data: settingsRow } = await client.from(SETTINGS_TABLE)
+        .select('clinic, ui, language').eq('user_id', userId).maybeSingle();
+
+      // Apply notifications from cloud (Phase 1.3)
+      if (settingsRow?.ui?.notifications && Array.isArray(settingsRow.ui.notifications)) {
+        window.__vpNotifications = settingsRow.ui.notifications.slice(0, 50);
+        try { localStorage.setItem('vetpro-notifications', JSON.stringify(window.__vpNotifications)); } catch(e){}
+        // Refresh notification bell
+        const bell = document.getElementById('vp-notif-bell');
+        if (bell) {
+          const unread = window.__vpNotifications.filter(n => !n.read).length;
+          bell.classList.toggle('has-unread', unread > 0);
+        }
+      }
+
+      setSyncStatus('ok');
+      return true;
+    } catch (e) {
+      setSyncStatus('error', e.message);
+      return false;
+    }
+  }
+  window.vpFullLoad = fullLoad;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * LAB_EXAMS array + render + modal hook (Phase 1.1)
+   * ──────────────────────────────────────────────────────────────────── */
+  if (!Array.isArray(window.LAB_EXAMS)) window.LAB_EXAMS = [];
+
+  function renderLabExams(){
+    const page = document.getElementById('page-labo');
+    if (!page) return;
+    const tbody = page.querySelector('#labo-resultats table tbody');
+    if (!tbody) return;
+    const card = page.querySelector('#labo-resultats .card');
+    const tbl = card?.querySelector('table');
+
+    if (!window.LAB_EXAMS.length) {
+      tbody.innerHTML = '';
+      if (tbl) tbl.style.display = 'none';
+      let empty = card?.querySelector('.vp-card-empty');
+      if (!empty && card) {
+        empty = document.createElement('div');
+        empty.className = 'vp-card-empty';
+        empty.innerHTML = `
+          <div class="vp-card-empty-icon">🔬</div>
+          <div class="vp-card-empty-title">Aucun bilan enregistré</div>
+          <div class="vp-card-empty-msg">Cliquez sur "Nouveau bilan" pour ajouter votre premier examen.</div>
+        `;
+        card.appendChild(empty);
+      }
+      return;
+    }
+
+    if (tbl) tbl.style.display = '';
+    const empty = card?.querySelector('.vp-card-empty');
+    if (empty) empty.remove();
+    tbody.innerHTML = window.LAB_EXAMS.map((e, i) => {
+      const sevCls = e.severity === 'anormal' ? 'bdg-c' : e.severity === 'suivi' ? 'bdg-u' : 'bdg-n';
+      const sevTxt = e.severity === 'anormal' ? '🚨 Anormal' : e.severity === 'suivi' ? '⚠️ Suivi' : '✅ Normal';
+      return `
+        <tr>
+          <td><strong>${escapeHtml(e.animal || '')}</strong>${e.client ? `<br/><small style="color:var(--muted)">${escapeHtml(e.client)}</small>` : ''}</td>
+          <td>${escapeHtml(e.type || '')}</td>
+          <td>${escapeHtml(e.date || '')}</td>
+          <td><span class="bdg ${sevCls}">${sevTxt}</span></td>
+          <td style="font-size:11.5px">${escapeHtml(e.summary || '')}</td>
+          <td><button class="btn btn-sm btn-ghost" onclick="window.vpDeleteLabExam(${i})">🗑️</button></td>
+        </tr>
+      `;
+    }).join('');
+  }
+  window.vpRenderLabExams = renderLabExams;
+
+  window.vpDeleteLabExam = function(idx){
+    if (!confirm('Supprimer ce bilan ?')) return;
+    window.LAB_EXAMS.splice(idx, 1);
+    renderLabExams();
+    fullSave();
+  };
+
+  function hookLabModal(){
+    const modal = document.getElementById('modal-labo-new');
+    if (!modal || modal.dataset.vpHooked === '1') return false;
+    const saveBtn = Array.from(modal.querySelectorAll('button')).find(b =>
+      (b.textContent || '').toLowerCase().includes('enregistrer'));
+    if (!saveBtn) return false;
+    // Replace the inline onclick (closeModal+toast) with a real save
+    saveBtn.onclick = function(){
+      const selects = modal.querySelectorAll('select');
+      const inputs = modal.querySelectorAll('input');
+      const textareas = modal.querySelectorAll('textarea');
+      const animal = selects[0]?.value || '';
+      const type = selects[1]?.value || '';
+      const dateRaw = inputs[0]?.value || '';
+      const date = dateRaw ? new Date(dateRaw).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR');
+      const results = textareas[0]?.value || '';
+      const interp = textareas[1]?.value || '';
+      // Naive severity heuristic
+      const blob = (results + ' ' + interp).toLowerCase();
+      let severity = 'normal';
+      if (/anormal|↑↑|↓↓|leucoc|leucop|alarmant|urgence/i.test(blob)) severity = 'anormal';
+      else if (/suivi|élev|baiss|surveiller|controler|contrôler/i.test(blob)) severity = 'suivi';
+      const summary = results.split('\n')[0]?.slice(0, 80) || (interp.slice(0, 80)) || '';
+      window.LAB_EXAMS.unshift({
+        id: Date.now(),
+        animal, type, date, severity, summary,
+        results, interpretation: interp,
+      });
+      renderLabExams();
+      fullSave();
+      // Reset form
+      textareas.forEach(t => { t.value = ''; });
+      if (typeof window.closeModal === 'function') window.closeModal('modal-labo-new');
+      if (typeof window.toast === 'function') window.toast('Bilan enregistré ✅');
+      try { window.vpAddNotification && window.vpAddNotification(`🔬 Bilan ${type} ajouté pour ${animal}`, { icon: '🔬' }); } catch(e){}
+    };
+    // Also populate the animal dropdown from real PATIENTS
+    const animalSel = selects[0];
+    if (animalSel && Array.isArray(window.PATIENTS) && window.PATIENTS.length) {
+      animalSel.innerHTML = window.PATIENTS.map(p => {
+        const sp = p.species === 'Chat' || p.especeIcon === '🐈' ? '🐈' : '🐕';
+        return `<option>${sp} ${escapeHtml(p.name || p.nom || '')}</option>`;
+      }).join('');
+    } else if (animalSel) {
+      animalSel.innerHTML = '<option disabled>Aucun patient — créez un cas d\'abord</option>';
+    }
+    modal.dataset.vpHooked = '1';
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * SETTINGS auto-load on auth events (Phase 1.2)
+   * ──────────────────────────────────────────────────────────────────── */
+  async function preloadSettings(){
+    const client = sb();
+    if (!client) return;
+    try {
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return;
+      const { data } = await client.from(SETTINGS_TABLE)
+        .select('clinic, language').eq('user_id', session.user.id).maybeSingle();
+      if (!data) return;
+      // Stash for any code that reads window.__vpClinicSettings
+      window.__vpClinicSettings = data.clinic || {};
+      // Apply to settings page if visible
+      if (typeof window.applyUserToSettings === 'function') window.applyUserToSettings();
+    } catch (e) {}
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * FORCE-SYNC button in settings (Phase 2.5)
+   * ──────────────────────────────────────────────────────────────────── */
+  function injectForceSyncButton(){
+    const page = document.getElementById('page-settings');
+    if (!page || page.querySelector('#vp-force-sync-btn')) return false;
+    // Find a card or anchor near the existing reset button
+    const anchor = page.querySelector('#vp-settings-reset-btn')?.closest('.card') || page.querySelector('.card');
+    if (!anchor) return false;
+    const box = document.createElement('div');
+    box.className = 'vp-sync-actions';
+    box.innerHTML = `
+      <h4>☁️ Synchronisation cloud</h4>
+      <p>Force la sauvegarde immédiate de toutes vos données vers Supabase. Utile si vous changez de téléphone ou que la barre de statut indique une erreur.</p>
+      <button class="vp-btn-sync" id="vp-force-sync-btn" type="button">💾 Forcer la synchronisation maintenant</button>
+    `;
+    anchor.appendChild(box);
+    document.getElementById('vp-force-sync-btn').addEventListener('click', async () => {
+      const btn = document.getElementById('vp-force-sync-btn');
+      btn.disabled = true;
+      btn.textContent = '⏳ Synchronisation…';
+      const ok = await fullSave();
+      btn.disabled = false;
+      btn.textContent = ok ? '✅ Synchronisé' : '❌ Echec — réessayer';
+      setTimeout(() => { btn.textContent = '💾 Forcer la synchronisation maintenant'; }, 2000);
+      if (ok) try { window.vpAddNotification('☁️ Synchronisation manuelle réussie', { icon: '✅' }); } catch(e){}
+    });
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * SAVE on page hide / tab background / network change (Phase 2.6)
+   * ──────────────────────────────────────────────────────────────────── */
+  function setupSaveTriggers(){
+    if (window.__vpSaveTriggersDone) return;
+    window.__vpSaveTriggersDone = true;
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        try { fullSave(); } catch(e){}
+      } else if (document.visibilityState === 'visible') {
+        // Check for any pending retry
+        if (retryQueue.length) processQueue();
+        // Refresh sync status
+        if (!navigator.onLine) setSyncStatus('offline');
+        else setSyncStatus('ok');
+      }
+    });
+
+    window.addEventListener('online', () => {
+      setSyncStatus('ok');
+      if (retryQueue.length) processQueue();
+    });
+    window.addEventListener('offline', () => {
+      setSyncStatus('offline');
+    });
+
+    window.addEventListener('beforeunload', () => {
+      try { fullSave(); } catch(e){}
+    });
+
+    window.addEventListener('pagehide', () => {
+      try { fullSave(); } catch(e){}
+    });
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * Hook every change in clinic forms → debounced fullSave
+   * ──────────────────────────────────────────────────────────────────── */
+  let saveDebounce = null;
+  function scheduleSave(){
+    clearTimeout(saveDebounce);
+    saveDebounce = setTimeout(() => fullSave(), 800);
+  }
+  document.addEventListener('input', (ev) => {
+    const t = ev.target;
+    if (!t || !/^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
+    const page = t.closest && t.closest('.page');
+    if (!page || !page.id) return;
+    if (/^page-(login|terms|conditions|approvals|landing|support|maladies|chirurgie|nutrition|preop|urgences|references|perfusion|anesthesie|ai|ordonnances)$/.test(page.id)) return;
+    scheduleSave();
+  }, true);
+
+  /* ────────────────────────────────────────────────────────────────────
+   * Auth-driven full load
+   * ──────────────────────────────────────────────────────────────────── */
+  function hookAuth(){
+    const client = sb();
+    if (!client?.auth?.onAuthStateChange) return false;
+    if (client.auth.__vpBulletproofHooked) return true;
+    client.auth.__vpBulletproofHooked = true;
+    client.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        setTimeout(() => { fullLoad(); preloadSettings(); }, 600);
+      } else if (event === 'SIGNED_OUT') {
+        setSyncStatus('offline', 'Déconnecté');
+      }
+    });
+    // Also one-shot now
+    setTimeout(() => { fullLoad(); preloadSettings(); }, 1500);
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * Helpers
+   * ──────────────────────────────────────────────────────────────────── */
+  function escapeHtml(s){
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * INIT
+   * ──────────────────────────────────────────────────────────────────── */
+  function tryAll(){
+    ensureSyncBadge();
+    hookLabModal();
+    injectForceSyncButton();
+    renderLabExams();
+  }
+
+  function init(){
+    setupSaveTriggers();
+    setSyncStatus(navigator.onLine ? 'ok' : 'offline');
+    tryAll();
+    hookAuth();
+    const obs = new MutationObserver(() => tryAll());
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Hook reset to also clear LAB_EXAMS
+  setTimeout(() => {
+    ['vpResetToZero','vpTotalReset'].forEach(fnName => {
+      const orig = window[fnName];
+      if (typeof orig !== 'function' || orig.__vpClearLab) return;
+      const wrapped = async function(){
+        const r = await orig.apply(this, arguments);
+        if (Array.isArray(window.LAB_EXAMS)) window.LAB_EXAMS.length = 0;
+        renderLabExams();
+        await fullSave();
+        return r;
+      };
+      wrapped.__vpClearLab = true;
+      window[fnName] = wrapped;
+    });
+  }, 3000);
+})();
+</script>
+
 </body>
 </html>
