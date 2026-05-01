@@ -9448,8 +9448,10 @@ function saveAdmission() {
 
   function applyAppStateSnapshot(saved, defaults){
     replaceArrayContents(CAGES, (saved?.cages?.length ? saved.cages : null) || defaults.cages);
-    // Never wipe drug catalog — if saved drugs is empty, use defaults (catalog with stock 0)
-    replaceArrayContents(DRUGS, (saved?.drugs?.length ? saved.drugs : null) || defaults.drugs);
+    // Never wipe drug catalog — if saved drugs is empty, use frozen backup catalog with stock=0
+    const drugsFallback = (Array.isArray(window.__vpDrugsCatalogBackup) && window.__vpDrugsCatalogBackup.length > 0)
+      ? window.__vpDrugsCatalogBackup.map(d => ({ ...d, s: 0 })) : defaults.drugs;
+    replaceArrayContents(DRUGS, (saved?.drugs?.length ? saved.drugs : null) || drugsFallback);
     replaceArrayContents(ORDOS, saved?.ordos || defaults.ordos);
     replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
     replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
@@ -15010,6 +15012,17 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- Freeze original DRUGS catalog before any script can wipe it -->
+<script id="vetpro-drugs-catalog-backup">
+(function(){
+  if (window.__vpDrugsCatalogBackup) return;
+  // Snapshot the full catalog right now (before reset/load can empty it)
+  if (typeof DRUGS !== 'undefined' && Array.isArray(DRUGS) && DRUGS.length > 0) {
+    window.__vpDrugsCatalogBackup = JSON.parse(JSON.stringify(DRUGS));
+  }
+})();
+</script>
+
 <!-- ═══════════════════════════════════════════════════════════════════════
      MOBILE UI + MONTANT v3 — definitive fixes for:
      · stuck UI on phone (excessive intervals + missing touch-action)
@@ -16350,8 +16363,11 @@ function saveAdmission() {
   }
 
   function drugsStocksAtZero(){
-    const src = (typeof window.DRUGS !== 'undefined' && Array.isArray(window.DRUGS))
-      ? window.DRUGS : [];
+    // Use frozen backup catalog (never emptied), fall back to live DRUGS
+    const src = (Array.isArray(window.__vpDrugsCatalogBackup) && window.__vpDrugsCatalogBackup.length > 0)
+      ? window.__vpDrugsCatalogBackup
+      : (typeof window.DRUGS !== 'undefined' && Array.isArray(window.DRUGS) && window.DRUGS.length > 0)
+        ? window.DRUGS : [];
     // Keep the catalog (id, name, indications, etc.) but stock = 0
     return src.map(d => ({ ...d, s: 0 }));
   }
