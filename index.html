@@ -16128,5 +16128,175 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     EMPTY DEFAULTS — every user starts with NO demo data
+     · getDefaultState() returns empty arrays + drug stocks at 0
+     · Force dashboard v2 paint() to run on every page show + observe
+     · Reset zeroes drug stocks too
+     ═══════════════════════════════════════════════════════════════════ -->
+<script id="vetpro-empty-defaults-script">
+(function(){
+  'use strict';
+  if (window.__vetproEmptyDefaults) return;
+  window.__vetproEmptyDefaults = true;
+
+  function emptyCagesWithIds(count){
+    const arr = [];
+    for (let i = 1; i <= count; i++) {
+      arr.push({ id: 'C' + i, statut: 'libre', animal: null, motif: null, depuis: null, notes: null });
+    }
+    return arr;
+  }
+
+  function drugsStocksAtZero(){
+    const src = (typeof window.DRUGS !== 'undefined' && Array.isArray(window.DRUGS))
+      ? window.DRUGS : [];
+    // Keep the catalog (id, name, indications, etc.) but stock = 0
+    return src.map(d => ({ ...d, s: 0 }));
+  }
+
+  // Override getDefaultState so a brand-new user (no cloud state)
+  // starts with: empty patients/clients/historique/etc, libre cages, 0 stocks
+  const ORIGINAL_GET_DEFAULT_STATE = window.getDefaultState;
+  window.getDefaultState = function(){
+    return {
+      cages: emptyCagesWithIds(12),
+      drugs: drugsStocksAtZero(),
+      ordos: [],
+      historique: [],
+      suivi: {},
+      appointments: [],
+      vaccineReminders: [],
+      patients: [],
+      clients: [],
+    };
+  };
+
+  // Wipe the in-memory hardcoded demo data RIGHT NOW so the very first
+  // render after page load shows zeros even before any save/load.
+  function wipeDemoNow(){
+    try {
+      const arrays = ['PATIENTS','CLIENTS','APPOINTMENTS','VACCINE_REMINDERS','HISTORIQUE_DATA','ORDOS'];
+      arrays.forEach(name => {
+        const a = window[name];
+        if (Array.isArray(a)) a.splice(0, a.length);
+      });
+      const o = window.SUIVI_HISTORY;
+      if (o && typeof o === 'object') Object.keys(o).forEach(k => delete o[k]);
+      // Cages: keep IDs, free everything
+      if (Array.isArray(window.CAGES)) {
+        window.CAGES.forEach(c => {
+          c.statut = 'libre'; c.animal = null; c.motif = null; c.depuis = null; c.notes = null;
+        });
+      }
+      // Drug stocks to 0
+      if (Array.isArray(window.DRUGS)) {
+        window.DRUGS.forEach(d => { d.s = 0; });
+      }
+    } catch(e) {}
+  }
+  wipeDemoNow();
+  // Re-wipe on script load events too (catches late-loaded data)
+  window.addEventListener('load', () => setTimeout(wipeDemoNow, 100));
+
+  // After remote state loads, if it's empty/null, KEEP the wipe.
+  // If user actually has saved data, applyAppStateSnapshot will restore it.
+
+  /* ────────────────────────────────────────────────────────────────────
+   * AGGRESSIVE dashboard v2 paint
+   * ──────────────────────────────────────────────────────────────────── */
+  function forceRepaintDashboard(){
+    if (typeof window.__vpRepaintDashboard === 'function') {
+      try { window.__vpRepaintDashboard(); } catch(e) {}
+    }
+  }
+
+  // Observe #page-dashboard — if its content reverts to the hardcoded demo
+  // (detected by presence of "Cas ce mois" or hardcoded "145K" string),
+  // re-paint immediately.
+  function setupDashObserver(){
+    const dash = document.getElementById('page-dashboard');
+    if (!dash) return false;
+    if (dash.__vpObserved) return true;
+
+    // Initial paint
+    setTimeout(forceRepaintDashboard, 100);
+    setTimeout(forceRepaintDashboard, 500);
+    setTimeout(forceRepaintDashboard, 1500);
+
+    // Watch for the hardcoded text appearing
+    const obs = new MutationObserver(() => {
+      const text = dash.textContent || '';
+      // Markers of the original hardcoded dashboard
+      if (/Cas ce mois|Benali Ahmed|Hamdi Karim|Kaci Fatima|145K|3 paiements en attente/.test(text)) {
+        forceRepaintDashboard();
+      }
+    });
+    obs.observe(dash, { childList: true, subtree: true, characterData: true });
+    dash.__vpObserved = true;
+    return true;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      setupDashObserver();
+      setTimeout(setupDashObserver, 500);
+    });
+  } else {
+    setupDashObserver();
+    setTimeout(setupDashObserver, 500);
+  }
+  window.addEventListener('load', () => setTimeout(setupDashObserver, 1000));
+
+  /* ────────────────────────────────────────────────────────────────────
+   * RESET to 0 — also zero drug stocks (already partially done in prior
+   * fixes; re-do here for safety on every route to reset)
+   * ──────────────────────────────────────────────────────────────────── */
+  function zeroDrugStocks(){
+    if (Array.isArray(window.DRUGS)) {
+      window.DRUGS.forEach(d => { d.s = 0; });
+    }
+  }
+  // Wrap both reset functions to also zero drug stocks
+  ['vpResetToZero','vpTotalReset'].forEach(fnName => {
+    const orig = window[fnName];
+    if (typeof orig !== 'function' || orig.__vpZeroDrugs) return;
+    const wrapped = async function(){
+      const result = await orig.apply(this, arguments);
+      zeroDrugStocks();
+      // Re-render any open views
+      try { window.persistAppState && window.persistAppState(); } catch(e) {}
+      try { window.vpSaveRemoteFixed && window.vpSaveRemoteFixed(); } catch(e) {}
+      forceRepaintDashboard();
+      return result;
+    };
+    wrapped.__vpZeroDrugs = true;
+    window[fnName] = wrapped;
+  });
+  // Re-wrap later in case the original is defined after this script
+  setTimeout(() => {
+    ['vpResetToZero','vpTotalReset'].forEach(fnName => {
+      const orig = window[fnName];
+      if (typeof orig !== 'function' || orig.__vpZeroDrugs) return;
+      const wrapped = async function(){
+        const result = await orig.apply(this, arguments);
+        zeroDrugStocks();
+        try { window.persistAppState && window.persistAppState(); } catch(e) {}
+        try { window.vpSaveRemoteFixed && window.vpSaveRemoteFixed(); } catch(e) {}
+        forceRepaintDashboard();
+        return result;
+      };
+      wrapped.__vpZeroDrugs = true;
+      window[fnName] = wrapped;
+    });
+  }, 2000);
+
+  // Expose
+  window.vpWipeDemoNow = wipeDemoNow;
+  window.vpZeroDrugs = zeroDrugStocks;
+  window.vpForceDashRepaint = forceRepaintDashboard;
+})();
+</script>
+
 </body>
 </html>
