@@ -16298,5 +16298,652 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CONTRAST + APK QR + SETTINGS REAL USER + PERFUSION TIMER pack
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-contrast-features-style">
+  /* ── 1) LANDING HERO CONTRAST ─────────────────────────────────────────
+     The diagonal split made hero text invisible on the light cream half.
+     Push the cream-to-dark transition way down, give text a soft dark
+     drop-shadow, and add a subtle backdrop pad behind paragraphs/pills. */
+  #login-screen.vetpro-landing {
+    background:
+      radial-gradient(900px 500px at 8% -10%, rgba(13,148,136,.32), transparent 60%) !important,
+      radial-gradient(800px 400px at 100% 5%, rgba(234,88,12,.22), transparent 60%) !important,
+      radial-gradient(600px 600px at 50% 100%, rgba(56,211,124,.12), transparent 70%) !important,
+      linear-gradient(160deg, #04110c 0%, #0a2d1e 78%, #f0fdfa 78.2%, #fdfaf3 100%) !important;
+  }
+
+  /* Hero gradient text gets a dark glow halo so it's readable even if it
+     drifts onto the light section after a window resize */
+  #login-screen .landing-panel h1 {
+    text-shadow:
+      0 2px 30px rgba(4, 17, 12, .85),
+      0 4px 16px rgba(4, 17, 12, .6),
+      0 1px 2px rgba(4, 17, 12, .9);
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
+  }
+
+  /* Description paragraph gets a subtle dark wrapper for readability */
+  #login-screen .landing-copy {
+    background: rgba(4,17,12,.42);
+    border: 1px solid rgba(94,234,212,.16);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 14px 18px !important;
+    border-radius: 14px;
+    color: #f0fdfa !important;
+    text-shadow: 0 1px 4px rgba(0,0,0,.4);
+  }
+
+  /* Trust pills — make text pop on any background */
+  .vp-trust-pill {
+    background: rgba(4,17,12,.55) !important;
+    border: 1px solid rgba(94,234,212,.32) !important;
+    color: #f0fdfa !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  /* Social pills (Instagram / email / phone) — same fix */
+  #login-screen .landing-socials a {
+    background: rgba(4,17,12,.55) !important;
+    border: 1px solid rgba(94,234,212,.32) !important;
+    color: #f0fdfa !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+  #login-screen .landing-socials a:hover {
+    background: rgba(13,148,136,.42) !important;
+    border-color: rgba(94,234,212,.55) !important;
+  }
+
+  /* Eyebrow + brand name + author name — bump readability */
+  #login-screen .landing-eyebrow {
+    text-shadow: 0 2px 8px rgba(0,0,0,.5);
+  }
+  #login-screen .landing-brand {
+    text-shadow: 0 2px 8px rgba(0,0,0,.5);
+  }
+
+  /* ── 2) APK DOWNLOAD CARD on landing right column ────────────────── */
+  .vp-apk-card {
+    background: linear-gradient(135deg, #0F3D2A, #134E4A);
+    color: #fff;
+    border-radius: 22px;
+    padding: 22px;
+    border: 1px solid rgba(94,234,212,.22);
+    box-shadow: 0 14px 36px rgba(15,61,42,.28);
+    margin-top: 14px;
+  }
+  .vp-apk-card h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px; margin: 0 0 6px;
+    color: #fff;
+  }
+  .vp-apk-card p {
+    font-size: 12px; color: rgba(255,255,255,.72);
+    margin: 0 0 14px; line-height: 1.5;
+  }
+  .vp-apk-row {
+    display: flex; gap: 14px; align-items: center;
+  }
+  .vp-apk-qr {
+    width: 110px; height: 110px;
+    background: #fff;
+    border-radius: 12px; padding: 8px;
+    flex-shrink: 0;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+  }
+  .vp-apk-qr img { width: 100%; height: 100%; display: block; }
+  .vp-apk-actions { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .vp-apk-btn {
+    background: linear-gradient(135deg, #F97316, #EA580C);
+    color: #fff !important;
+    text-decoration: none;
+    padding: 11px 14px;
+    border-radius: 12px;
+    font-weight: 700; font-size: 13px;
+    text-align: center;
+    border: none;
+    box-shadow: 0 6px 16px rgba(234,88,12,.35);
+    transition: transform .15s ease, box-shadow .18s ease;
+    display: inline-block;
+  }
+  .vp-apk-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(234,88,12,.5); }
+  .vp-apk-btn.secondary {
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(94,234,212,.3);
+    box-shadow: none;
+    color: #f0fdfa !important;
+  }
+  .vp-apk-meta { font-size: 10.5px; color: rgba(255,255,255,.55); margin-top: 4px; }
+
+  @media (max-width: 480px) {
+    .vp-apk-row { flex-direction: column; align-items: stretch; }
+    .vp-apk-qr { margin: 0 auto; width: 140px; height: 140px; }
+  }
+
+  /* ── 3) PERFUSION TIMER widget ───────────────────────────────────── */
+  .vp-perf-timer-card {
+    background: linear-gradient(135deg, #0F3D2A, #0D9488);
+    color: #fff;
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-top: 14px;
+    box-shadow: 0 12px 28px rgba(13,148,136,.28);
+  }
+  .vp-perf-timer-h {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px; margin: 0 0 10px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .vp-perf-timer-display {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(40px, 8vw, 56px); line-height: 1;
+    text-align: center;
+    margin: 14px 0;
+    font-weight: 400;
+    letter-spacing: -.02em;
+    text-shadow: 0 2px 8px rgba(0,0,0,.3);
+  }
+  .vp-perf-timer-display.alert {
+    color: #FB923C;
+    animation: vp-perf-pulse 1s ease-in-out infinite;
+  }
+  @keyframes vp-perf-pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+  .vp-perf-timer-controls {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .vp-perf-timer-btn {
+    background: rgba(255,255,255,.16);
+    color: #fff; border: 1px solid rgba(255,255,255,.18);
+    padding: 10px 12px; border-radius: 12px;
+    font-weight: 700; font-size: 13px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  .vp-perf-timer-btn:hover { background: rgba(255,255,255,.28); }
+  .vp-perf-timer-btn.primary {
+    background: linear-gradient(135deg, #F97316, #EA580C);
+    border: none;
+    box-shadow: 0 6px 14px rgba(234,88,12,.3);
+  }
+  .vp-perf-timer-presets {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    justify-content: center;
+  }
+  .vp-perf-preset {
+    background: rgba(255,255,255,.1);
+    color: #d1fae5; border: 1px solid rgba(255,255,255,.14);
+    padding: 5px 10px; border-radius: 999px;
+    font-size: 11px; cursor: pointer;
+    transition: background .15s ease;
+  }
+  .vp-perf-preset:hover { background: rgba(255,255,255,.2); }
+  .vp-perf-preset.active { background: #EA580C; border-color: #EA580C; color: #fff; }
+
+  /* Gouttes/sec line in result */
+  .vp-perf-gtt-sec {
+    display: inline-block;
+    background: rgba(13,148,136,.12);
+    color: #0D9488;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 13px;
+    margin-top: 6px;
+  }
+</style>
+
+<script id="vetpro-contrast-features-script">
+(function(){
+  'use strict';
+  if (window.__vetproContrastFeatures) return;
+  window.__vetproContrastFeatures = true;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * APK DOWNLOAD CARD on landing
+   * ──────────────────────────────────────────────────────────────────── */
+  // Replace this URL with your actual Google Drive APK link
+  const APK_URL = 'https://drive.google.com/file/d/1XXXXXXXXXXXXXXXXXX/view?usp=sharing';
+  // Direct-download form (forces Drive to serve the file instead of preview)
+  const APK_DIRECT = APK_URL.replace('/view?usp=sharing', '?uc=download').replace('/file/d/', '/uc?id=').replace('/uc?id=', '/uc?id=');
+
+  function buildQRDataURL(text){
+    // QR generated via free public Google Charts API (no key needed)
+    return 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=0&data=' + encodeURIComponent(text);
+  }
+
+  function injectApkCard(){
+    const screen = document.getElementById('login-screen');
+    if (!screen) return false;
+    const right = screen.querySelector('.landing-right');
+    if (!right) return false;
+    if (right.querySelector('.vp-apk-card')) return true;
+
+    const card = document.createElement('div');
+    card.className = 'vp-apk-card';
+    card.innerHTML = `
+      <h3>📱 Application Android</h3>
+      <p>Téléchargez VetPro pour Android — même compte, mêmes données, même expérience que le web.</p>
+      <div class="vp-apk-row">
+        <div class="vp-apk-qr">
+          <img src="${buildQRDataURL(APK_URL)}" alt="QR code APK VetPro" loading="lazy"/>
+        </div>
+        <div class="vp-apk-actions">
+          <a class="vp-apk-btn" href="${APK_URL}" target="_blank" rel="noopener">⬇️ Télécharger l'APK</a>
+          <a class="vp-apk-btn secondary" href="${APK_URL}" target="_blank" rel="noopener">📱 Voir sur Google Drive</a>
+          <div class="vp-apk-meta">Scannez le QR depuis votre téléphone Android</div>
+        </div>
+      </div>
+    `;
+    right.appendChild(card);
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * SETTINGS — show real authenticated user name + reload after refresh
+   * ──────────────────────────────────────────────────────────────────── */
+  async function getCurrentUserInfo(){
+    try {
+      const client = window._sb;
+      if (!client?.auth?.getSession) return null;
+      const { data: { session } } = await client.auth.getSession();
+      const u = session?.user;
+      if (!u) return null;
+      const meta = u.user_metadata || {};
+      const fullName = meta.full_name || meta.name || '';
+      const [first, ...rest] = (fullName || u.email.split('@')[0]).split(' ');
+      return {
+        userId: u.id,
+        email: u.email || '',
+        firstName: first || '',
+        lastName: rest.join(' ') || '',
+        fullName: fullName || u.email.split('@')[0],
+      };
+    } catch (e) { return null; }
+  }
+
+  async function loadSettingsFromCloud(){
+    try {
+      const client = window._sb;
+      if (!client) return null;
+      const { data: { session } } = await client.auth.getSession();
+      if (!session?.user) return null;
+      const { data, error } = await client.from('vetpro_user_settings')
+        .select('clinic, notifications, language')
+        .eq('user_id', session.user.id)
+        .maybeSingle();
+      if (error) return null;
+      return data?.clinic || null;
+    } catch (e) { return null; }
+  }
+
+  function findInputAfterLabel(page, labelText){
+    const labels = page.querySelectorAll('label, .lbl');
+    for (const lbl of labels) {
+      if ((lbl.textContent || '').toLowerCase().includes(labelText.toLowerCase())) {
+        const fg = lbl.closest('.fg') || lbl.parentElement;
+        if (fg) {
+          const input = fg.querySelector('input, textarea');
+          if (input) return input;
+        }
+      }
+    }
+    return null;
+  }
+
+  async function applyUserToSettings(){
+    const page = document.getElementById('page-settings');
+    if (!page) return false;
+
+    const user = await getCurrentUserInfo();
+    if (!user) return false;
+
+    // Map labels to user data — by label text (defensive)
+    const setIfEmpty = (input, value) => {
+      if (!input) return;
+      // Always overwrite the hardcoded "Kherbache Wail" / "Wail" / etc.
+      const cur = (input.value || '').trim();
+      if (!cur || /Kherbache|Wail|admin@vetpro|w\.kherbache|781236686/i.test(cur)) {
+        input.value = value || '';
+      }
+    };
+
+    setIfEmpty(findInputAfterLabel(page, 'Prénom') || findInputAfterLabel(page, 'Prenom'), user.firstName);
+    setIfEmpty(findInputAfterLabel(page, 'Nom'), user.lastName);
+    setIfEmpty(findInputAfterLabel(page, 'Email'), user.email);
+
+    // Then load saved clinic data from Supabase and apply
+    const clinic = await loadSettingsFromCloud();
+    if (clinic && typeof clinic === 'object') {
+      const apply = (label, val) => {
+        if (val == null || val === '') return;
+        const input = findInputAfterLabel(page, label);
+        if (input) input.value = val;
+      };
+      apply('Prénom', clinic.first_name);
+      apply('Nom', clinic.last_name);
+      apply('Titre', clinic.title);
+      apply('N° Ordre', clinic.order_number);
+      apply('Email', clinic.email);
+      apply('Téléphone', clinic.phone);
+      apply('Telephone', clinic.phone);
+      apply('Nom de la clinique', clinic.clinic_name);
+      apply('Nom clinique', clinic.clinic_name);
+      apply('Adresse', clinic.clinic_address);
+      apply('Heures', clinic.clinic_hours);
+      apply('Pied de page', clinic.footer);
+      apply('Footer', clinic.footer);
+      apply('Bas de l', clinic.footer);
+    }
+    return true;
+  }
+
+  // Run on every nav('settings') AND on initial load + auth events
+  function patchNavForSettings(){
+    if (typeof window.nav !== 'function' || window.nav.__vpSettingsPatched) return false;
+    const orig = window.nav;
+    const wrapped = function(p){
+      const r = orig.apply(this, arguments);
+      if (p === 'settings' || p === 'parametres') {
+        setTimeout(applyUserToSettings, 100);
+        setTimeout(applyUserToSettings, 400);
+      }
+      return r;
+    };
+    wrapped.__vpSettingsPatched = true;
+    window.nav = wrapped;
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * PERFUSION TIMER widget
+   * ──────────────────────────────────────────────────────────────────── */
+  let perfTimerInterval = null;
+  let perfTimerEnd = 0;
+  let perfTimerPaused = false;
+  let perfTimerRemaining = 0;
+
+  function fmtTime(seconds){
+    const s = Math.max(0, Math.round(seconds));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    return `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  }
+
+  function playFinishSound(){
+    // Generate a 3-tone alert via Web Audio (no external sound file needed)
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const tones = [880, 1100, 880];
+      tones.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        const start = ctx.currentTime + i * 0.45;
+        gain.gain.setValueAtTime(0, start);
+        gain.gain.linearRampToValueAtTime(0.4, start + 0.04);
+        gain.gain.exponentialRampToValueAtTime(0.01, start + 0.4);
+        osc.start(start);
+        osc.stop(start + 0.42);
+      });
+    } catch (e) {}
+    // Browser notification
+    try {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('💧 Perfusion terminée', { body: 'Le minuteur de perfusion est arrivé à zéro.' });
+      }
+    } catch (e) {}
+    // Add to in-app notifications center
+    try { window.vpAddNotification && window.vpAddNotification('💧 Perfusion terminée — minuteur écoulé'); } catch(e) {}
+  }
+
+  function tickTimer(){
+    const display = document.getElementById('vp-perf-display');
+    if (!display) return;
+    const remaining = perfTimerPaused ? perfTimerRemaining : (perfTimerEnd - Date.now()) / 1000;
+    if (remaining <= 0) {
+      clearInterval(perfTimerInterval);
+      perfTimerInterval = null;
+      display.textContent = '00:00';
+      display.classList.add('alert');
+      playFinishSound();
+      return;
+    }
+    display.textContent = fmtTime(remaining);
+    display.classList.remove('alert');
+  }
+
+  function startTimer(seconds){
+    clearInterval(perfTimerInterval);
+    perfTimerEnd = Date.now() + seconds * 1000;
+    perfTimerPaused = false;
+    perfTimerRemaining = seconds;
+    const display = document.getElementById('vp-perf-display');
+    if (display) display.classList.remove('alert');
+    tickTimer();
+    perfTimerInterval = setInterval(tickTimer, 1000);
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }
+
+  function pauseTimer(){
+    if (!perfTimerInterval) return;
+    perfTimerPaused = true;
+    perfTimerRemaining = (perfTimerEnd - Date.now()) / 1000;
+    clearInterval(perfTimerInterval);
+    perfTimerInterval = null;
+    const btn = document.getElementById('vp-perf-pause-btn');
+    if (btn) btn.textContent = '▶ Reprendre';
+  }
+
+  function resumeTimer(){
+    perfTimerPaused = false;
+    perfTimerEnd = Date.now() + perfTimerRemaining * 1000;
+    perfTimerInterval = setInterval(tickTimer, 1000);
+    const btn = document.getElementById('vp-perf-pause-btn');
+    if (btn) btn.textContent = '⏸ Pause';
+  }
+
+  function resetTimer(){
+    clearInterval(perfTimerInterval);
+    perfTimerInterval = null;
+    perfTimerPaused = false;
+    perfTimerRemaining = 0;
+    const display = document.getElementById('vp-perf-display');
+    if (display) {
+      display.textContent = '00:00';
+      display.classList.remove('alert');
+    }
+    const btn = document.getElementById('vp-perf-pause-btn');
+    if (btn) btn.textContent = '⏸ Pause';
+  }
+
+  function injectPerfTimer(){
+    const page = document.getElementById('page-perfusion');
+    if (!page) return false;
+    if (page.querySelector('.vp-perf-timer-card')) return true;
+
+    const card = document.createElement('div');
+    card.className = 'vp-perf-timer-card';
+    card.innerHTML = `
+      <div class="vp-perf-timer-h">⏱️ Minuteur de perfusion</div>
+      <div class="vp-perf-timer-display" id="vp-perf-display">00:00</div>
+      <div class="vp-perf-timer-controls">
+        <button class="vp-perf-timer-btn primary" id="vp-perf-start-btn" type="button">▶ Démarrer</button>
+        <button class="vp-perf-timer-btn" id="vp-perf-pause-btn" type="button">⏸ Pause</button>
+      </div>
+      <div class="vp-perf-timer-presets" id="vp-perf-presets">
+        <button type="button" class="vp-perf-preset" data-min="10">10 min</button>
+        <button type="button" class="vp-perf-preset" data-min="20">20 min</button>
+        <button type="button" class="vp-perf-preset" data-min="30">30 min</button>
+        <button type="button" class="vp-perf-preset" data-min="60">1 h</button>
+        <button type="button" class="vp-perf-preset" data-min="120">2 h</button>
+        <button type="button" class="vp-perf-preset" data-min="240">4 h</button>
+        <button type="button" class="vp-perf-preset" data-min="480">8 h</button>
+        <button type="button" class="vp-perf-preset" data-min="720">12 h</button>
+        <button type="button" class="vp-perf-preset" data-min="1440">24 h</button>
+      </div>
+      <div style="font-size:11px;color:rgba(255,255,255,.55);text-align:center;margin-top:10px">
+        Sélectionnez une durée puis Démarrer · son + notification quand terminé
+      </div>
+    `;
+
+    // Append after the result card on the right column (the .g2 second cell)
+    const resultCard = page.querySelector('#pf-result');
+    if (resultCard && resultCard.parentElement) {
+      resultCard.insertAdjacentElement('afterend', card);
+    } else {
+      page.appendChild(card);
+    }
+
+    let selectedMin = 0;
+    page.querySelectorAll('.vp-perf-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        page.querySelectorAll('.vp-perf-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        selectedMin = parseInt(btn.dataset.min, 10) || 0;
+        const display = document.getElementById('vp-perf-display');
+        if (display) display.textContent = fmtTime(selectedMin * 60);
+      });
+    });
+
+    document.getElementById('vp-perf-start-btn').addEventListener('click', () => {
+      // If no preset selected, try to use the current "duration" from the form
+      let mins = selectedMin;
+      if (!mins) {
+        const dur = parseFloat(document.getElementById('pf-h')?.value || '0');
+        mins = dur ? Math.round(dur * 60) : 30;
+      }
+      startTimer(mins * 60);
+    });
+    document.getElementById('vp-perf-pause-btn').addEventListener('click', () => {
+      if (perfTimerInterval) pauseTimer();
+      else if (perfTimerRemaining > 0) resumeTimer();
+      else resetTimer();
+    });
+
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * PERFUSION RESULT — add gouttes/sec line
+   * ──────────────────────────────────────────────────────────────────── */
+  function patchCalcPf(){
+    if (typeof window.calcPf !== 'function' || window.calcPf.__vpGttSec) return false;
+    const orig = window.calcPf;
+    const wrapped = function(){
+      const r = orig.apply(this, arguments);
+      // After the original render, append gouttes/sec line to the result card
+      setTimeout(() => {
+        try {
+          const result = document.getElementById('pf-result');
+          if (!result) return;
+          // Try to find the gouttes/min value — search for "gtt/min" or "goutte" in text
+          const text = result.textContent || '';
+          const matchMin = text.match(/(\d+)\s*gtt?\/?min|gouttes?\/min[^\d]*(\d+)/i);
+          let gttPerMin = matchMin ? parseInt(matchMin[1] || matchMin[2], 10) : null;
+          if (!gttPerMin) {
+            // Compute manually from form values
+            const w = parseFloat(document.getElementById('pf-p')?.value || '0');
+            const h = parseFloat(document.getElementById('pf-h')?.value || '24');
+            const e = document.getElementById('pf-e')?.value === 'chat' ? 50 : 60;
+            const d = parseFloat(document.getElementById('pf-d')?.value || '0');
+            const pr = parseFloat(document.getElementById('pf-pr')?.value || '0');
+            const gtt = parseFloat(document.querySelector('input[name="gtt"]:checked')?.value || '20');
+            if (w > 0 && h > 0) {
+              const totalMl = (w * e) + (w * d * 10) + (w * pr);
+              const mlPerH = totalMl / h;
+              gttPerMin = Math.round(mlPerH * gtt / 60);
+            }
+          }
+          if (!gttPerMin) return;
+          const gttPerSec = (gttPerMin / 60).toFixed(2);
+          // Don't duplicate
+          if (result.querySelector('[data-vp-gtt-sec]')) {
+            result.querySelector('[data-vp-gtt-sec]').textContent = `≈ ${gttPerSec} gtt/sec`;
+            return;
+          }
+          const pill = document.createElement('div');
+          pill.setAttribute('data-vp-gtt-sec', '1');
+          pill.className = 'vp-perf-gtt-sec';
+          pill.style.display = 'block';
+          pill.style.margin = '10px auto 0';
+          pill.style.textAlign = 'center';
+          pill.style.width = 'fit-content';
+          pill.textContent = `≈ ${gttPerSec} gtt/sec`;
+          result.appendChild(pill);
+        } catch (e) {}
+      }, 30);
+      return r;
+    };
+    wrapped.__vpGttSec = true;
+    window.calcPf = wrapped;
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * NOTIFICATIONS center (basic structure)
+   * ──────────────────────────────────────────────────────────────────── */
+  window.__vpNotifications = window.__vpNotifications || [];
+  window.vpAddNotification = function(text){
+    const n = { id: Date.now(), text, time: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'}), read: false };
+    window.__vpNotifications.unshift(n);
+    if (window.__vpNotifications.length > 30) window.__vpNotifications.length = 30;
+    try { localStorage.setItem('vetpro-notifications', JSON.stringify(window.__vpNotifications)); } catch(e) {}
+    return n;
+  };
+  // Restore notifications from localStorage
+  try {
+    const stored = JSON.parse(localStorage.getItem('vetpro-notifications') || '[]');
+    if (Array.isArray(stored)) window.__vpNotifications = stored;
+  } catch(e) {}
+
+  /* ────────────────────────────────────────────────────────────────────
+   * INIT
+   * ──────────────────────────────────────────────────────────────────── */
+  function tryAll(){
+    injectApkCard();
+    injectPerfTimer();
+    patchCalcPf();
+    patchNavForSettings();
+  }
+
+  function init(){
+    tryAll();
+    setTimeout(applyUserToSettings, 1500);
+    const obs = new MutationObserver(() => tryAll());
+    obs.observe(document.body, { childList: true, subtree: true });
+    // Also listen for auth changes to refresh settings form
+    if (window._sb?.auth?.onAuthStateChange) {
+      window._sb.auth.onAuthStateChange((event) => {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+          setTimeout(applyUserToSettings, 1000);
+        }
+      });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+
 </body>
 </html>
