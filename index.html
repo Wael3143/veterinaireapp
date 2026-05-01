@@ -4890,6 +4890,142 @@ const DRUGS=[
    eff:'Bradycardie si IV trop rapide · Nécrose tissulaire si extravasation · Vomissements IV rapide',
    inter:'❌ JAMAIS avec bicarbonate (précipitation) · ❌ Digitaliques (arythmies) · Monitoring ECG pendant perfusion',
    poso:'Eclampsia : 0.5–1.5 mL/kg IV TRÈS lent (10–20 min) sous monitorage ECG · Réchauffer avant · Stopper si bradycardie'},
+
+  // ── ANTIFONGIQUES SYSTÉMIQUES (Algérie) ──────────────────────────────────
+  {id:'itraconazole',n:'Itraconazole 100mg (Sporanox)',m:'Itraconazole (azolé systémique)',g:'Antiparasitaires',f:'Capsule',v:'PO',p:1500,s:0,smin:2,c:'#7C2D12',
+   ind:'Dermatophytose (Microsporum/Trichophyton) chat & chien · Aspergillose · Cryptococcose · Sporotrichose · Mycose unguéale',
+   ci:'Insuffisance hépatique sévère · Grossesse (tératogène) · Hypersensibilité azolés',
+   eff:'Hépatotoxicité (suivre ALAT) · Vomissements · Anorexie · Réactions cutanées',
+   inter:'Inhibe CYP3A4 — augmente ciclosporine, midazolam · Antagonisme avec rifampicine · Ne pas associer aux antiacides (réduit absorption — espacer 2h)',
+   poso:'🐈 5 mg/kg PO 1x/j avec repas gras · 4–8 sem · 🐕 5–10 mg/kg/j · Suivi ALAT mensuel'},
+  {id:'ketoconazole',n:'Kétoconazole 200mg',m:'Kétoconazole (azolé systémique)',g:'Antiparasitaires',f:'Comprimé',v:'PO',p:480,s:0,smin:2,c:'#7C2D12',
+   ind:'Malassezia (Dermatite Levurienne, Otite externe à levures) · Dermatophytie · Cushing chien (alternative — inhibe synthèse cortisol)',
+   ci:'⛔ CHAT (hépatotoxicité ++) · Insuffisance hépatique · Grossesse',
+   eff:'Hépatotoxicité (très fréquente chien) · Anorexie · Vomissements · Inhibe stéroïdogenèse',
+   inter:'Inhibiteur puissant CYP3A4 · ❌ Cisapride · Augmente concentrations Ciclosporine',
+   poso:'🐕 5–10 mg/kg PO 2x/j avec repas · 3–6 sem · Cushing : 15 mg/kg 2x/j · Bilan hépatique avant + mensuel'},
+  {id:'fluconazole',n:'Fluconazole 50mg/100mg',m:'Fluconazole (azolé systémique)',g:'Antiparasitaires',f:'Comprimé/Susp',v:'PO/IV',p:850,s:0,smin:2,c:'#7C2D12',
+   ind:'Cryptococcose nasale (chat ++) · Candidose systémique · Mycose urinaire · Bonne pénétration LCR/œil/urine',
+   ci:'Insuffisance hépatique sévère · Hypersensibilité · Grossesse',
+   eff:'Hépatotoxicité (moins que kéto) · Vomissements · Diarrhée · Rashs',
+   inter:'Inhibe CYP — surveiller doses warfarine, ciclosporine, phénytoïne',
+   poso:'🐈 50 mg/chat PO 1x/j (cryptococcose) · 6 mois min · 🐕 5–10 mg/kg/j PO'},
+
+  // ── ANTICONVULSIVANTS ────────────────────────────────────────────────────
+  {id:'phenobarbital',n:'Phénobarbital 100mg (Gardenal)',m:'Phénobarbital (barbiturique)',g:'Anesthésiques',f:'Comprimé',v:'PO',p:380,s:0,smin:3,c:'#5B21B6',
+   ind:'Épilepsie idiopathique chien (1ère ligne) · Status epilepticus (charge IV) · Crises convulsives chroniques',
+   ci:'Insuffisance hépatique · Porphyrie · Grossesse (1er trim) · Hypersensibilité barbituriques',
+   eff:'Sédation initiale (2–4 sem) · Polyphagie · PU/PD · Hépatotoxicité long cours · Anémie idiosyncrasique rare',
+   inter:'Inducteur enzymatique puissant — accélère métabolisme de bromure, lévétiracétam, corticoïdes · Synergie avec autres dépresseurs SNC',
+   poso:'🐕 2–3 mg/kg PO 2x/j initial · ajuster sur dosage sérique (cible 25–35 µg/mL) · 🐈 1–3 mg/kg PO 2x/j'},
+  {id:'levetiracetam',n:'Lévétiracétam 250mg (Keppra)',m:'Lévétiracétam',g:'Anesthésiques',f:'Comprimé',v:'PO/IV',p:1200,s:0,smin:2,c:'#5B21B6',
+   ind:'Épilepsie réfractaire chien & chat (add-on phénobarbital) · Crises en grappe (pulse therapy) · Status epilepticus (alternative)',
+   ci:'Insuffisance rénale sévère (ajuster dose) · Hypersensibilité',
+   eff:'Sédation légère · Ataxie (rare) · Excellent profil de tolérance globalement',
+   inter:'Pas d\'interaction métabolique majeure · Idéal en add-on avec phénobarbital ou bromure',
+   poso:'🐕 20–60 mg/kg PO 3x/j · Pulse therapy crises en grappe : 60 mg/kg PO puis 20 mg/kg/8h × 24h · 🐈 20 mg/kg PO 3x/j'},
+  {id:'kbr',n:'Bromure de potassium (KBr)',m:'Bromure de potassium',g:'Anesthésiques',f:'Solution/Capsule',v:'PO',p:650,s:0,smin:2,c:'#5B21B6',
+   ind:'Épilepsie chien réfractaire au phénobarbital · Add-on ou monothérapie · Demi-vie longue (24 jours)',
+   ci:'⛔ CHAT (bronchite asthmatiforme parfois fatale) · Insuffisance rénale · Pancréatite chronique',
+   eff:'PU/PD · Polyphagie · Sédation · Pancréatite (rare) · Bromisme si surdose (ataxie)',
+   inter:'Diurétiques + régime sel ↓ taux sériques · Surveiller bromémie 1x/an',
+   poso:'🐕 30–40 mg/kg PO 1x/j (avec repas) · Charge : 400–600 mg/kg sur 5j si urgence · Cible 1–2 mg/mL sérum'},
+
+  // ── ANTIÉMÉTIQUES & ANTIDIARRHÉIQUES ─────────────────────────────────────
+  {id:'ondansetron',n:'Ondansétron 4mg/2mL (Zofran)',m:'Ondansétron (antagoniste 5-HT3)',g:'Gastroprotecteurs',f:'Injectable/Comprimé',v:'IV/SC/PO',p:780,s:0,smin:2,c:'#0E7490',
+   ind:'Vomissements sévères réfractaires au Maropitant · Vomissements chimio-induits · IRC stade avancé · Pancréatite aiguë',
+   ci:'Hypersensibilité · Allongement QT (rare) · Obstruction GI mécanique',
+   eff:'Constipation · Céphalées (humain — rapporté) · Bradycardie rare',
+   inter:'Synergie ++ avec Maropitant pour vomissements rebelles · Prudence avec autres allongeurs QT',
+   poso:'🐕🐈 0.5–1 mg/kg IV/SC/PO 2–3x/j · Antagonisme partiel des opioïdes émétogènes'},
+  {id:'metoclopramide',n:'Métoclopramide 5mg/mL (Primperan)',m:'Métoclopramide (antagoniste D2 + 5-HT3)',g:'Gastroprotecteurs',f:'Injectable/Comprimé',v:'IV/IM/SC/PO',p:280,s:0,smin:3,c:'#0E7490',
+   ind:'Vomissements · Reflux gastro-œsophagien · Atonie gastrique post-op · Stimule motilité GI proximale',
+   ci:'Obstruction GI mécanique · Phéochromocytome · Convulsions/épilepsie · Hypersensibilité',
+   eff:'Effets extrapyramidaux (agitation, dystonie surtout chat) · Hypotension IV rapide · Constipation paradoxale',
+   inter:'❌ Cisapride (additif moteur) · Antagonise dopaminergiques · Synergie avec Maropitant',
+   poso:'🐕🐈 0.2–0.5 mg/kg IV/IM/SC 3x/j ou CRI 1–2 mg/kg/24h IV · PO : 0.5 mg/kg 3x/j'},
+
+  // ── HORMONES & ENDOCRINOLOGIE ────────────────────────────────────────────
+  {id:'levothyroxine',n:'Lévothyroxine 0.1/0.4mg (Forthyron)',m:'L-Thyroxine sodique (T4 synthétique)',g:'Anti-inflammatoires',f:'Comprimé',v:'PO',p:1100,s:0,smin:3,c:'#B45309',
+   ind:'Hypothyroïdie chien (universelle) · Substitution post-thyroïdectomie',
+   ci:'Hyperthyroïdie · Insuffisance surrénalienne non corrigée · Cardiomyopathie sévère (initier prudemment)',
+   eff:'Si surdosage : tachycardie, halètement, agitation, polyphagie · Hyperthyroïdie iatrogène',
+   inter:'Sucralfate, antiacides : ↓ absorption (espacer 4h) · Phénobarbital ↑ besoin · Œstrogènes ↑ besoin',
+   poso:'🐕 0.02 mg/kg PO 2x/j à jeun · Contrôle T4 totale 4–6h post-prise à 4 sem · Ajuster par paliers de 25%'},
+  {id:'insuline-nph',n:'Insuline Humaine NPH 100UI/mL',m:'Insuline humaine isophane (NPH)',g:'Anti-inflammatoires',f:'Solution',v:'SC',p:2800,s:0,smin:2,c:'#B45309',
+   ind:'Diabète sucré chien (1ère ligne) · Diabète chat alternative à glargine',
+   ci:'Hypoglycémie active · Acidocétose non corrigée (utiliser insuline rapide IV) · Hypersensibilité',
+   eff:'Hypoglycémie (URGENCE — convulsions, coma) · Effet Somogyi (hyperglycémie rebond) · Lipodystrophie locale',
+   inter:'Corticoïdes, progestagènes : ↑ besoin insuline · β-bloquants : masquent hypo · AINS ↑ effet',
+   poso:'🐕 0.25–0.5 UI/kg SC 2x/j post-repas · Ajuster sur courbe glycémique (cible nadir 100–150 mg/dL)'},
+  {id:'glargine',n:'Insuline Glargine 100UI/mL (Lantus)',m:'Insuline glargine (analogue lente)',g:'Anti-inflammatoires',f:'Solution',v:'SC',p:3500,s:0,smin:1,c:'#B45309',
+   ind:'Diabète sucré chat (1ère ligne — meilleure rémission) · Alternative chien si NPH inefficace',
+   ci:'Hypoglycémie · Hypersensibilité · Acidocétose non corrigée',
+   eff:'Hypoglycémie · Réaction locale (rare) · Pas d\'effet Somogyi (action plate)',
+   inter:'Idem NPH · Ne pas mélanger avec autres insulines (cristallise)',
+   poso:'🐈 0.25–0.5 UI/chat SC 2x/j (typique 1–2 UI/chat) · Cible nadir 80–150 mg/dL · Surveillance 12h post-injection'},
+
+  // ── ANTIDOTES & URGENCES SPÉCIFIQUES ─────────────────────────────────────
+  {id:'vit-k1',n:'Vitamine K1 10mg/mL (Phytoménadione)',m:'Phytoménadione (Vitamine K1)',g:'Vitamines',f:'Injectable',v:'SC/PO',p:680,s:0,smin:3,c:'#6B21A8',
+   ind:'Intoxication aux raticides anticoagulants (warfarine, brodifacoum) · Coagulopathie hépatique · Carence congénitale',
+   ci:'Hypersensibilité · Voie IV strictement à éviter (anaphylaxie)',
+   eff:'IV : risque anaphylactique sévère — toujours SC/PO · Très bien toléré SC',
+   inter:'Antagoniste des anticoagulants oraux · Compatible AINS (mais surveiller saignement initial)',
+   poso:'🐕🐈 2.5–5 mg/kg PO 1x/j (charge) · puis 1–2.5 mg/kg/j × 3–4 sem (raticide longue durée) · Contrôle TP/PTT à J+2 après arrêt'},
+  {id:'naloxone',n:'Naloxone 0.4mg/mL (Narcan)',m:'Naloxone (antagoniste opioïdes)',g:'Anesthésiques',f:'Injectable',v:'IV/IM/SC',p:920,s:0,smin:2,c:'#7C3AED',
+   ind:'Antagonisation surdosage opioïdes (morphine, fentanyl, butorphanol) · Réveil de césarienne (chiot/chaton sous opioïde) · Coma opiacé',
+   ci:'Hypersensibilité · Dépendance opiacée chronique (sevrage aigu)',
+   eff:'Réversion analgésie (douleur immédiate) · Tachycardie · Hypertension · Œdème pulmonaire (rare)',
+   inter:'Antagonise tous opioïdes · Demi-vie courte — re-narcotisation possible (re-dose si besoin)',
+   poso:'🐕🐈 0.01–0.04 mg/kg IV/IM/SC · Titrer petites doses · Chiot néonat : 1–2 gouttes sublinguales'},
+  {id:'atipamezole',n:'Atipamézole 5mg/mL (Antisedan)',m:'Atipamézole (antagoniste α2)',g:'Anesthésiques',f:'Injectable',v:'IM',p:1850,s:0,smin:2,c:'#7C3AED',
+   ind:'Antagonisation médétomidine/dexmédétomidine/xylazine · Réveil rapide post-anesthésie',
+   ci:'Hypersensibilité · Pas de bénéfice si pas d\'α2 administré',
+   eff:'Tachycardie transitoire · Réveil brutal possible (préparer environnement calme) · Vasodilatation',
+   inter:'Antagonise tous α2 · IM uniquement (IV → hypotension sévère)',
+   poso:'🐕🐈 Volume égal au volume de médétomidine injecté en IM · Ne pas dépasser 5x la dose médétomidine'},
+
+  // ── ANTIPARASITAIRES SUPPLÉMENTAIRES ─────────────────────────────────────
+  {id:'praziquantel',n:'Praziquantel 50mg (Drontal Plus)',m:'Praziquantel (antitématode)',g:'Antiparasitaires',f:'Comprimé',v:'PO/SC',p:340,s:0,smin:5,c:'#059669',
+   ind:'Cestodes (Dipylidium, Echinococcus, Taenia) · Trématodes hépatiques · TOUS animaux y compris chat',
+   ci:'< 4 semaines · Hypersensibilité · Grossesse 1er tiers (par prudence)',
+   eff:'Excellente tolérance · Diarrhée transitoire · Salivation post-PO chat',
+   inter:'Souvent associé à Pyrantel (nématodes) ou Fébantel (Drontal Plus) · Compatible vaccins',
+   poso:'🐕🐈 5 mg/kg PO dose unique · Echinococcose : 5 mg/kg toutes 6 sem (zones endémiques)'},
+  {id:'pyrantel',n:'Pyrantel pamoate 50mg/mL',m:'Pyrantel pamoate (antinématode)',g:'Antiparasitaires',f:'Suspension',v:'PO',p:380,s:0,smin:4,c:'#059669',
+   ind:'Ascaris (Toxocara, Toxascaris) · Ankylostomes · Vermifugation chiot/chaton dès 2 semaines',
+   ci:'Hypersensibilité · Très peu de CI (peu absorbé)',
+   eff:'Vomissements rares · Excellente tolérance néonat',
+   inter:'❌ Lévamisole, Pipérazine (antagonisme) · Compatible Praziquantel (synergie spectre)',
+   poso:'🐕🐈 5–10 mg/kg PO dose unique · Chiot/chaton : 2, 4, 6, 8, 10, 12 sem puis mensuel jusqu\'à 6 mois'},
+  {id:'selamectine',n:'Selamectine 60/120mg (Stronghold/Revolution)',m:'Selamectine (lactone macrocyclique)',g:'Antiparasitaires',f:'Spot-on',v:'Topique',p:1450,s:0,smin:3,c:'#059669',
+   ind:'Puces (adultes + œufs) · Tiques (Ixodes/Rhipicephalus) · Gale (Sarcoptes, Notoedres, Otodectes) · Dirofilariose préventive · Ankylostomes (chat)',
+   ci:'< 6 semaines · Animal mouillé < 2h post-application',
+   eff:'Alopécie locale transitoire · Hypersalivation si léché · Très bien toléré',
+   inter:'Compatible avec la plupart des médicaments · Peut être utilisé chez les colleys (sécuritaire à dose recommandée)',
+   poso:'🐕🐈 6 mg/kg topique 1x/mois sur la nuque · Gale : J0, J30, J60'},
+
+  // ── DERMATO ALLERGIQUE & IMMUNOMODULATION ────────────────────────────────
+  {id:'apoquel',n:'Apoquel 5.4/16mg (Oclacitinib)',m:'Oclacitinib (inhibiteur JAK1)',g:'Anti-inflammatoires',f:'Comprimé',v:'PO',p:2200,s:0,smin:3,c:'#B45309',
+   ind:'Dermatite atopique chien · Prurit allergique aigu · Allergie alimentaire en attente diagnostic · Action en 4h',
+   ci:'< 12 mois · Infections actives (bactériennes/fongiques/néoplasiques) · Démodécie active · Grossesse',
+   eff:'Vomissements · Diarrhée · Léthargie · Très rares: néoplasies (suivi long cours) · Modulation immunitaire',
+   inter:'Prudence avec autres immunosuppresseurs (ciclosporine, corticoïdes) — additif',
+   poso:'🐕 0.4–0.6 mg/kg PO 2x/j × 14j puis 1x/j entretien · Pas d\'AMM chat'},
+  {id:'cyclosporine-derm',n:'Atopica 25/50/100mg (Ciclosporine)',m:'Ciclosporine A (immunomodulateur)',g:'Anti-inflammatoires',f:'Capsule',v:'PO',p:3200,s:0,smin:2,c:'#B45309',
+   ind:'Dermatite atopique chronique chien & chat · Granulome éosinophilique chat · Pemphigus foliacé · Anémie hémolytique auto-immune',
+   ci:'Infections actives · Néoplasies · Insuffisance rénale sévère · Vaccinations vivantes en cours',
+   eff:'Vomissements (donner avec repas après 7j) · Hyperplasie gingivale · Hirsutisme · Augmente risque infections',
+   inter:'Inducteurs CYP3A4 (kétoconazole) ↑ taux · Antagonisme avec phénobarbital · Vaccins vivants à éviter',
+   poso:'🐕 5 mg/kg PO 1x/j × 4 sem puis dose minimale efficace · 🐈 7 mg/kg PO 1x/j'},
+
+  // ── REPRODUCTION & OBSTETRIQUE ───────────────────────────────────────────
+  {id:'oxytocine',n:'Ocytocine 10UI/mL',m:'Oxytocine synthétique',g:'Cardio-Diurétiques',f:'Injectable',v:'IM/IV',p:480,s:0,smin:3,c:'#B91C1C',
+   ind:'Inertie utérine secondaire (mise-bas) · Atonie post-partum · Hémorragie utérine post-césarienne · Stimulation lactation (rétention lait)',
+   ci:'Inertie utérine PRIMAIRE non explorée (faire écho/radio d\'abord) · Disproportion fœto-pelvienne · Présentation anormale · Souffrance fœtale',
+   eff:'Contractions tétaniques (surdose) · Rupture utérine (rare) · Hyponatrémie (perfusion prolongée)',
+   inter:'Synergie Calcium gluconate (recharge énergétique utérus) · Effet ↓ si hypocalcémie/déshydratation',
+   poso:'🐕🐈 2–10 UI IM (chien) / 0.5–2 UI IM (chat) · Répéter 2–3× toutes 30 min · Calcium gluconate avant pour potentialiser'},
 ];
 
 // drugFilter/drugSearch declared above
@@ -18051,6 +18187,227 @@ function saveAdmission() {
   // Expose
   window.vpInstantWipeDashboard = instantWipeDashboardDemo;
   window.vpRenderHistStats = renderHistStats;
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MEDICATION DETAIL ENRICHMENT — adds storage / pregnancy / similar
+     drugs sections to the existing modal-drug
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-med-detail-style">
+  .vp-med-extra {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin: 12px 0;
+  }
+  @media (max-width: 600px) { .vp-med-extra { grid-template-columns: 1fr; } }
+  .vp-med-extra-card {
+    background: linear-gradient(135deg, #F0FDFA, #ECFDF5);
+    border: 1px solid rgba(13,148,136,.18);
+    border-radius: 12px;
+    padding: 11px 13px;
+    font-size: 11.5px;
+    color: #0F3D2A;
+    line-height: 1.5;
+  }
+  .vp-med-extra-card .vp-med-extra-label {
+    font-size: 9.5px; font-weight: 700;
+    letter-spacing: .8px; text-transform: uppercase;
+    color: #0D9488;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .vp-med-similar {
+    margin-top: 12px;
+    padding: 10px 13px;
+    background: linear-gradient(135deg, #FFF7ED, #FED7AA);
+    border: 1px solid rgba(234,88,12,.2);
+    border-radius: 12px;
+  }
+  .vp-med-similar h5 {
+    color: #C2410C; font-size: 11px; font-weight: 700;
+    margin: 0 0 6px;
+    text-transform: uppercase; letter-spacing: .5px;
+  }
+  .vp-med-similar-list {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .vp-med-similar-list button {
+    background: #fff;
+    border: 1px solid rgba(234,88,12,.3);
+    color: #C2410C;
+    padding: 5px 10px;
+    border-radius: 999px;
+    font-size: 11px; font-weight: 600;
+    cursor: pointer;
+    transition: background .12s ease;
+  }
+  .vp-med-similar-list button:hover { background: #FED7AA; }
+</style>
+
+<script id="vetpro-med-detail-script">
+(function(){
+  'use strict';
+  if (window.__vetproMedDetail) return;
+  window.__vetproMedDetail = true;
+
+  // Heuristic metadata derived from drug class — extends what shows in
+  // the detail modal without changing every existing DRUGS entry.
+  const STORAGE = {
+    'Antibiotiques': '🌡️ 15–25 °C · à l\'abri de la lumière',
+    'Antiparasitaires': '🌡️ 15–25 °C · sec',
+    'Anesthésiques': '❄️ 2–8 °C (réfrigérateur) · à l\'abri lumière',
+    'Anti-inflammatoires': '🌡️ 15–25 °C · sec',
+    'Cardio-Diurétiques': '🌡️ 15–25 °C · à l\'abri lumière',
+    'Gastroprotecteurs': '🌡️ 15–25 °C · sec',
+    'Fluidothérapie': '🌡️ Température ambiante · vérifier date',
+    'Vitamines': '❄️ 2–8 °C (B12 et K1) · sinon 15–25 °C',
+    'Oculaires': '🌡️ 15–25 °C · usage 28j après ouverture',
+  };
+  const PREGNANCY = {
+    // C = use with caution, X = contre-indiqué, B = safe data, A = safe
+    'Antibiotiques': { class: 'B', text: 'Pénicillines/Céphalosporines : sûres · Tétracyclines/Aminosides : à éviter (gestation)' },
+    'Antiparasitaires': { class: 'B', text: 'Praziquantel/Pyrantel sûrs · Imidocarbe à éviter' },
+    'Anesthésiques': { class: 'C', text: 'Prudence — bénéfice/risque · Kétamine/Diazépam acceptables si nécessaire' },
+    'Anti-inflammatoires': { class: 'X', text: '⛔ Corticoïdes : risque avortement · AINS : à éviter (toxicité fœtale)' },
+    'Cardio-Diurétiques': { class: 'C', text: 'Furosémide acceptable · IEC contre-indiqués (toxicité fœtale)' },
+    'Gastroprotecteurs': { class: 'B', text: 'Oméprazole, Maropitant : sûrs · Métoclopramide : éviter dernier tiers' },
+    'Fluidothérapie': { class: 'A', text: '✅ Sans danger — adapter volumes selon stade gestation' },
+    'Vitamines': { class: 'A', text: '✅ B12, K1 sûres · Vitamine A à fortes doses : tératogène' },
+    'Oculaires': { class: 'B', text: 'Néomycine/Gentamicine collyre : sûres (peu absorbées) · Atropine : prudence' },
+  };
+  const ONSET = {
+    'IV': '⚡ Quasi immédiat (1–5 min)',
+    'IM/SC': '⏱️ 15–30 min',
+    'IM': '⏱️ 15–30 min',
+    'SC': '⏱️ 30–60 min',
+    'PO': '🍽️ 30–90 min selon repas',
+    'IM/IV': '⏱️ Selon voie · IV immédiat',
+    'IV/IM': '⏱️ Selon voie · IV immédiat',
+    'IV/SC': '⏱️ Selon voie · IV immédiat',
+    'IV/IM/SC': '⏱️ Selon voie',
+    'Topique': '⏱️ 4–24 h selon préparation',
+    'Oculaire': '⚡ Immédiat (local)',
+    'IM/SC/PO': '⏱️ 15–60 min selon voie',
+    'IV/IM/SC/PO': '⏱️ Selon voie · IV immédiat',
+    'IV/IM/PO': '⏱️ Selon voie · IV immédiat',
+  };
+
+  function similarDrugs(currentDrug){
+    if (!Array.isArray(window.DRUGS)) return [];
+    return window.DRUGS
+      .filter(d => d.id !== currentDrug.id && d.g === currentDrug.g)
+      .slice(0, 6);
+  }
+
+  function buildExtraSection(drug){
+    if (!drug) return '';
+    const storage = STORAGE[drug.g] || '🌡️ 15–25 °C · à l\'abri de la lumière';
+    const preg = PREGNANCY[drug.g] || { class: 'C', text: 'Prudence — consulter notice' };
+    const onset = ONSET[drug.v] || '⏱️ Selon voie';
+    const pregClass = { A: '✅', B: '🟢', C: '🟡', X: '🔴' }[preg.class] || '🟡';
+    return `
+      <div class="vp-med-extra">
+        <div class="vp-med-extra-card">
+          <div class="vp-med-extra-label">📦 Conservation</div>
+          <div>${storage}</div>
+        </div>
+        <div class="vp-med-extra-card">
+          <div class="vp-med-extra-label">${pregClass} Gestation / Lactation</div>
+          <div>${preg.text}</div>
+        </div>
+        <div class="vp-med-extra-card">
+          <div class="vp-med-extra-label">${onset.charAt(0)} Délai d'action</div>
+          <div>${onset}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildSimilarSection(drug){
+    const sim = similarDrugs(drug);
+    if (!sim.length) return '';
+    return `
+      <div class="vp-med-similar">
+        <h5>🔄 Médicaments de la même classe (${escapeHtml(drug.g)})</h5>
+        <div class="vp-med-similar-list">
+          ${sim.map(s => `<button type="button" onclick="window.vpJumpToDrug && window.vpJumpToDrug('${s.id}')">${escapeHtml(s.n)}</button>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  // Hook: after the existing showDrug() (or whatever opens modal-drug),
+  // find the drug from the title and inject the extra sections.
+  function enrichOpenModal(){
+    const modal = document.getElementById('modal-drug');
+    if (!modal || !modal.classList.contains('show') && modal.style.display === 'none') return;
+    const titleEl = document.getElementById('drug-modal-title');
+    const titleText = (titleEl?.textContent || '').trim();
+    if (!titleText || titleText === 'Médicament') return;
+    if (!Array.isArray(window.DRUGS)) return;
+    const drug = window.DRUGS.find(d => d.n === titleText || titleText.includes(d.n));
+    if (!drug) return;
+    // Avoid duplicate insertion
+    if (modal.querySelector('.vp-med-extra')) return;
+    // Find a sensible place to inject — after the calculator (#dw-result)
+    const inject = buildExtraSection(drug) + buildSimilarSection(drug);
+    const calc = modal.querySelector('#dw-result');
+    if (calc && calc.parentElement) {
+      const wrap = document.createElement('div');
+      wrap.innerHTML = inject;
+      calc.parentElement.appendChild(wrap.firstElementChild);
+      if (wrap.firstElementChild) {
+        // Append second child too if it exists
+        Array.from(wrap.children).forEach(c => calc.parentElement.appendChild(c));
+      }
+    }
+  }
+
+  // Helper to jump from "similar" pills to another drug's modal
+  window.vpJumpToDrug = function(id){
+    if (typeof window.closeModal === 'function') window.closeModal('modal-drug');
+    setTimeout(() => {
+      if (typeof window.showDrug === 'function') window.showDrug(id);
+      else {
+        // Fallback: trigger any showDrug-like function
+        const drug = window.DRUGS?.find(d => d.id === id);
+        if (drug && typeof window.openDrug === 'function') window.openDrug(drug);
+      }
+    }, 200);
+  };
+
+  function escapeHtml(s){
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Watch the modal for "open" state changes (overlay class toggles)
+  function setupObserver(){
+    const modal = document.getElementById('modal-drug');
+    if (!modal || modal.__vpEnrichObserved) return false;
+    const obs = new MutationObserver(() => {
+      // Trigger after a short delay to let the modal render its content
+      setTimeout(enrichOpenModal, 50);
+    });
+    obs.observe(modal, { attributes: true, attributeFilter: ['class','style'], childList: true, subtree: true });
+    modal.__vpEnrichObserved = true;
+    return true;
+  }
+
+  function init(){
+    if (!setupObserver()) {
+      let n = 0;
+      const t = setInterval(() => {
+        if (setupObserver() || ++n > 30) clearInterval(t);
+      }, 250);
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 </script>
 
