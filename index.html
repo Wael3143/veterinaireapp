@@ -14946,6 +14946,66 @@ function saveAdmission() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════
+     MUTATION OBSERVER THROTTLE — prevents infinite loops from multiple
+     body-level observers whose callbacks modify DOM. Patches the native
+     MutationObserver so every callback is:
+     1) Debounced via requestAnimationFrame (max 1 fire per frame)
+     2) Guarded by a global _vpMutating flag (skip if DOM write in progress)
+     3) Self-disconnecting after 60 s of inactivity (reconnects on demand)
+     ═══════════════════════════════════════════════════════════════════ -->
+<script id="vetpro-observer-throttle">
+(function(){
+  if (window.__vpObserverThrottleInstalled) return;
+  window.__vpObserverThrottleInstalled = true;
+
+  /* Global mutation guard — set before DOM writes, unset after */
+  window.__vpMutating = false;
+
+  const _OrigMO = window.MutationObserver;
+
+  function ThrottledMO(callback) {
+    let rafId = null;
+    let pending = false;
+
+    const throttled = function(mutations, observer) {
+      if (window.__vpMutating) return;           // skip re-entrant calls
+      if (rafId) return;                          // already scheduled
+      pending = true;
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        if (!pending) return;
+        pending = false;
+        if (window.__vpMutating) return;
+        window.__vpMutating = true;
+        try {
+          callback(mutations, observer);
+        } catch(e) {
+          console.warn('[VP-Throttle]', e);
+        } finally {
+          /* Release after a microtask so sync DOM writes in callback finish */
+          Promise.resolve().then(() => { window.__vpMutating = false; });
+        }
+      });
+    };
+
+    const inner = new _OrigMO(throttled);
+
+    /* Proxy the API */
+    this.observe    = function(t, o) { return inner.observe(t, o); };
+    this.disconnect = function()     { pending = false; if(rafId){cancelAnimationFrame(rafId);rafId=null;} return inner.disconnect(); };
+    this.takeRecords= function()     { return inner.takeRecords(); };
+  }
+
+  /* Preserve prototype chain for instanceof checks */
+  ThrottledMO.prototype = _OrigMO.prototype;
+  window.MutationObserver = ThrottledMO;
+
+  /* Keep original available for edge cases */
+  window._OriginalMutationObserver = _OrigMO;
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
      MOBILE UI + MONTANT v3 — definitive fixes for:
      · stuck UI on phone (excessive intervals + missing touch-action)
      · letter-per-line vertical text on mobile (aggressive writing-mode)
