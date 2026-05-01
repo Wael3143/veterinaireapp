@@ -17831,5 +17831,228 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════════
+     WELCOME MODAL FIT + HISTORIQUE STATS LIVE + DASHBOARD WIPE-INSTANT
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-welcome-historique-fix-style">
+  /* ── Welcome modal: fit text on mobile, never overflow ───────────── */
+  #vetpro-first-login > div {
+    width: min(540px, 100%) !important;
+    padding: 22px 18px !important;
+  }
+  #vetpro-first-login > div > div:first-child {
+    font-size: clamp(20px, 5vw, 28px) !important;
+    line-height: 1.15 !important;
+    word-break: break-word;
+  }
+  #vetpro-first-login > div > div[style*="grid-template-columns:repeat(3"] {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  #vetpro-first-login button {
+    min-height: 64px !important;
+    padding: 14px 18px !important;
+    font-size: 14px !important;
+    text-align: center;
+    line-height: 1.3 !important;
+    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: break-word;
+  }
+  @media (min-width: 700px) {
+    #vetpro-first-login > div > div[style*="grid-template-columns:repeat(3"] {
+      grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    }
+    #vetpro-first-login button { min-height: 96px !important; font-size: 13.5px !important; }
+  }
+</style>
+
+<script id="vetpro-welcome-historique-fix-script">
+(function(){
+  'use strict';
+  if (window.__vetproWelcomeHistFix) return;
+  window.__vetproWelcomeHistFix = true;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 1) Live historique stats (replace hardcoded 95/87/6/2)
+   * ──────────────────────────────────────────────────────────────────── */
+  function computeHistStats(){
+    const hist = Array.isArray(window.HISTORIQUE_DATA) ? window.HISTORIQUE_DATA : [];
+    const total = hist.length;
+    const traites = hist.filter(h => h.statutTraitement === 'traite' || /gu[ée]ri|stabilis/i.test(h.resultat || '')).length;
+    const enCours = hist.filter(h => h.statutTraitement === 'en-cours' || h.statutTraitement === 'chron').length;
+    const referes = hist.filter(h => h.statutTraitement === 'non-traite' || /d[ée]c[ée]s|r[ée]f[ée]r/i.test(h.resultat || '')).length;
+    const year = new Date().getFullYear();
+    return { total, traites, enCours, referes, year };
+  }
+  function renderHistStats(){
+    const page = document.getElementById('page-historique');
+    if (!page) return false;
+    const grid = page.querySelector('div[style*="grid-template-columns:repeat(4,1fr)"]');
+    if (!grid) return false;
+    const cards = grid.querySelectorAll('.card');
+    if (cards.length < 4) return false;
+    const s = computeHistStats();
+    const setVal = (i, val, label) => {
+      if (!cards[i]) return;
+      const big = cards[i].querySelector('div[style*="font-size:24px"]');
+      const lbl = cards[i].querySelector('div[style*="font-size:10px"]');
+      if (big) big.textContent = String(val);
+      if (lbl && label) lbl.textContent = label;
+    };
+    setVal(0, s.total, `Total cas ${s.year}`);
+    setVal(1, s.traites, '✅ Traités avec succès');
+    setVal(2, s.enCours, '⏳ En cours');
+    setVal(3, s.referes, '❌ Référés/Décès');
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 2) Aggressive dashboard wipe — strip hardcoded demo HTML INSTANTLY
+   *    even before dashboard v2 paint() runs
+   * ──────────────────────────────────────────────────────────────────── */
+  function instantWipeDashboardDemo(){
+    const dash = document.getElementById('page-dashboard');
+    if (!dash) return false;
+    if (dash.dataset.vpWipedInstant === '1') return true;
+    const text = dash.textContent || '';
+    if (/Benali Ahmed|Hamdi Karim|Kaci Fatima|Saâdi Omar/.test(text)) {
+      // Strip the recent-cases demo rows
+      dash.querySelectorAll('table.tbl tbody tr').forEach(tr => {
+        if (/Benali Ahmed|Hamdi Karim|Kaci Fatima|Saâdi Omar/.test(tr.textContent || '')) {
+          tr.remove();
+        }
+      });
+    }
+    // Strip the hardcoded mini cage grid demo
+    dash.querySelectorAll('.cage-card').forEach(cc => {
+      const t = cc.textContent || '';
+      if (/Rex|Misty|Bruno|Fido|Nala/.test(t)) {
+        // Reset to libre placeholder
+        cc.className = 'cage-card cage-free';
+        const num = cc.querySelector('.cage-num')?.textContent || '';
+        cc.innerHTML = `<div class="cage-num" style="font-size:16px">${num}</div><div class="cage-status libre" style="font-size:9px">Libre</div>`;
+      }
+    });
+    // Replace hardcoded numbers with 0 in stat cards
+    dash.querySelectorAll('.stat-val').forEach(el => {
+      const t = (el.textContent || '').trim();
+      if (/^(24|4|145K|5)$/.test(t)) {
+        el.textContent = '0';
+      }
+    });
+    // Replace hardcoded "+8 vs mois dernier", "4 cages occupées", etc trends
+    dash.querySelectorAll('.stat-trend').forEach(el => {
+      const t = (el.textContent || '').trim();
+      if (/(\+8 vs mois dernier|4 cages occupées|3 paiements en attente|2 ruptures)/.test(t)) {
+        el.textContent = '—';
+      }
+    });
+    dash.dataset.vpWipedInstant = '1';
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 3) Watch dashboard for demo data resurfacing
+   * ──────────────────────────────────────────────────────────────────── */
+  function setupDashWatcher(){
+    const dash = document.getElementById('page-dashboard');
+    if (!dash || dash.dataset.vpDeepWatched === '1') return false;
+    dash.dataset.vpDeepWatched = '1';
+
+    const obs = new MutationObserver(() => {
+      const text = dash.textContent || '';
+      if (/Benali Ahmed|Hamdi Karim|Kaci Fatima|Saâdi Omar|Cas ce mois/.test(text)) {
+        // Reset wipe flag and re-wipe
+        dash.dataset.vpWipedInstant = '';
+        instantWipeDashboardDemo();
+        if (window.__vpRepaintDashboard) try { window.__vpRepaintDashboard(); } catch(e){}
+      }
+    });
+    obs.observe(dash, { childList: true, subtree: true, characterData: true });
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 4) Welcome modal "Commencer à zéro" — also wipe drug stocks +
+   *    LAB_EXAMS + force instant dashboard wipe
+   * ──────────────────────────────────────────────────────────────────── */
+  function patchWelcomeStartZero(){
+    const overlay = document.getElementById('vetpro-first-login');
+    if (!overlay) return false;
+    const buttons = overlay.querySelectorAll('button');
+    buttons.forEach(b => {
+      const id = b.id || '';
+      if (/start-zero/.test(id) && !b.__vpEnhanced) {
+        const orig = b.onclick;
+        b.onclick = function(ev){
+          // Run original (which sets empty state)
+          if (typeof orig === 'function') orig.call(this, ev);
+          // Then enforce: drug stocks 0, lab exams empty, mini-cages free, force-save
+          try {
+            if (Array.isArray(window.DRUGS)) window.DRUGS.forEach(d => { d.s = 0; });
+            if (Array.isArray(window.LAB_EXAMS)) window.LAB_EXAMS.length = 0;
+            if (Array.isArray(window.CAGES)) {
+              window.CAGES.forEach(c => {
+                c.statut = 'libre'; c.animal = null; c.motif = null; c.depuis = null; c.notes = null;
+              });
+            }
+            // Wipe localStorage caches
+            try {
+              Object.keys(localStorage).forEach(k => {
+                if (k.startsWith('vetpro-')) localStorage.removeItem(k);
+              });
+            } catch(e) {}
+            // Force-paint everything
+            if (typeof window.refreshPersistentViews === 'function') window.refreshPersistentViews();
+            if (window.__vpRepaintDashboard) window.__vpRepaintDashboard();
+            if (typeof window.vpRenderLabExams === 'function') window.vpRenderLabExams();
+            // Force-save to cloud
+            if (typeof window.vpFullSave === 'function') window.vpFullSave();
+            else if (typeof window.vpSaveRemoteFixed === 'function') window.vpSaveRemoteFixed();
+            // Render historique stats
+            renderHistStats();
+            // Re-wipe dashboard hardcoded HTML
+            const dash = document.getElementById('page-dashboard');
+            if (dash) { dash.dataset.vpWipedInstant = ''; instantWipeDashboardDemo(); }
+            try { window.vpAddNotification && window.vpAddNotification('🗑️ Espace démarré à zéro', { icon: '✅' }); } catch(e){}
+          } catch (e) { console.warn('[VP] start-zero enhance failed:', e); }
+        };
+        b.__vpEnhanced = true;
+      }
+    });
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * INIT — observe DOM and run all fixes
+   * ──────────────────────────────────────────────────────────────────── */
+  function tryAll(){
+    instantWipeDashboardDemo();
+    setupDashWatcher();
+    renderHistStats();
+    patchWelcomeStartZero();
+  }
+
+  function init(){
+    tryAll();
+    const obs = new MutationObserver(() => tryAll());
+    obs.observe(document.body, { childList: true, subtree: true });
+    // Multiple delayed runs to catch lazy-rendered content
+    [50, 200, 600, 1500, 3000].forEach(ms => setTimeout(tryAll, ms));
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Expose
+  window.vpInstantWipeDashboard = instantWipeDashboardDemo;
+  window.vpRenderHistStats = renderHistStats;
+})();
+</script>
+
 </body>
 </html>
