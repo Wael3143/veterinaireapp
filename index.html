@@ -1578,7 +1578,7 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="row2">
         <div class="fg"><label class="lbl">Pertes en cours</label><select class="sel" id="pf-pr" onchange="calcPf()"><option value="0">Absentes</option><option value="5">Légères</option><option value="15">Modérées</option><option value="30">Importantes</option></select></div>
-        <div class="fg"><label class="lbl">Durée de correction</label><select class="sel" id="pf-h" onchange="calcPf()"><option value="0.33">20 min (perfusion IV rapide)</option><option value="1">1h</option><option value="4">4h (urgence)</option><option value="8">8h</option><option value="12">12h</option><option value="24" selected>24h</option></select></div>
+        <div class="fg"><label class="lbl">Durée de correction</label><select class="sel" id="pf-h" onchange="calcPf()"><option value="0.166">10 min (perfusion flash)</option><option value="0.33">20 min (perfusion IV rapide)</option><option value="0.5">30 min</option><option value="1">1h</option><option value="2">2h</option><option value="4">4h (urgence)</option><option value="8">8h</option><option value="12">12h</option><option value="24" selected>24h</option></select></div>
       </div>
       <div class="fg"><label class="lbl">Fluide (disponible en Algérie)</label><select class="sel" id="pf-f" onchange="calcPf()"><option value="rl">Ringer Lactate (1er choix)</option><option value="nacl">NaCl 0.9%</option><option value="g5">Glucose 5%</option></select></div>
       <div class="fg"><label class="lbl">Facteur goutte</label>
@@ -16314,15 +16314,9 @@ function saveAdmission() {
       linear-gradient(160deg, #04110c 0%, #0a2d1e 78%, #f0fdfa 78.2%, #fdfaf3 100%) !important;
   }
 
-  /* Hero gradient text gets a dark glow halo so it's readable even if it
-     drifts onto the light section after a window resize */
-  #login-screen .landing-panel h1 {
-    text-shadow:
-      0 2px 30px rgba(4, 17, 12, .85),
-      0 4px 16px rgba(4, 17, 12, .6),
-      0 1px 2px rgba(4, 17, 12, .9);
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
-  }
+  /* Hero h1: reverted to the original styling per user request — no
+     extra text-shadow / drop-shadow on the gradient. Diagonal split was
+     pushed to 78% above so the text already stays on the dark area. */
 
   /* Description paragraph gets a subtle dark wrapper for readability */
   #login-screen .landing-copy {
