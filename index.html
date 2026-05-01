@@ -9447,8 +9447,9 @@ function saveAdmission() {
   }
 
   function applyAppStateSnapshot(saved, defaults){
-    replaceArrayContents(CAGES, saved?.cages || defaults.cages);
-    replaceArrayContents(DRUGS, saved?.drugs || defaults.drugs);
+    replaceArrayContents(CAGES, (saved?.cages?.length ? saved.cages : null) || defaults.cages);
+    // Never wipe drug catalog — if saved drugs is empty, use defaults (catalog with stock 0)
+    replaceArrayContents(DRUGS, (saved?.drugs?.length ? saved.drugs : null) || defaults.drugs);
     replaceArrayContents(ORDOS, saved?.ordos || defaults.ordos);
     replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
     replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
@@ -11251,7 +11252,9 @@ function saveAdmission() {
       toast('Mode démo conservé');
     };
     overlay.querySelector('#vetpro-start-zero').onclick = () => {
-      const empty = { cages:[], drugs:[], ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
+      const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
+      const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
+      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
       if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
       if (typeof persistAppState === 'function') persistAppState();
       if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
@@ -11611,7 +11614,9 @@ function saveAdmission() {
       toast('Mode démo conservé');
     };
     overlay.querySelector('#vetpro-start-zero-ultra').onclick = () => {
-      const empty = { cages:[], drugs:[], ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
+      const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
+      const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
+      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
       if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
       if (typeof persistAppState === 'function') persistAppState();
       if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
