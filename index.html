@@ -16525,15 +16525,11 @@ function saveAdmission() {
     card.className = 'vp-apk-card';
     card.innerHTML = `
       <h3>📱 Application Android</h3>
-      <p>Téléchargez VetPro pour Android — même compte, mêmes données, même expérience que le web.</p>
+      <p>Une version mobile de VetPro — même compte, mêmes données, même expérience que le web — sera disponible prochainement.</p>
       <div class="vp-apk-row">
-        <div class="vp-apk-qr">
-          <img src="${buildQRDataURL(APK_URL)}" alt="QR code APK VetPro" loading="lazy"/>
-        </div>
-        <div class="vp-apk-actions">
-          <a class="vp-apk-btn" href="${APK_URL}" target="_blank" rel="noopener">⬇️ Télécharger l'APK</a>
-          <a class="vp-apk-btn secondary" href="${APK_URL}" target="_blank" rel="noopener">📱 Voir sur Google Drive</a>
-          <div class="vp-apk-meta">Scannez le QR depuis votre téléphone Android</div>
+        <div class="vp-apk-actions" style="text-align:center">
+          <span class="vp-apk-btn" style="cursor:default;display:inline-block;background:linear-gradient(135deg,#0D9488,#134E4A);box-shadow:0 6px 16px rgba(13,148,136,.32)">🚀 Bientôt disponible</span>
+          <div class="vp-apk-meta" style="margin-top:10px">Lancement prévu très bientôt · suivez @vetpro.dz pour être notifié</div>
         </div>
       </div>
     `;
@@ -16936,6 +16932,356 @@ function saveAdmission() {
   } else {
     init();
   }
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     CLEANUP DEMO DATA + NOTIFICATIONS CENTER UI
+     · Strip hardcoded demo rows from page-labo (Rex/Misty/Bruno/Nala lab
+       results) — replace with empty state when no real data
+     · Strip any leftover demo HTML from clients / rdv tables
+     · Build a notifications center: bell button on topbar + dropdown panel
+     ═══════════════════════════════════════════════════════════════════ -->
+<style id="vetpro-notif-center-style">
+  /* Empty state inside cards */
+  .vp-card-empty {
+    text-align: center; padding: 28px 18px;
+    color: #5b6b73; font-family: 'Outfit', sans-serif;
+  }
+  .vp-card-empty-icon { font-size: 36px; margin-bottom: 6px; opacity: .55; }
+  .vp-card-empty-title { font-weight: 700; color: #0F3D2A; font-size: 14px; margin-bottom: 4px; }
+  .vp-card-empty-msg { font-size: 12px; line-height: 1.5; max-width: 320px; margin: 0 auto; }
+
+  /* Notifications bell button (added to topbar) */
+  .vp-notif-bell {
+    position: relative;
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    background: rgba(13,148,136,.1);
+    border: 1px solid rgba(13,148,136,.18);
+    color: #0F3D2A;
+    cursor: pointer;
+    font-size: 18px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: background .15s ease, transform .15s ease;
+  }
+  .vp-notif-bell:hover { background: rgba(13,148,136,.18); transform: translateY(-1px); }
+  .vp-notif-bell .vp-notif-dot {
+    position: absolute;
+    top: 6px; right: 6px;
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #F97316, #EA580C);
+    box-shadow: 0 0 0 2px #fff, 0 2px 6px rgba(234,88,12,.5);
+    display: none;
+  }
+  .vp-notif-bell.has-unread .vp-notif-dot { display: block; }
+
+  /* Notifications panel */
+  .vp-notif-panel {
+    position: fixed;
+    top: 64px;
+    right: 14px;
+    width: min(360px, calc(100vw - 28px));
+    max-height: min(520px, 70vh);
+    background: #fff;
+    border: 1px solid rgba(13,148,136,.18);
+    border-radius: 18px;
+    box-shadow: 0 1px 2px rgba(15,61,42,.05), 0 24px 60px rgba(15,61,42,.22);
+    z-index: 9000;
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: 'Outfit', sans-serif;
+  }
+  .vp-notif-panel.open { display: flex; animation: vp-notif-in .2s cubic-bezier(0.4,0,0.2,1); }
+  @keyframes vp-notif-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .vp-notif-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 16px; border-bottom: 1px solid rgba(15,61,42,.06);
+    background: linear-gradient(135deg, #0F3D2A, #0D9488);
+    color: #fff;
+  }
+  .vp-notif-head h4 {
+    margin: 0; font-family: 'DM Serif Display', serif;
+    font-size: 15px; font-weight: 400;
+  }
+  .vp-notif-head button {
+    background: rgba(255,255,255,.15); color: #fff; border: none;
+    padding: 5px 10px; border-radius: 8px;
+    font-size: 11px; font-weight: 600; cursor: pointer;
+  }
+  .vp-notif-head button:hover { background: rgba(255,255,255,.25); }
+  .vp-notif-list {
+    flex: 1; overflow-y: auto;
+    padding: 8px 0;
+  }
+  .vp-notif-empty {
+    text-align: center; padding: 32px 16px;
+    color: #5b6b73;
+  }
+  .vp-notif-empty-icon { font-size: 38px; opacity: .5; margin-bottom: 6px; }
+  .vp-notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(15,61,42,.05);
+    font-size: 12.5px; color: #1f3b2c;
+    line-height: 1.5;
+    display: flex; gap: 10px; align-items: flex-start;
+    transition: background .12s ease;
+  }
+  .vp-notif-item:hover { background: #F0FDFA; }
+  .vp-notif-item.unread { background: rgba(13,148,136,.06); }
+  .vp-notif-item .ico { font-size: 18px; flex-shrink: 0; }
+  .vp-notif-item .body { flex: 1; min-width: 0; }
+  .vp-notif-item .time {
+    font-size: 10.5px; color: #5b6b73;
+    margin-top: 3px;
+  }
+  .vp-notif-foot {
+    padding: 10px 16px;
+    border-top: 1px solid rgba(15,61,42,.06);
+    text-align: center;
+    background: #F8FAFC;
+  }
+  .vp-notif-foot button {
+    background: none; border: none; color: #0D9488;
+    font-weight: 700; font-size: 11.5px; cursor: pointer;
+    padding: 4px 8px; border-radius: 6px;
+  }
+  .vp-notif-foot button:hover { background: rgba(13,148,136,.1); }
+
+  @media (max-width: 480px) {
+    .vp-notif-panel { right: 8px; left: 8px; width: auto; top: 60px; }
+    .vp-notif-bell { width: 36px; height: 36px; font-size: 16px; }
+  }
+</style>
+
+<script id="vetpro-notif-cleanup-script">
+(function(){
+  'use strict';
+  if (window.__vetproNotifCleanup) return;
+  window.__vetproNotifCleanup = true;
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 1) WIPE hardcoded demo data from page-labo
+   * ──────────────────────────────────────────────────────────────────── */
+  function cleanLabPage(){
+    const page = document.getElementById('page-labo');
+    if (!page) return false;
+    const tbody = page.querySelector('#labo-resultats table tbody');
+    if (!tbody) return false;
+    if (tbody.dataset.vpCleaned === '1') return true;
+    // Detect demo rows by Rex/Misty/Bruno/Nala
+    const text = tbody.textContent || '';
+    if (/Benali Ahmed|Kaci Fatima|Sa[âa]di Omar|Boukhechem Lina/.test(text)) {
+      tbody.innerHTML = '';
+      // Insert empty state after the table
+      const card = page.querySelector('#labo-resultats .card');
+      if (card && !card.querySelector('.vp-card-empty')) {
+        const empty = document.createElement('div');
+        empty.className = 'vp-card-empty';
+        empty.innerHTML = `
+          <div class="vp-card-empty-icon">🔬</div>
+          <div class="vp-card-empty-title">Aucun bilan enregistré</div>
+          <div class="vp-card-empty-msg">Cliquez sur "Nouveau bilan" pour ajouter votre premier examen de laboratoire.</div>
+        `;
+        card.appendChild(empty);
+        // Hide the empty table
+        const tbl = card.querySelector('table');
+        if (tbl) tbl.style.display = 'none';
+      }
+    }
+    tbody.dataset.vpCleaned = '1';
+    return true;
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
+   * 2) NOTIFICATIONS CENTER UI
+   * ──────────────────────────────────────────────────────────────────── */
+  function getNotifs(){
+    if (!Array.isArray(window.__vpNotifications)) window.__vpNotifications = [];
+    return window.__vpNotifications;
+  }
+  function saveNotifs(){
+    try { localStorage.setItem('vetpro-notifications', JSON.stringify(getNotifs())); } catch(e) {}
+  }
+  // Robust addNotification that updates the bell + panel
+  window.vpAddNotification = function(text, opts){
+    const n = {
+      id: Date.now() + Math.random(),
+      text,
+      icon: opts?.icon || '🔔',
+      time: new Date().toLocaleTimeString('fr-FR', { hour:'2-digit', minute:'2-digit' }),
+      timestamp: Date.now(),
+      read: false,
+    };
+    getNotifs().unshift(n);
+    if (getNotifs().length > 50) getNotifs().length = 50;
+    saveNotifs();
+    refreshBell();
+    refreshPanel();
+    return n;
+  };
+  window.vpClearNotifications = function(){
+    window.__vpNotifications = [];
+    saveNotifs();
+    refreshBell();
+    refreshPanel();
+  };
+  window.vpMarkAllRead = function(){
+    getNotifs().forEach(n => { n.read = true; });
+    saveNotifs();
+    refreshBell();
+    refreshPanel();
+  };
+
+  function ensureBell(){
+    let bell = document.getElementById('vp-notif-bell');
+    if (bell) return bell;
+    const topbar = document.querySelector('.topbar');
+    if (!topbar) return null;
+    bell = document.createElement('button');
+    bell.id = 'vp-notif-bell';
+    bell.type = 'button';
+    bell.className = 'vp-notif-bell';
+    bell.title = 'Notifications';
+    bell.innerHTML = `🔔<span class="vp-notif-dot"></span>`;
+    bell.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePanel();
+    });
+    topbar.appendChild(bell);
+    return bell;
+  }
+
+  function ensurePanel(){
+    let panel = document.getElementById('vp-notif-panel');
+    if (panel) return panel;
+    panel = document.createElement('div');
+    panel.id = 'vp-notif-panel';
+    panel.className = 'vp-notif-panel';
+    panel.innerHTML = `
+      <div class="vp-notif-head">
+        <h4>🔔 Notifications</h4>
+        <button type="button" id="vp-notif-mark-read">Tout marquer lu</button>
+      </div>
+      <div class="vp-notif-list" id="vp-notif-list"></div>
+      <div class="vp-notif-foot">
+        <button type="button" id="vp-notif-clear">🗑️ Effacer tout</button>
+      </div>
+    `;
+    document.body.appendChild(panel);
+
+    document.getElementById('vp-notif-mark-read').addEventListener('click', window.vpMarkAllRead);
+    document.getElementById('vp-notif-clear').addEventListener('click', window.vpClearNotifications);
+
+    // Click outside to close
+    document.addEventListener('click', (e) => {
+      if (!panel.classList.contains('open')) return;
+      if (panel.contains(e.target)) return;
+      if (e.target.id === 'vp-notif-bell' || e.target.closest('#vp-notif-bell')) return;
+      panel.classList.remove('open');
+    });
+
+    return panel;
+  }
+
+  function togglePanel(){
+    const panel = ensurePanel();
+    const opening = !panel.classList.contains('open');
+    panel.classList.toggle('open', opening);
+    if (opening) {
+      // Mark all as read on open
+      window.vpMarkAllRead();
+    }
+  }
+
+  function refreshBell(){
+    const bell = ensureBell();
+    if (!bell) return;
+    const unread = getNotifs().filter(n => !n.read).length;
+    bell.classList.toggle('has-unread', unread > 0);
+  }
+
+  function refreshPanel(){
+    const list = document.getElementById('vp-notif-list');
+    if (!list) return;
+    const items = getNotifs();
+    if (!items.length) {
+      list.innerHTML = `
+        <div class="vp-notif-empty">
+          <div class="vp-notif-empty-icon">🔔</div>
+          <div style="font-weight:600;color:#0F3D2A;font-size:13px;margin-bottom:4px">Aucune notification</div>
+          <div style="font-size:11.5px;line-height:1.5">Les alertes (perfusion terminée, rappels vaccins, etc.) apparaîtront ici.</div>
+        </div>
+      `;
+      return;
+    }
+    list.innerHTML = items.map(n => `
+      <div class="vp-notif-item ${n.read ? '' : 'unread'}">
+        <div class="ico">${n.icon || '🔔'}</div>
+        <div class="body">
+          <div>${escapeHtml(n.text || '')}</div>
+          <div class="time">${escapeHtml(n.time || '')}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // Restore notifications from localStorage on init
+  try {
+    const stored = JSON.parse(localStorage.getItem('vetpro-notifications') || '[]');
+    if (Array.isArray(stored)) window.__vpNotifications = stored;
+  } catch(e) {}
+
+  /* ────────────────────────────────────────────────────────────────────
+   * INIT
+   * ──────────────────────────────────────────────────────────────────── */
+  function tryAll(){
+    cleanLabPage();
+    ensureBell();
+    refreshBell();
+  }
+
+  function init(){
+    tryAll();
+    const obs = new MutationObserver(() => tryAll());
+    obs.observe(document.body, { childList: true, subtree: true });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Hook reset functions to also clear lab page demo + add a "reset done" notif
+  ['vpResetToZero','vpTotalReset'].forEach(fnName => {
+    setTimeout(() => {
+      const orig = window[fnName];
+      if (typeof orig !== 'function' || orig.__vpNotifWrap) return;
+      const wrapped = async function(){
+        const r = await orig.apply(this, arguments);
+        try {
+          // Reset cleanup flag so labPage gets re-cleaned
+          const tbody = document.querySelector('#page-labo #labo-resultats table tbody');
+          if (tbody) { tbody.dataset.vpCleaned = ''; }
+          cleanLabPage();
+          window.vpAddNotification('🗑️ Données réinitialisées à zéro', { icon: '✅' });
+        } catch(e) {}
+        return r;
+      };
+      wrapped.__vpNotifWrap = true;
+      window[fnName] = wrapped;
+    }, 2500);
+  });
 })();
 </script>
 
