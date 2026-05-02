@@ -8708,7 +8708,14 @@ function saveAdmission() {
     next.display.reducedMotion = toggles[6]?.classList.contains('on');
     saveSettings(next);
     renameBranding();
-    toast('Paramètres VetPro sauvegardés');
+    // Also persist to Supabase so settings survive across devices/logins
+    if (typeof window.vpSaveSettings === 'function') {
+      window.__vpSettingsSaveQuiet = true;
+      window.vpSaveSettings()
+        .catch(e => console.warn('[VetPro] Supabase settings save failed:', e))
+        .finally(() => { window.__vpSettingsSaveQuiet = false; });
+    }
+    toast('Paramètres sauvegardés ✅');
   };
 
   function wireSettingsActions(){
@@ -12943,7 +12950,8 @@ function saveAdmission() {
     });
     await persistUserSettings({ language: lang, clinic, notifications: notif });
     applyLanguage(lang);
-    showToast(t('settings_saved_ok'));
+    // Toast only if called directly (not via saveVetProSettings which has its own)
+    if (!window.__vpSettingsSaveQuiet) showToast(t('settings_saved_ok'));
   };
 
   window.vpExportData = async function(){
