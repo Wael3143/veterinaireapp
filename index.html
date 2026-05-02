@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>VétérinApp Pro v5 — Dr. Kherbache Wail</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
@@ -3069,21 +3069,85 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- Finance Entry -->
 <div class="overlay" id="modal-finance">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:560px">
     <div class="modal-hdr">
       <div class="modal-title">💰 Nouvelle transaction</div>
       <button class="btn-ico" onclick="closeModal('modal-finance')">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:14px;padding:20px 0">
+    <div style="display:flex;flex-direction:column;gap:14px;padding:10px 0">
+      <div class="fg"><label class="lbl">Type de transaction</label>
+        <select class="sel" id="fin-type" onchange="toggleFinanceFields()">
+          <option value="recette">💵 Recette — Consultation / Soin</option>
+          <option value="vente">🛒 Vente — Croquettes, jouets, accessoires</option>
+          <option value="depense">📦 Dépense — Achat marchandise / fournitures</option>
+        </select>
+      </div>
       <div class="fg"><label class="lbl">Date</label><input class="inp" type="date" id="fin-date"/></div>
-      <div class="row2">
+      <div class="row2" id="fin-animal-row">
         <div class="fg"><label class="lbl">Animal</label><input class="inp" id="fin-animal" placeholder="Nom de l'animal"/></div>
         <div class="fg"><label class="lbl">Client</label><input class="inp" id="fin-client" placeholder="Nom du client"/></div>
       </div>
-      <div class="fg"><label class="lbl">Description / Diagnostic</label><input class="inp" id="fin-desc" placeholder="Ex: Consultation, Vaccination, Chirurgie…"/></div>
+      <div class="fg"><label class="lbl" id="fin-desc-label">Description</label><input class="inp" id="fin-desc" placeholder="Ex: Consultation, Vaccination…"/></div>
+      <div id="fin-vente-details" style="display:none">
+        <div class="fg"><label class="lbl">Produit vendu</label>
+          <select class="sel" id="fin-product">
+            <option value="">— Sélectionner —</option>
+            <optgroup label="🦴 Alimentation">
+              <option value="Croquettes chien">Croquettes chien</option>
+              <option value="Croquettes chat">Croquettes chat</option>
+              <option value="Pâtée chien">Pâtée chien</option>
+              <option value="Pâtée chat">Pâtée chat</option>
+              <option value="Croquettes médicalisées">Croquettes médicalisées (régime)</option>
+              <option value="Lait maternisé">Lait maternisé chiot/chaton</option>
+              <option value="Compléments alimentaires">Compléments alimentaires</option>
+            </optgroup>
+            <optgroup label="🧸 Jouets & Accessoires">
+              <option value="Jouet chien">Jouet chien</option>
+              <option value="Jouet chat">Jouet chat</option>
+              <option value="Laisse/Collier">Laisse / Collier</option>
+              <option value="Harnais">Harnais</option>
+              <option value="Gamelle">Gamelle / Distributeur</option>
+              <option value="Niche/Panier">Niche / Panier</option>
+              <option value="Cage transport">Cage de transport</option>
+              <option value="Arbre à chat">Arbre à chat</option>
+            </optgroup>
+            <optgroup label="🧴 Hygiène & Soins">
+              <option value="Shampoing">Shampoing antiparasitaire</option>
+              <option value="Brosse/Peigne">Brosse / Peigne</option>
+              <option value="Coupe-griffes">Coupe-griffes</option>
+              <option value="Nettoyant auriculaire">Nettoyant auriculaire</option>
+              <option value="Dentifrice animal">Dentifrice animal</option>
+              <option value="Couches animal">Couches animal</option>
+            </optgroup>
+            <optgroup label="💊 Antiparasitaires OTC">
+              <option value="Pipette antiparasitaire">Pipette antiparasitaire</option>
+              <option value="Collier antiparasitaire">Collier antiparasitaire</option>
+              <option value="Spray antipuces">Spray antipuces</option>
+            </optgroup>
+            <option value="Autre">Autre (préciser dans description)</option>
+          </select>
+        </div>
+        <div class="row2">
+          <div class="fg"><label class="lbl">Quantité</label><input class="inp" type="number" id="fin-qty" value="1" min="1" oninput="toggleFinanceFields()"/></div>
+          <div class="fg"><label class="lbl">Prix unitaire (DA)</label><input class="inp" type="number" id="fin-unit-price" placeholder="500" oninput="toggleFinanceFields()"/></div>
+        </div>
+      </div>
+      <div id="fin-depense-details" style="display:none">
+        <div class="fg"><label class="lbl">Catégorie d'achat</label>
+          <select class="sel" id="fin-dep-cat">
+            <option value="Médicaments">💊 Médicaments / Produits pharmaceutiques</option>
+            <option value="Alimentation stock">🦴 Alimentation (stock boutique)</option>
+            <option value="Matériel médical">🔬 Matériel médical / Consommables</option>
+            <option value="Fournitures bureau">📎 Fournitures de bureau</option>
+            <option value="Entretien">🧹 Entretien / Nettoyage</option>
+            <option value="Loyer">🏠 Loyer / Charges</option>
+            <option value="Autre dépense">📦 Autre dépense</option>
+          </select>
+        </div>
+      </div>
       <div class="row2">
         <div class="fg"><label class="lbl">Montant (DA)</label><input class="inp" type="number" id="fin-amount" placeholder="5000"/></div>
-        <div class="fg"><label class="lbl">Statut paiement</label>
+        <div class="fg" id="fin-status-group"><label class="lbl">Statut paiement</label>
           <select class="sel" id="fin-status">
             <option value="paye">Payé</option>
             <option value="partiel">Partiel</option>
@@ -3091,7 +3155,7 @@ window.addEventListener('DOMContentLoaded', () => {
           </select>
         </div>
       </div>
-      <div class="fg"><label class="lbl">Montant payé (DA)</label><input class="inp" type="number" id="fin-paid" placeholder="0"/></div>
+      <div class="fg" id="fin-paid-group"><label class="lbl">Montant payé (DA)</label><input class="inp" type="number" id="fin-paid" placeholder="0"/></div>
       <div style="display:flex;gap:10px;margin-top:8px">
         <button class="btn btn-p" style="flex:1;justify-content:center" onclick="saveFinanceEntry()">Enregistrer</button>
         <button class="btn btn-ghost" onclick="closeModal('modal-finance')">Annuler</button>
@@ -5634,7 +5698,7 @@ function calcPf(){
   if(!poids||poids<=0)return;
   const pct=parseInt(document.getElementById('pf-d').value)||0;
   const pertesPct=parseInt(document.getElementById('pf-pr').value)||0;
-  const duree=parseInt(document.getElementById('pf-h').value)||24;
+  const duree=parseFloat(document.getElementById('pf-h').value)||24;
   const fluide=document.getElementById('pf-f').value;
   const gtt=parseInt(document.querySelector('input[name="gtt"]:checked')?.value)||20;
   const ent=esp==='chien'?poids*60:poids*50;
@@ -11070,43 +11134,99 @@ function saveAdmission() {
     toast('Paiement mis à jour');
   };
 
+  window.toggleFinanceFields = function(){
+    const type = document.getElementById('fin-type')?.value || 'recette';
+    const animalRow = document.getElementById('fin-animal-row');
+    const venteDetails = document.getElementById('fin-vente-details');
+    const depenseDetails = document.getElementById('fin-depense-details');
+    const statusGroup = document.getElementById('fin-status-group');
+    const paidGroup = document.getElementById('fin-paid-group');
+    const descLabel = document.getElementById('fin-desc-label');
+    // Show/hide fields based on type
+    if (animalRow) animalRow.style.display = type === 'recette' ? '' : 'none';
+    if (venteDetails) venteDetails.style.display = type === 'vente' ? '' : 'none';
+    if (depenseDetails) depenseDetails.style.display = type === 'depense' ? '' : 'none';
+    if (statusGroup) statusGroup.style.display = type === 'depense' ? 'none' : '';
+    if (paidGroup) paidGroup.style.display = type === 'depense' ? 'none' : '';
+    if (descLabel) descLabel.textContent = type === 'depense' ? 'Description de l\'achat' : type === 'vente' ? 'Détails de la vente' : 'Description / Diagnostic';
+    // Auto-fill amount for vente
+    if (type === 'vente') {
+      const qty = parseInt(document.getElementById('fin-qty')?.value || '1', 10) || 1;
+      const unit = parseInt(document.getElementById('fin-unit-price')?.value || '0', 10) || 0;
+      if (unit > 0) document.getElementById('fin-amount').value = qty * unit;
+    }
+  };
+
   window.saveFinanceEntry = function(){
+    const type = document.getElementById('fin-type')?.value || 'recette';
     const date = document.getElementById('fin-date')?.value;
-    const animal = document.getElementById('fin-animal')?.value?.trim() || 'Animal';
-    const client = document.getElementById('fin-client')?.value?.trim() || 'Client';
-    const desc = document.getElementById('fin-desc')?.value?.trim() || 'Transaction';
+    const animal = document.getElementById('fin-animal')?.value?.trim() || '';
+    const client = document.getElementById('fin-client')?.value?.trim() || '';
+    const desc = document.getElementById('fin-desc')?.value?.trim() || '';
     const amount = parseInt(document.getElementById('fin-amount')?.value || '0', 10) || 0;
-    const status = document.getElementById('fin-status')?.value || 'impaye';
+    const status = document.getElementById('fin-status')?.value || 'paye';
     const paid = parseInt(document.getElementById('fin-paid')?.value || '0', 10) || 0;
+    const product = document.getElementById('fin-product')?.value || '';
+    const depCat = document.getElementById('fin-dep-cat')?.value || '';
     if (!amount) { toast('Veuillez saisir un montant'); return; }
     const now = new Date();
     const dateStr = date
       ? date.split('-').reverse().join('/')
       : `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+    let entryDesc = desc;
+    let entryType = 'Consultation';
+    let entryAnimal = animal || '—';
+    let entryClient = client || '—';
+    let finalMontant = amount;
+    let finalPaid = status === 'paye' ? amount : paid;
+    let finalStatus = status;
+    if (type === 'vente') {
+      const qty = parseInt(document.getElementById('fin-qty')?.value || '1', 10) || 1;
+      entryDesc = `Vente: ${product || desc || 'Produit'} x${qty}`;
+      entryType = 'Vente boutique';
+      entryAnimal = product || 'Boutique';
+      entryClient = client || 'Client boutique';
+    } else if (type === 'depense') {
+      entryDesc = `Achat: ${depCat} — ${desc || 'Fournitures'}`;
+      entryType = 'Dépense';
+      entryAnimal = depCat;
+      entryClient = '—';
+      finalMontant = -Math.abs(amount); // Negative for expenses
+      finalPaid = -Math.abs(amount);
+      finalStatus = 'paye';
+    }
     const entry = {
       id: 'fin-' + Date.now(),
       date: dateStr,
-      animal: animal,
-      client: client,
-      diagnostic: desc,
-      type: 'Consultation',
+      animal: entryAnimal,
+      client: entryClient,
+      diagnostic: entryDesc,
+      type: entryType,
       statut: 'OK',
-      resultat: 'guerison',
-      montant: amount,
-      paidAmount: status === 'paye' ? amount : paid,
-      paiement: status,
-      rdv: '—'
+      resultat: type === 'depense' ? 'depense' : 'guerison',
+      montant: finalMontant,
+      paidAmount: finalPaid,
+      paiement: finalStatus,
+      rdv: '—',
+      finType: type // tag for filtering
     };
     HISTORIQUE_DATA.unshift(entry);
     if (typeof persistAppState === 'function') persistAppState();
+    if (typeof window.vpSaveRemoteFixed === 'function') {
+      try { window.vpSaveRemoteFixed(); } catch(e) {}
+    }
     if (typeof renderFinancesPage === 'function') renderFinancesPage();
     if (typeof renderStatistics === 'function') renderStatistics();
     closeModal('modal-finance');
     // Clear form
-    ['fin-date','fin-animal','fin-client','fin-desc','fin-amount','fin-paid'].forEach(id => {
+    ['fin-date','fin-animal','fin-client','fin-desc','fin-amount','fin-paid','fin-unit-price'].forEach(id => {
       const el = document.getElementById(id); if (el) el.value = '';
     });
-    toast('Transaction enregistrée ✅');
+    const qtyEl = document.getElementById('fin-qty'); if (qtyEl) qtyEl.value = '1';
+    const typeMsg = type === 'depense' ? `Dépense de ${Math.abs(amount).toLocaleString('fr-FR')} DA enregistrée`
+                  : type === 'vente' ? `Vente de ${amount.toLocaleString('fr-FR')} DA enregistrée`
+                  : `Recette de ${amount.toLocaleString('fr-FR')} DA enregistrée`;
+    toast(typeMsg + ' ✅');
   };
 
   function patchApprovalsAccess(){
@@ -12991,6 +13111,12 @@ function saveAdmission() {
   /* Modals never exceed viewport */
   .overlay { padding: 12px; }
   .overlay > div, .overlay .modal { max-width: min(640px, 96vw); max-height: 92vh; overflow: auto; }
+  /* Sticky close button header so it's always reachable on mobile */
+  .overlay .modal-hdr {
+    position: sticky; top: 0; z-index: 5;
+    background: #fff; padding-bottom: 12px; margin: -26px -28px 20px;
+    padding: 16px 20px 12px; border-bottom: 1px solid var(--brd);
+  }
 
   /* Focus rings for accessibility */
   button:focus-visible, a:focus-visible, input:focus-visible,
@@ -15123,6 +15249,11 @@ function saveAdmission() {
   }
   /* But allow truly intentional RTL (Arabic) */
   body.vp-rtl, body.vp-rtl * { direction: rtl; }
+
+  /* ── Prevent iOS zoom on input focus (font-size ≥ 16px) ────────────── */
+  @media (max-width: 768px) {
+    input, select, textarea { font-size: 16px !important; }
+  }
 
   /* ── Touch responsiveness ───────────────────────────────────────────── */
   button, .btn, .login-btn, .landing-btn, a, .sb-item,
@@ -18526,6 +18657,36 @@ function saveAdmission() {
     `;
   }
 
+  function buildNoticeSection(drug){
+    if (!drug) return '';
+    const storage = STORAGE[drug.g] || '15–25 °C · à l\'abri de la lumière';
+    const preg = PREGNANCY[drug.g] || { class: 'C', text: 'Prudence — consulter vétérinaire' };
+    const onset = ONSET[drug.v] || 'Selon voie d\'administration';
+    return `
+      <div style="margin:14px 0;background:linear-gradient(135deg,#F9FAFB,#F3F4F6);border:1px solid #E5E7EB;border-radius:14px;padding:16px 18px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #D1D5DB">
+          <span style="font-size:20px">📋</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#1F2937">Notice — ${escapeHtml(drug.n)}</div>
+            <div style="font-size:10px;color:#6B7280;text-transform:uppercase;letter-spacing:.5px">${escapeHtml(drug.m)} · ${escapeHtml(drug.f)} · Voie ${escapeHtml(drug.v)}</div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:12px;color:#374151;line-height:1.6">
+          <div><strong style="color:#065F46">1. INDICATIONS THÉRAPEUTIQUES</strong><br/>${(drug.ind || '').split(' · ').map(i => '• ' + i).join('<br/>')}</div>
+          <div><strong style="color:#991B1B">2. CONTRE-INDICATIONS</strong><br/>${(drug.ci || '').split(' · ').map(i => '⛔ ' + i).join('<br/>')}</div>
+          <div><strong style="color:#1E40AF">3. POSOLOGIE ET MODE D'ADMINISTRATION</strong><br/>${escapeHtml(drug.poso || 'Selon protocole vétérinaire')}<br/><em style="color:#6B7280">Voie d'administration : ${escapeHtml(drug.v)} · Délai d'action : ${onset}</em></div>
+          <div><strong style="color:#92400E">4. EFFETS INDÉSIRABLES</strong><br/>${(drug.eff || 'Non documentés').split(' · ').map(i => '⚠️ ' + i).join('<br/>')}</div>
+          <div><strong style="color:#7C3AED">5. INTERACTIONS MÉDICAMENTEUSES</strong><br/>${escapeHtml(drug.inter || 'Pas d\'interactions connues documentées')}</div>
+          <div><strong style="color:#0D9488">6. CONSERVATION</strong><br/>📦 ${escapeHtml(storage)}</div>
+          <div><strong style="color:#B91C1C">7. GESTATION ET LACTATION</strong><br/>${escapeHtml(preg.text)}</div>
+          <div style="padding:8px 12px;background:#FEF3C7;border-radius:8px;border:1px solid #F59E0B40;font-size:11px;color:#92400E">
+            <strong>⚠️ PRÉCAUTIONS :</strong> Usage exclusivement vétérinaire. Respecter les délais d'attente pour les animaux de production. Ne pas dépasser les doses prescrites. En cas de surdosage ou d'effet indésirable grave, consulter immédiatement un vétérinaire. Tenir hors de portée des enfants. Ce médicament est un médicament vétérinaire, respecter strictement la prescription.
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function buildSimilarSection(drug){
     const sim = similarDrugs(drug);
     if (!sim.length) return '';
@@ -18553,7 +18714,7 @@ function saveAdmission() {
     // Avoid duplicate insertion
     if (modal.querySelector('.vp-med-extra')) return;
     // Find a sensible place to inject — after the calculator (#dw-result)
-    const inject = buildExtraSection(drug) + buildSimilarSection(drug);
+    const inject = buildExtraSection(drug) + buildNoticeSection(drug) + buildSimilarSection(drug);
     const calc = modal.querySelector('#dw-result');
     if (calc && calc.parentElement) {
       const wrap = document.createElement('div');
