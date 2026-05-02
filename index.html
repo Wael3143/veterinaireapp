@@ -3067,6 +3067,39 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 </div>
 
+<!-- Finance Entry -->
+<div class="overlay" id="modal-finance">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr">
+      <div class="modal-title">💰 Nouvelle transaction</div>
+      <button class="btn-ico" onclick="closeModal('modal-finance')">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px;padding:20px 0">
+      <div class="fg"><label class="lbl">Date</label><input class="inp" type="date" id="fin-date"/></div>
+      <div class="row2">
+        <div class="fg"><label class="lbl">Animal</label><input class="inp" id="fin-animal" placeholder="Nom de l'animal"/></div>
+        <div class="fg"><label class="lbl">Client</label><input class="inp" id="fin-client" placeholder="Nom du client"/></div>
+      </div>
+      <div class="fg"><label class="lbl">Description / Diagnostic</label><input class="inp" id="fin-desc" placeholder="Ex: Consultation, Vaccination, Chirurgie…"/></div>
+      <div class="row2">
+        <div class="fg"><label class="lbl">Montant (DA)</label><input class="inp" type="number" id="fin-amount" placeholder="5000"/></div>
+        <div class="fg"><label class="lbl">Statut paiement</label>
+          <select class="sel" id="fin-status">
+            <option value="paye">Payé</option>
+            <option value="partiel">Partiel</option>
+            <option value="impaye">Impayé</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg"><label class="lbl">Montant payé (DA)</label><input class="inp" type="number" id="fin-paid" placeholder="0"/></div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <button class="btn btn-p" style="flex:1;justify-content:center" onclick="saveFinanceEntry()">Enregistrer</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-finance')">Annuler</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Ordonnance New -->
 <div class="overlay" id="modal-ordo-new">
   <div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto">
@@ -11037,6 +11070,45 @@ function saveAdmission() {
     toast('Paiement mis à jour');
   };
 
+  window.saveFinanceEntry = function(){
+    const date = document.getElementById('fin-date')?.value;
+    const animal = document.getElementById('fin-animal')?.value?.trim() || 'Animal';
+    const client = document.getElementById('fin-client')?.value?.trim() || 'Client';
+    const desc = document.getElementById('fin-desc')?.value?.trim() || 'Transaction';
+    const amount = parseInt(document.getElementById('fin-amount')?.value || '0', 10) || 0;
+    const status = document.getElementById('fin-status')?.value || 'impaye';
+    const paid = parseInt(document.getElementById('fin-paid')?.value || '0', 10) || 0;
+    if (!amount) { toast('Veuillez saisir un montant'); return; }
+    const now = new Date();
+    const dateStr = date
+      ? date.split('-').reverse().join('/')
+      : `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+    const entry = {
+      id: 'fin-' + Date.now(),
+      date: dateStr,
+      animal: animal,
+      client: client,
+      diagnostic: desc,
+      type: 'Consultation',
+      statut: 'OK',
+      resultat: 'guerison',
+      montant: amount,
+      paidAmount: status === 'paye' ? amount : paid,
+      paiement: status,
+      rdv: '—'
+    };
+    HISTORIQUE_DATA.unshift(entry);
+    if (typeof persistAppState === 'function') persistAppState();
+    if (typeof renderFinancesPage === 'function') renderFinancesPage();
+    if (typeof renderStatistics === 'function') renderStatistics();
+    closeModal('modal-finance');
+    // Clear form
+    ['fin-date','fin-animal','fin-client','fin-desc','fin-amount','fin-paid'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
+    toast('Transaction enregistrée ✅');
+  };
+
   function patchApprovalsAccess(){
     const originalRefresh = window.renderApprovalsPage;
     window.renderApprovalsPage = async function(){
@@ -11230,9 +11302,8 @@ function saveAdmission() {
   }
 
   function addFirstLoginChoices(){
-    const user = window.__vetproCurrentSessionUser || null;
-    const key = `vetpro-first-login-choice:${user?.id || user?.email || 'guest'}`;
-    if (!user?.email || localStorage.getItem(key) === 'done' || document.getElementById('vetpro-first-login')) return;
+    // Suppressed — showFirstLoginChoicesUltra() is the sole welcome modal now
+    return;
     const overlay = document.createElement('div');
     overlay.id = 'vetpro-first-login';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:10010;background:rgba(5,12,9,.62);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px';
@@ -12714,21 +12785,35 @@ function saveAdmission() {
   window.vpSaveSettings = async function(){
     const langSel = document.getElementById('vp-settings-language');
     const lang = langSel?.value || currentLang;
-    // Collect generic clinic + notifications snapshot from existing form
+    // Collect clinic + profile data via label-based lookup (robust)
     const page = document.getElementById('page-settings');
-    const inputs = page ? Array.from(page.querySelectorAll('input.inp, textarea.tex')) : [];
+    const find = (label) => {
+      if (!page) return '';
+      const labels = page.querySelectorAll('label, .lbl');
+      for (const lbl of labels) {
+        if ((lbl.textContent || '').toLowerCase().includes(label.toLowerCase())) {
+          const fg = lbl.closest('.fg') || lbl.parentElement;
+          if (fg) {
+            const el = fg.querySelector('input, textarea, select');
+            if (el) return el.value || '';
+          }
+        }
+      }
+      return '';
+    };
     const clinic = {
-      first_name: inputs[0]?.value || '',
-      last_name:  inputs[1]?.value || '',
-      title:      inputs[2]?.value || '',
-      order_number: inputs[3]?.value || '',
-      email:      inputs[4]?.value || '',
-      phone:      inputs[5]?.value || '',
-      clinic_name:    inputs[7]?.value || '',
-      clinic_address: inputs[8]?.value || '',
-      clinic_phone:   inputs[9]?.value || '',
-      clinic_hours:   inputs[10]?.value || '',
-      footer:         inputs[11]?.value || ''
+      first_name:     find('Prénom') || find('Prenom'),
+      last_name:      find('Nom'),
+      title:          find('Titre'),
+      order_number:   find('Ordre'),
+      email:          find('Email'),
+      phone:          find('Téléphone'),
+      specialty:      find('Spécialité') || find('Specialite'),
+      clinic_name:    find('Nom de la clinique') || find('Nom clinique'),
+      clinic_address: find('Adresse'),
+      clinic_phone:   find('Téléphone clinique') || find('Telephone clinique'),
+      clinic_hours:   find('Horaires') || find('Heures'),
+      footer:         find('Pied de page') || find('Footer')
     };
     const notif = {};
     page?.querySelectorAll('.toggle-wrap').forEach((tw, i) => {
@@ -16798,7 +16883,7 @@ function saveAdmission() {
       if ((lbl.textContent || '').toLowerCase().includes(labelText.toLowerCase())) {
         const fg = lbl.closest('.fg') || lbl.parentElement;
         if (fg) {
-          const input = fg.querySelector('input, textarea');
+          const input = fg.querySelector('input, textarea, select');
           if (input) return input;
         }
       }
@@ -16845,10 +16930,15 @@ function saveAdmission() {
       apply('Nom de la clinique', clinic.clinic_name);
       apply('Nom clinique', clinic.clinic_name);
       apply('Adresse', clinic.clinic_address);
+      apply('Téléphone clinique', clinic.clinic_phone);
+      apply('Telephone clinique', clinic.clinic_phone);
       apply('Heures', clinic.clinic_hours);
+      apply('Horaires', clinic.clinic_hours);
       apply('Pied de page', clinic.footer);
       apply('Footer', clinic.footer);
       apply('Bas de l', clinic.footer);
+      apply('Spécialité', clinic.specialty);
+      apply('Specialite', clinic.specialty);
     }
     return true;
   }
@@ -18053,20 +18143,24 @@ function saveAdmission() {
      ═══════════════════════════════════════════════════════════════════ -->
 <style id="vetpro-welcome-historique-fix-style">
   /* ── Welcome modal: fit text on mobile, never overflow ───────────── */
-  #vetpro-first-login > div {
+  #vetpro-first-login > div,
+  #vetpro-first-login-ultra > div {
     width: min(540px, 100%) !important;
     padding: 22px 18px !important;
   }
-  #vetpro-first-login > div > div:first-child {
+  #vetpro-first-login > div > div:first-child,
+  #vetpro-first-login-ultra > div > div:first-child {
     font-size: clamp(20px, 5vw, 28px) !important;
     line-height: 1.15 !important;
     word-break: break-word;
   }
-  #vetpro-first-login > div > div[style*="grid-template-columns:repeat(3"] {
+  #vetpro-first-login > div > div[style*="grid-template-columns:repeat(3"],
+  #vetpro-first-login-ultra > div > div[style*="grid-template-columns:repeat(3"] {
     grid-template-columns: 1fr !important;
     gap: 10px !important;
   }
-  #vetpro-first-login button {
+  #vetpro-first-login button,
+  #vetpro-first-login-ultra button {
     min-height: 64px !important;
     padding: 14px 18px !important;
     font-size: 14px !important;
@@ -18077,10 +18171,12 @@ function saveAdmission() {
     overflow-wrap: break-word;
   }
   @media (min-width: 700px) {
-    #vetpro-first-login > div > div[style*="grid-template-columns:repeat(3"] {
+    #vetpro-first-login > div > div[style*="grid-template-columns:repeat(3"],
+    #vetpro-first-login-ultra > div > div[style*="grid-template-columns:repeat(3"] {
       grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     }
-    #vetpro-first-login button { min-height: 96px !important; font-size: 13.5px !important; }
+    #vetpro-first-login button,
+    #vetpro-first-login-ultra button { min-height: 96px !important; font-size: 13.5px !important; }
   }
 </style>
 
@@ -18195,7 +18291,7 @@ function saveAdmission() {
    *    LAB_EXAMS + force instant dashboard wipe
    * ──────────────────────────────────────────────────────────────────── */
   function patchWelcomeStartZero(){
-    const overlay = document.getElementById('vetpro-first-login');
+    const overlay = document.getElementById('vetpro-first-login') || document.getElementById('vetpro-first-login-ultra');
     if (!overlay) return false;
     const buttons = overlay.querySelectorAll('button');
     buttons.forEach(b => {
@@ -18242,6 +18338,29 @@ function saveAdmission() {
   }
 
   /* ────────────────────────────────────────────────────────────────────
+   * 5) Zero hardcoded stats KPIs (287, 1.74M, 147, 94%)
+   * ──────────────────────────────────────────────────────────────────── */
+  function wipeStatisticsDemo(){
+    const page = document.getElementById('page-statistics');
+    if (!page || page.dataset.vpStatsWiped === '1') return;
+    const kpis = page.querySelectorAll('.kpi-val');
+    kpis.forEach(el => {
+      const t = (el.textContent || '').trim();
+      if (/^(287|1\.74M|147|94%)$/.test(t)) el.textContent = '0';
+    });
+    const trends = page.querySelectorAll('.kpi-trend');
+    trends.forEach(el => {
+      const t = (el.textContent || '').trim();
+      if (/\+23%|\+31%|\+18|Stable/.test(t)) el.textContent = '—';
+    });
+    page.dataset.vpStatsWiped = '1';
+    // Also trigger the dynamic render to replace all content
+    if (typeof window.renderStatistics === 'function') {
+      try { window.renderStatistics(); } catch(e) {}
+    }
+  }
+
+  /* ────────────────────────────────────────────────────────────────────
    * INIT — observe DOM and run all fixes
    * ──────────────────────────────────────────────────────────────────── */
   function tryAll(){
@@ -18249,6 +18368,7 @@ function saveAdmission() {
     setupDashWatcher();
     renderHistStats();
     patchWelcomeStartZero();
+    wipeStatisticsDemo();
   }
 
   function init(){
