@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "vetpro-static",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["__serve_temp__.js"],
+      "port": 3000
+    },
+    {
+      "name": "supabase-functions",
+      "runtimeExecutable": "supabase",
+      "runtimeArgs": ["functions", "serve", "vetpro-ai"],
+      "port": 54321
+    }
+  ]
+}
