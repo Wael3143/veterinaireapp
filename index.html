@@ -18811,26 +18811,29 @@ function saveAdmission() {
   if (window.__vetproDrugNoticesLoaded) return;
   window.__vetproDrugNoticesLoaded = true;
 
-  // Comprehensive pharmaceutical notices for all drugs
-  const DRUG_NOTICES = {
-    'lavamox': '<b>COMPOSITION :</b> Amoxicilline trihydrate 150 mg/mL (forme longue action). Excipients : huile de coco fractionnée, stéarate d\'aluminium.<br/><b>FORME PHARMACEUTIQUE :</b> Suspension injectable huileuse LA (longue action) en flacon 100 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat, bovins, ovins, porcins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15 mg/kg (1 mL/10 kg) SC, 1 injection/48 h. Chat : 15 mg/kg SC, même intervalle. La formulation LA permet un espacement des injections.<br/><b>MODE D\'ADMINISTRATION :</b> Voie SC stricte (pas d\'IM). Agiter vigoureusement avant emploi. Injecter en SC lâche inter-scapulaire ou du flanc. Volume max par site : 5 mL (chien), 2 mL (chat).<br/><b>DURÉE DE TRAITEMENT :</b> 3 à 5 injections (6-10 jours effectifs). Adapter selon réponse clinique.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 25 jours. Lait : 2,5 jours.<br/><b>SURDOSAGE :</b> Symptômes : réaction locale importante, diarrhée profuse. CAT : traitement symptomatique.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 3-6 h (SC, libération prolongée). Demi-vie apparente : 12-15 h. Élimination rénale sous forme active (60%).',
-    'ganamic': '<b>COMPOSITION :</b> Gentamicine sulfate 50 mg/mL (équivalent base). Excipients : méthylparabène, propylparabène, EDTA disodique, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide incolore, flacon 50 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (avec précautions), bovins, équins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 2-4 mg/kg IM ou SC, 2x/j pendant 5-7 jours. Chat : 2-3 mg/kg IM, 2x/j, max 5 jours (néphrotoxicité accrue).<br/><b>MODE D\'ADMINISTRATION :</b> IM profonde dans la cuisse. SC possible. Jamais en IV rapide (bloc neuromusculaire). Surveiller créatinine et urée à J3 et J5.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours maximum. Ne pas dépasser 10 jours.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 90 jours. Lait : 5 jours.<br/><b>SURDOSAGE :</b> Symptômes : oligurie, anurie, surdité, ataxie vestibulaire. CAT : fluidothérapie intensive, diurèse forcée, dialyse péritonéale si anurie. Pas d\'antidote.<br/><b>CONSERVATION :</b> 15-25 °C. Ne pas congeler. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 0.5-1 h (IM). Demi-vie : 1.5-2.5 h (chien), 2-3 h (chat). Élimination rénale 90% sous forme inchangée. Index thérapeutique étroit.',
-    'metro': '<b>COMPOSITION :</b> Métronidazole 250 mg par comprimé. Excipients : amidon de maïs, cellulose microcristalline, stéarate de magnésium.<br/><b>FORME PHARMACEUTIQUE :</b> Comprimé pelliculé sécable, boîte de 20.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (usage courant hors AMM vétérinaire).<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15-25 mg/kg PO 2x/j, 5-7 jours. Giardia : 25 mg/kg 1x/j pendant 5 jours. Chat : 10-15 mg/kg PO 2x/j, 5-7 jours (prudence neurotoxicité).<br/><b>MODE D\'ADMINISTRATION :</b> Voie orale avec nourriture (réduit nausées). Comprimé au goût très amer : enrober dans aliment appétent. Chat : écraser et mélanger ou utiliser forme suspension.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours standard. Giardiose : 5 jours. Ne pas dépasser 10 jours (neurotoxicité).<br/><b>DÉLAI D\'ATTENTE :</b> Non applicable (animaux de compagnie).<br/><b>SURDOSAGE :</b> Symptômes : nystagmus, ataxie, rigidité, convulsions, anorexie. CAT : arrêt immédiat, diazépam si convulsions, soins de support. Réversible en 1-2 semaines.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière et de l\'humidité.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 1-2 h (PO). Biodisponibilité orale ~100%. Demi-vie : 4-5 h (chien), 8 h (chat). Métabolisme hépatique (oxydation). Élimination urinaire (urine brun-rougeâtre = normal).',
-    'imidocarbe': '<b>COMPOSITION :</b> Imidocarbe dipropionate 85 mg/mL. Excipients : propylène glycol, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide jaune pâle, flacon 20 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, bovins, équins. CONTRE-INDIQUÉ CHEZ LE CHAT.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 7 mg/kg (0.08 mL/kg) IM profonde, 2 injections à J0 et J14. Babésiose sévère : dose unique de 7 mg/kg peut suffire.<br/><b>MODE D\'ADMINISTRATION :</b> OBLIGATOIRE : prémédication Atropine 0.02 mg/kg SC/IM 30 min avant (prévient effets cholinergiques). Injection IM profonde dans le muscle de la cuisse. Ne pas injecter en SC (nécrose). Garder l\'animal en observation 1h post-injection.<br/><b>DURÉE DE TRAITEMENT :</b> 2 injections espacées de 14 jours (babésiose). Ehrlichiose : associer doxycycline 4 semaines.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 213 jours (bovins). Lait : ne pas utiliser chez vache laitière.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation sévère, bradycardie, vomissements, diarrhée, tremblements, collapsus. CAT : Atropine 0.04 mg/kg IV immédiatement, fluidothérapie, monitoring cardiaque.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Ne pas réfrigérer (cristallisation). Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 2-4 h (IM). Demi-vie : 5-7 h. Forte liaison aux protéines tissulaires (foie, rein). Élimination rénale lente. Accumulation hépatique.',
-    'frontline-cat': '<b>COMPOSITION :</b> Fipronil 9.7%, S-méthoprène 11.8%. Excipients : hydroxyéthylcellulose, butoxyde de pipéronyle, huile minérale.<br/><b>FORME PHARMACEUTIQUE :</b> Solution spot-on en pipette monodose (0.5 mL pour chat).<br/><b>ESPÈCES CIBLES :</b> Chat uniquement (formule chat). NE PAS UTILISER CHEZ LE CHIEN.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chat : 1 pipette (0.5 mL) topique, 1x/mois. Appliquer sur la peau sèche à la base du crâne, zone inaccessible au léchage.<br/><b>MODE D\'ADMINISTRATION :</b> Écarter les poils au niveau de la nuque. Appliquer directement sur la peau. Ne pas immerger dans l\'eau 48h après l\'application. Laisser sécher avant contact.<br/><b>DURÉE DE TRAITEMENT :</b> 1 mois de protection par application. Renouveler mensuellement si infestation persistante.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation, tremblements, ataxie (si léché). CAT : rinçage abondant, soins symptomatiques.<br/><b>CONSERVATION :</b> 15-25 °C. Pipette fermée : 3 ans. Après ouverture : usage immédiat.<br/><b>PHARMACOCINÉTIQUE :</b> Action locale et systémique. Fipronil : absorption cutanée lente. Demi-vie : 17-19 jours (accumulation cutanée). S-méthoprène : inhibe développement larves, inhibition réversible.'
-  };
+  function applyDrugNoticesAndDiseases(){
+    // Comprehensive pharmaceutical notices for all drugs
+    const DRUG_NOTICES = {
+      'lavamox': '<b>COMPOSITION :</b> Amoxicilline trihydrate 150 mg/mL (forme longue action). Excipients : huile de coco fractionnée, stéarate d\'aluminium.<br/><b>FORME PHARMACEUTIQUE :</b> Suspension injectable huileuse LA (longue action) en flacon 100 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat, bovins, ovins, porcins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15 mg/kg (1 mL/10 kg) SC, 1 injection/48 h. Chat : 15 mg/kg SC, même intervalle. La formulation LA permet un espacement des injections.<br/><b>MODE D\'ADMINISTRATION :</b> Voie SC stricte (pas d\'IM). Agiter vigoureusement avant emploi. Injecter en SC lâche inter-scapulaire ou du flanc. Volume max par site : 5 mL (chien), 2 mL (chat).<br/><b>DURÉE DE TRAITEMENT :</b> 3 à 5 injections (6-10 jours effectifs). Adapter selon réponse clinique.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 25 jours. Lait : 2,5 jours.<br/><b>SURDOSAGE :</b> Symptômes : réaction locale importante, diarrhée profuse. CAT : traitement symptomatique.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 3-6 h (SC, libération prolongée). Demi-vie apparente : 12-15 h. Élimination rénale sous forme active (60%).',
+      'ganamic': '<b>COMPOSITION :</b> Gentamicine sulfate 50 mg/mL (équivalent base). Excipients : méthylparabène, propylparabène, EDTA disodique, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide incolore, flacon 50 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (avec précautions), bovins, équins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 2-4 mg/kg IM ou SC, 2x/j pendant 5-7 jours. Chat : 2-3 mg/kg IM, 2x/j, max 5 jours (néphrotoxicité accrue).<br/><b>MODE D\'ADMINISTRATION :</b> IM profonde dans la cuisse. SC possible. Jamais en IV rapide (bloc neuromusculaire). Surveiller créatinine et urée à J3 et J5.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours maximum. Ne pas dépasser 10 jours.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 90 jours. Lait : 5 jours.<br/><b>SURDOSAGE :</b> Symptômes : oligurie, anurie, surdité, ataxie vestibulaire. CAT : fluidothérapie intensive, diurèse forcée, dialyse péritonéale si anurie. Pas d\'antidote.<br/><b>CONSERVATION :</b> 15-25 °C. Ne pas congeler. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 0.5-1 h (IM). Demi-vie : 1.5-2.5 h (chien), 2-3 h (chat). Élimination rénale 90% sous forme inchangée. Index thérapeutique étroit.',
+      'metro': '<b>COMPOSITION :</b> Métronidazole 250 mg par comprimé. Excipients : amidon de maïs, cellulose microcristalline, stéarate de magnésium.<br/><b>FORME PHARMACEUTIQUE :</b> Comprimé pelliculé sécable, boîte de 20.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (usage courant hors AMM vétérinaire).<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15-25 mg/kg PO 2x/j, 5-7 jours. Giardia : 25 mg/kg 1x/j pendant 5 jours. Chat : 10-15 mg/kg PO 2x/j, 5-7 jours (prudence neurotoxicité).<br/><b>MODE D\'ADMINISTRATION :</b> Voie orale avec nourriture (réduit nausées). Comprimé au goût très amer : enrober dans aliment appétent. Chat : écraser et mélanger ou utiliser forme suspension.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours standard. Giardiose : 5 jours. Ne pas dépasser 10 jours (neurotoxicité).<br/><b>DÉLAI D\'ATTENTE :</b> Non applicable (animaux de compagnie).<br/><b>SURDOSAGE :</b> Symptômes : nystagmus, ataxie, rigidité, convulsions, anorexie. CAT : arrêt immédiat, diazépam si convulsions, soins de support. Réversible en 1-2 semaines.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière et de l\'humidité.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 1-2 h (PO). Biodisponibilité orale ~100%. Demi-vie : 4-5 h (chien), 8 h (chat). Métabolisme hépatique (oxydation). Élimination urinaire (urine brun-rougeâtre = normal).',
+      'imidocarbe': '<b>COMPOSITION :</b> Imidocarbe dipropionate 85 mg/mL. Excipients : propylène glycol, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide jaune pâle, flacon 20 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, bovins, équins. CONTRE-INDIQUÉ CHEZ LE CHAT.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 7 mg/kg (0.08 mL/kg) IM profonde, 2 injections à J0 et J14. Babésiose sévère : dose unique de 7 mg/kg peut suffire.<br/><b>MODE D\'ADMINISTRATION :</b> OBLIGATOIRE : prémédication Atropine 0.02 mg/kg SC/IM 30 min avant (prévient effets cholinergiques). Injection IM profonde dans le muscle de la cuisse. Ne pas injecter en SC (nécrose). Garder l\'animal en observation 1h post-injection.<br/><b>DURÉE DE TRAITEMENT :</b> 2 injections espacées de 14 jours (babésiose). Ehrlichiose : associer doxycycline 4 semaines.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 213 jours (bovins). Lait : ne pas utiliser chez vache laitière.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation sévère, bradycardie, vomissements, diarrhée, tremblements, collapsus. CAT : Atropine 0.04 mg/kg IV immédiatement, fluidothérapie, monitoring cardiaque.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Ne pas réfrigérer (cristallisation). Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 2-4 h (IM). Demi-vie : 5-7 h. Forte liaison aux protéines tissulaires (foie, rein). Élimination rénale lente. Accumulation hépatique.',
+      'frontline-cat': '<b>COMPOSITION :</b> Fipronil 9.7%, S-méthoprène 11.8%. Excipients : hydroxyéthylcellulose, butoxyde de pipéronyle, huile minérale.<br/><b>FORME PHARMACEUTIQUE :</b> Solution spot-on en pipette monodose (0.5 mL pour chat).<br/><b>ESPÈCES CIBLES :</b> Chat uniquement (formule chat). NE PAS UTILISER CHEZ LE CHIEN.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chat : 1 pipette (0.5 mL) topique, 1x/mois. Appliquer sur la peau sèche à la base du crâne, zone inaccessible au léchage.<br/><b>MODE D\'ADMINISTRATION :</b> Écarter les poils au niveau de la nuque. Appliquer directement sur la peau. Ne pas immerger dans l\'eau 48h après l\'application. Laisser sécher avant contact.<br/><b>DURÉE DE TRAITEMENT :</b> 1 mois de protection par application. Renouveler mensuellement si infestation persistante.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation, tremblements, ataxie (si léché). CAT : rinçage abondant, soins symptomatiques.<br/><b>CONSERVATION :</b> 15-25 °C. Pipette fermée : 3 ans. Après ouverture : usage immédiat.<br/><b>PHARMACOCINÉTIQUE :</b> Action locale et systémique. Fipronil : absorption cutanée lente. Demi-vie : 17-19 jours (accumulation cutanée). S-méthoprène : inhibe développement larves, inhibition réversible.'
+    };
 
-  // Patch existing DRUGS array with notices
-  if (Array.isArray(window.DRUGS)) {
-    window.DRUGS.forEach(drug => {
-      if (DRUG_NOTICES[drug.id] && !drug.notice) {
-        drug.notice = DRUG_NOTICES[drug.id];
+    // Patch existing DRUGS array with notices
+    try {
+      if (typeof DRUGS !== 'undefined' && Array.isArray(DRUGS)) {
+        DRUGS.forEach(drug => {
+          if (DRUG_NOTICES[drug.id] && !drug.notice) {
+            drug.notice = DRUG_NOTICES[drug.id];
+          }
+        });
       }
-    });
-  }
+    } catch (e) { console.warn('[VetPro] Drug notices patch error:', e); }
 
-  // Add more diseases to MALADIES_DATA
-  const newDiseases = [
+    // Add more diseases to MALADIES_DATA
+    const newDiseases = [
     {id:'conjunctivite',n:'Conjonctivite Allergique',e:'👁️',sp:'both',cat:'chronique',prev:'Fréquente printemps-été · Toutes races',z:false,
       symp:['Larmoiement excessif','Œdème conjonctival','Prurit occulaire','Blépharospasme','Écoulement séreux/mucoid'],
       diag:'Examen clinique · Coloration Schirmer · Exclusion corps étrangers',
@@ -18895,14 +18898,27 @@ function saveAdmission() {
       prog:'Rémission généralement complète avec antibiotiques · Rechute possible si immunosuppression'}
   ];
 
-  // Add new diseases to MALADIES_DATA if it exists
-  if (Array.isArray(window.MALADIES_DATA)) {
-    newDiseases.forEach(disease => {
-      if (!window.MALADIES_DATA.find(m => m.id === disease.id)) {
-        window.MALADIES_DATA.push(disease);
+    // Add new diseases to MALADIES_DATA if it exists
+    try {
+      if (typeof MALADIES_DATA !== 'undefined' && Array.isArray(MALADIES_DATA)) {
+        newDiseases.forEach(disease => {
+          if (!MALADIES_DATA.find(m => m.id === disease.id)) {
+            MALADIES_DATA.push(disease);
+          }
+        });
       }
-    });
+    } catch (e) { console.warn('[VetPro] Disease patch error:', e); }
   }
+
+  // Call on DOMContentLoaded + with retry
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyDrugNoticesAndDiseases);
+  } else {
+    applyDrugNoticesAndDiseases();
+  }
+
+  // Also retry after a short delay in case arrays are still loading
+  setTimeout(applyDrugNoticesAndDiseases, 500);
 })();
 </script>
 
