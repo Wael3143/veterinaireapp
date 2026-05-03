@@ -18806,5 +18806,105 @@ function saveAdmission() {
 })();
 </script>
 
+<script>
+(function(){
+  if (window.__vetproDrugNoticesLoaded) return;
+  window.__vetproDrugNoticesLoaded = true;
+
+  // Comprehensive pharmaceutical notices for all drugs
+  const DRUG_NOTICES = {
+    'lavamox': '<b>COMPOSITION :</b> Amoxicilline trihydrate 150 mg/mL (forme longue action). Excipients : huile de coco fractionnée, stéarate d\'aluminium.<br/><b>FORME PHARMACEUTIQUE :</b> Suspension injectable huileuse LA (longue action) en flacon 100 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat, bovins, ovins, porcins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15 mg/kg (1 mL/10 kg) SC, 1 injection/48 h. Chat : 15 mg/kg SC, même intervalle. La formulation LA permet un espacement des injections.<br/><b>MODE D\'ADMINISTRATION :</b> Voie SC stricte (pas d\'IM). Agiter vigoureusement avant emploi. Injecter en SC lâche inter-scapulaire ou du flanc. Volume max par site : 5 mL (chien), 2 mL (chat).<br/><b>DURÉE DE TRAITEMENT :</b> 3 à 5 injections (6-10 jours effectifs). Adapter selon réponse clinique.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 25 jours. Lait : 2,5 jours.<br/><b>SURDOSAGE :</b> Symptômes : réaction locale importante, diarrhée profuse. CAT : traitement symptomatique.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 3-6 h (SC, libération prolongée). Demi-vie apparente : 12-15 h. Élimination rénale sous forme active (60%).',
+    'ganamic': '<b>COMPOSITION :</b> Gentamicine sulfate 50 mg/mL (équivalent base). Excipients : méthylparabène, propylparabène, EDTA disodique, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide incolore, flacon 50 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (avec précautions), bovins, équins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 2-4 mg/kg IM ou SC, 2x/j pendant 5-7 jours. Chat : 2-3 mg/kg IM, 2x/j, max 5 jours (néphrotoxicité accrue).<br/><b>MODE D\'ADMINISTRATION :</b> IM profonde dans la cuisse. SC possible. Jamais en IV rapide (bloc neuromusculaire). Surveiller créatinine et urée à J3 et J5.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours maximum. Ne pas dépasser 10 jours.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 90 jours. Lait : 5 jours.<br/><b>SURDOSAGE :</b> Symptômes : oligurie, anurie, surdité, ataxie vestibulaire. CAT : fluidothérapie intensive, diurèse forcée, dialyse péritonéale si anurie. Pas d\'antidote.<br/><b>CONSERVATION :</b> 15-25 °C. Ne pas congeler. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 0.5-1 h (IM). Demi-vie : 1.5-2.5 h (chien), 2-3 h (chat). Élimination rénale 90% sous forme inchangée. Index thérapeutique étroit.',
+    'metro': '<b>COMPOSITION :</b> Métronidazole 250 mg par comprimé. Excipients : amidon de maïs, cellulose microcristalline, stéarate de magnésium.<br/><b>FORME PHARMACEUTIQUE :</b> Comprimé pelliculé sécable, boîte de 20.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (usage courant hors AMM vétérinaire).<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15-25 mg/kg PO 2x/j, 5-7 jours. Giardia : 25 mg/kg 1x/j pendant 5 jours. Chat : 10-15 mg/kg PO 2x/j, 5-7 jours (prudence neurotoxicité).<br/><b>MODE D\'ADMINISTRATION :</b> Voie orale avec nourriture (réduit nausées). Comprimé au goût très amer : enrober dans aliment appétent. Chat : écraser et mélanger ou utiliser forme suspension.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours standard. Giardiose : 5 jours. Ne pas dépasser 10 jours (neurotoxicité).<br/><b>DÉLAI D\'ATTENTE :</b> Non applicable (animaux de compagnie).<br/><b>SURDOSAGE :</b> Symptômes : nystagmus, ataxie, rigidité, convulsions, anorexie. CAT : arrêt immédiat, diazépam si convulsions, soins de support. Réversible en 1-2 semaines.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière et de l\'humidité.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 1-2 h (PO). Biodisponibilité orale ~100%. Demi-vie : 4-5 h (chien), 8 h (chat). Métabolisme hépatique (oxydation). Élimination urinaire (urine brun-rougeâtre = normal).',
+    'imidocarbe': '<b>COMPOSITION :</b> Imidocarbe dipropionate 85 mg/mL. Excipients : propylène glycol, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide jaune pâle, flacon 20 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, bovins, équins. CONTRE-INDIQUÉ CHEZ LE CHAT.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 7 mg/kg (0.08 mL/kg) IM profonde, 2 injections à J0 et J14. Babésiose sévère : dose unique de 7 mg/kg peut suffire.<br/><b>MODE D\'ADMINISTRATION :</b> OBLIGATOIRE : prémédication Atropine 0.02 mg/kg SC/IM 30 min avant (prévient effets cholinergiques). Injection IM profonde dans le muscle de la cuisse. Ne pas injecter en SC (nécrose). Garder l\'animal en observation 1h post-injection.<br/><b>DURÉE DE TRAITEMENT :</b> 2 injections espacées de 14 jours (babésiose). Ehrlichiose : associer doxycycline 4 semaines.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 213 jours (bovins). Lait : ne pas utiliser chez vache laitière.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation sévère, bradycardie, vomissements, diarrhée, tremblements, collapsus. CAT : Atropine 0.04 mg/kg IV immédiatement, fluidothérapie, monitoring cardiaque.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Ne pas réfrigérer (cristallisation). Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 2-4 h (IM). Demi-vie : 5-7 h. Forte liaison aux protéines tissulaires (foie, rein). Élimination rénale lente. Accumulation hépatique.',
+    'frontline-cat': '<b>COMPOSITION :</b> Fipronil 9.7%, S-méthoprène 11.8%. Excipients : hydroxyéthylcellulose, butoxyde de pipéronyle, huile minérale.<br/><b>FORME PHARMACEUTIQUE :</b> Solution spot-on en pipette monodose (0.5 mL pour chat).<br/><b>ESPÈCES CIBLES :</b> Chat uniquement (formule chat). NE PAS UTILISER CHEZ LE CHIEN.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chat : 1 pipette (0.5 mL) topique, 1x/mois. Appliquer sur la peau sèche à la base du crâne, zone inaccessible au léchage.<br/><b>MODE D\'ADMINISTRATION :</b> Écarter les poils au niveau de la nuque. Appliquer directement sur la peau. Ne pas immerger dans l\'eau 48h après l\'application. Laisser sécher avant contact.<br/><b>DURÉE DE TRAITEMENT :</b> 1 mois de protection par application. Renouveler mensuellement si infestation persistante.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation, tremblements, ataxie (si léché). CAT : rinçage abondant, soins symptomatiques.<br/><b>CONSERVATION :</b> 15-25 °C. Pipette fermée : 3 ans. Après ouverture : usage immédiat.<br/><b>PHARMACOCINÉTIQUE :</b> Action locale et systémique. Fipronil : absorption cutanée lente. Demi-vie : 17-19 jours (accumulation cutanée). S-méthoprène : inhibe développement larves, inhibition réversible.'
+  };
+
+  // Patch existing DRUGS array with notices
+  if (Array.isArray(window.DRUGS)) {
+    window.DRUGS.forEach(drug => {
+      if (DRUG_NOTICES[drug.id] && !drug.notice) {
+        drug.notice = DRUG_NOTICES[drug.id];
+      }
+    });
+  }
+
+  // Add more diseases to MALADIES_DATA
+  const newDiseases = [
+    {id:'conjunctivite',n:'Conjonctivite Allergique',e:'👁️',sp:'both',cat:'chronique',prev:'Fréquente printemps-été · Toutes races',z:false,
+      symp:['Larmoiement excessif','Œdème conjonctival','Prurit occulaire','Blépharospasme','Écoulement séreux/mucoid'],
+      diag:'Examen clinique · Coloration Schirmer · Exclusion corps étrangers',
+      trait:'Antihistaminiques topiques · Chromoglycate sodique · Corticoïdes court terme · Éviter allergène',
+      prev2:'Antihistaminiques préventifs saisonniers · Lavage oculaire régulier',
+      prog:'Excellent avec traitement antihistaminique · Récurrent saisonnier'},
+
+    {id:'keratite',n:'Kératite Ulcéreuse',e:'👁️',sp:'both',cat:'urgence',prev:'Urgence ophtalmologique · Chien brachycéphale ++',z:false,
+      symp:['Blépharospasme sévère','Photophobie extrême','Écoulement mucopurulent','Ulcération cornéenne','Nécrose tissulaire avancée'],
+      diag:'Fluorescéine (ulcère vert) · Coloration Lissamine · Examen lampe à fente',
+      trait:'Cicatrisation cornéenne · Transplant conjonctival · Débridement nécrose · Antibiothérapie massive',
+      prev2:'Hydratation oculaire intensive · Pansement occlusif temporaire',
+      prog:'Cicatrisation lente (3-6 mois) · Risque cécité si perforation'},
+
+    {id:'urolithiase',n:'Urolithiase (Calculs Urinaires)',e:'💧',sp:'both',cat:'urgence',prev:'Fréquente chat mâle (FLUTD) · Chien : phosphate ammonium-magnésium',z:false,
+      symp:['Dysurie intense','Hématurie','Strangurie (efforts miction)','Blocage urétral complet','Anuria possible'],
+      diag:'Radiographie abdominale (calculs radio-opaques) · Échographie (urate, xanthine) · Analyse urinaire',
+      trait:'Sondage d\'urgence si blocage · Dissolution médicaleparalittérature pH + diurétiques · Chirugie cystotomie si impasse',
+      prev2:'Diète spécifique pH urinaire · Hydratation libre · Prévention infection bactérienne secondaire',
+      prog:'Variable selon composition · Récurrence 15-30% sans prévention'},
+
+    {id:'cystite-idiopathique',n:'Cystite Idiopathique Féline (FIC)',e:'💧',sp:'chat',cat:'chronique',prev:'Très fréquente chat mâle 2-6 ans · Idiopathique 50-60% FLUTD',z:false,
+      symp:['Pollakiurie intense','Dysurie','Hématurie spontanée','Comportements aberrants miction','Stress/anxiété chronique'],
+      diag:'Exclusion infection (ECBU négatif) · Imagerie : exclusion calculs/masses · Cystoscopie si récidive',
+      trait:'Gestion stress · Antispasmodiques uréthraux · Enrichissement environnemental · Féromones félines',
+      prev2:'Eau libre ad libitum · Litières multiples · Réduction densité chat/foyer',
+      prog:'Rémission spontanée 40-50% · Récurrence chronique 39% · Complication rare'},
+
+    {id:'hyperaldosteronisme',n:'Hyperaldostéronisme Primitif Félin',e:'🔴',sp:'chat',cat:'urgence',prev:'Rare · Chat âgé hypertension sévère',z:false,
+      symp:['HTA sévère systolique (≥180 mmHg)','Hématurie spontanée','Hypokalémie','Faiblesse musculaire','Syncope hémodynamique'],
+      diag:'HTA persistante · Hypokalémie · Rapport aldostérone/rénine élevé · Imagerie surrénale (TDM/IRM)',
+      trait:'Inhibiteur aldostérone (spironolactone) · Bloquant calcique (amlodipine) · Supplémentation K+',
+      prev2:'Monitoring tensionnel régulier · Équilibre électrolytique · Néphroprotection IECA',
+      prog:'Contrôle HTA variable · Complications rénales chroniques'},
+
+    {id:'gliome-cerebral',n:'Gliome Cérébral',e:'🧠',sp:'both',cat:'urgence',prev:'Tumeur cérébrale la plus fréquente chien âgé',z:false,
+      symp:['Épilepsie d\'apparition tardive','Déficits neurologiques progressifs','Changement comportement','Désorientation','Ataxie hémisphérique'],
+      diag:'IRM cérébrale (imagerie de référence) · TDM si IRM indisponible · Analyse LCR si atypique',
+      trait:'Radiothérapie (30-36 Gy) · Corticoïdes (réduire œdème) · Anticonvulsivants prophylactiques',
+      prev2:'Chimiothérapie adjuvante (témozolomide) · Thérapie photodynamique expérimentale',
+      prog:'Médiane survie 11 mois (radiothérapie) vs 2 mois (supportif)'},
+
+    {id:'cholangiohepatite',n:'Cholangite-Hépatite Féline',e:'🫘',sp:'chat',cat:'urgence',prev:'Cause fréquente IRA chat · Peut être stérile ou infectieuse',z:false,
+      symp:['Anorexie complète','Ictère sévère','Vomissements','Apathie extrême','Encéphalopathie hépatique possible'],
+      diag:'Enzymatologie hépatique (ALP/ALT très élevées) · Échographie (perte architecture) · Biopsie hépatique (diagnostic).',
+      trait:'Antibiotiques empiriques ± débridement chirurgical · Soutien nutri-IV · Udca hépatoprotecteur · Traitement cause primaire',
+      prev2:'Gestion infection bactérienne secondaire · Transplantation hépatique si insuffisance complète (très rare)',
+      prog:'Mortalité élevée si stade avancé (60%) · Meilleur avec diagnostic précoce'},
+
+    {id:'hepatic-lipidosis',n:'Lipidose Hépatique Féline',e:'🫘',sp:'chat',cat:'urgence',prev:'Complication jeûne >48h · Chat obèse à risque · Peut être primaire ou secondaire',z:false,
+      symp:['Anorexie persistante','Ictère progressif','Vomissements','Dépression mentale','Encéphalopathie avancée possible'],
+      diag:'Transaminases modérément élevées · Bilirubine très élevée · Échographie (hyperéchogénicité diffuse) · Biopsie (diagnostic)',
+      trait:'Nutrition entérale forcée (sonde gastrique/jéjunale) · Supportif IV · Traitement maladie primaire',
+      prev2:'L-carnitine supplémentaire · Vitamine E antioxydant · Acide ursodésoxycholique',
+      prog:'Mortalité 40-60% sans nutrition forcée · Excellent si diagnostic précoce + sonde'},
+
+    {id:'hemobartonelle',n:'Mycoplasmose Féline (Hemotropique)',e:'🔴',sp:'chat',cat:'infectieuse',prev:'Fréquente chat FIV+ · Chat FeLV+ · Transmission : puces, morsures · Algérie 🇩🇿',z:false,
+      symp:['Anémie régénérative','Ictère intermittent','Fièvre cyclique','Apathie','Tachycardie compensatrice'],
+      diag:'Frottis sanguin (coques bordure érythrocyte) · PCR Mycoplasma sp. · FeLV/FIV dépistage associé',
+      trait:'Doxycycline 10 mg/kg 2x/j · 2 semaines minimum · Transfusion si Hb<7 g/dL',
+      prev2:'Contrôle puces · Prévention retransmission (FIV+) · Surveillance anémie rechute',
+      prog:'Rémission généralement complète avec antibiotiques · Rechute possible si immunosuppression'}
+  ];
+
+  // Add new diseases to MALADIES_DATA if it exists
+  if (Array.isArray(window.MALADIES_DATA)) {
+    newDiseases.forEach(disease => {
+      if (!window.MALADIES_DATA.find(m => m.id === disease.id)) {
+        window.MALADIES_DATA.push(disease);
+      }
+    });
+  }
+})();
+</script>
+
 </body>
 </html>
