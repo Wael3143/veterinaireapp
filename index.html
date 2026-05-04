@@ -2352,67 +2352,53 @@ window.addEventListener('DOMContentLoaded', () => {
     </div>
   </div>
 
-  <!-- TAB: Rappels -->
+  <!-- TAB: Rappels (dynamically rendered) -->
   <div id="vacc-rappels" style="display:none">
-    <div class="ibox ibox-a" style="margin-bottom:14px">🔔 <strong>3 rappels urgents dans les 10 prochains jours</strong> — Notifications automatiques 48h avant</div>
-    <div class="card">
-      <table class="tbl">
-        <thead><tr><th>Animal</th><th>Propriétaire</th><th>Vaccin dû</th><th>Date rappel</th><th>Statut</th><th>Actions</th></tr></thead>
-        <tbody>
-          <tr><td><strong>🐕 Rex</strong></td><td>Benali Ahmed · 0550 123 456</td><td>CHPPiL + Rage</td><td style="color:var(--danger);font-weight:700">22/04/2026</td><td><span class="bdg bdg-c">🚨 Urgent</span></td><td><button class="btn btn-sm btn-p" onclick="toast('SMS envoyé à Benali Ahmed ✅')">📱 SMS</button></td></tr>
-          <tr><td><strong>🐕 Titan</strong></td><td>Merzouk Rachid · 0661 234 567</td><td>CHPPiL annuel</td><td style="color:var(--warning);font-weight:700">28/04/2026</td><td><span class="bdg bdg-u">⚠️ Proche</span></td><td><button class="btn btn-sm btn-p" onclick="toast('SMS envoyé ✅')">📱 SMS</button></td></tr>
-          <tr><td><strong>🐈 Luna</strong></td><td>Hamdi Karim · 0770 345 678</td><td>CHPCH + Rage</td><td style="color:var(--warning);font-weight:700">02/05/2026</td><td><span class="bdg bdg-u">⚠️ Proche</span></td><td><button class="btn btn-sm btn-p" onclick="toast('Email envoyé ✅')">✉️ Email</button></td></tr>
-          <tr><td><strong>🐕 Bruno</strong></td><td>Saâdi Omar · 0555 456 789</td><td>Rage + Letifend</td><td>15/05/2026</td><td><span class="bdg bdg-n">✅ OK</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('modal-rdv')">📅 RDV</button></td></tr>
-          <tr><td><strong>🐈 Misty</strong></td><td>Kaci Fatima · 0699 567 890</td><td>CHPCH annuel</td><td>20/05/2026</td><td><span class="bdg bdg-n">✅ OK</span></td><td><button class="btn btn-sm btn-ghost" onclick="openModal('modal-rdv')">📅 RDV</button></td></tr>
-        </tbody>
-      </table>
-    </div>
+    <div id="vacc-rappels-content"></div>
   </div>
 
-  <!-- TAB: Historique -->
+  <!-- TAB: Historique (dynamically rendered) -->
   <div id="vacc-historique" style="display:none">
-    <div class="g2">
-      <div class="card">
-        <div class="card-title">📜 Historique — 🐕 Rex (Benali Ahmed)</div>
-        <table class="tbl">
-          <thead><tr><th>Date</th><th>Vaccin</th><th>Lot</th><th>Vétérinaire</th><th>Prochain rappel</th></tr></thead>
-          <tbody>
-            <tr><td>22/04/2025</td><td><strong>CHPPiL + Rage (Hexadog + Rabisin)</strong></td><td>HD-23847A / RS-11203</td><td>Dr. Kherbache</td><td style="color:var(--danger);font-weight:700">22/04/2026 🚨</td></tr>
-            <tr><td>22/04/2024</td><td>CHPPiL + Rage</td><td>HD-22156B / RS-10021</td><td>Dr. Kherbache</td><td>22/04/2025 ✅</td></tr>
-            <tr><td>15/01/2024</td><td>Letifend (Leishmaniose J3)</td><td>LF-21099C</td><td>Dr. Kherbache</td><td>15/01/2025 ✅</td></tr>
-            <tr><td>25/12/2023</td><td>Letifend (J2)</td><td>LF-20988B</td><td>Dr. Kherbache</td><td>—</td></tr>
-            <tr><td>04/12/2023</td><td>Letifend (J1)</td><td>LF-20877A</td><td>Dr. Kherbache</td><td>—</td></tr>
-            <tr><td>12/06/2022</td><td>CHPPi J1 (Canigen)</td><td>CG-19334A</td><td>Dr. Kherbache</td><td>—</td></tr>
-            <tr><td>10/07/2022</td><td>CHPPiL + Rage J2 (Hexadog + Rabisin)</td><td>HD-19411B / RS-9021</td><td>Dr. Kherbache</td><td>—</td></tr>
-          </tbody>
-        </table>
-        <div style="display:flex;gap:9px;margin-top:12px">
-          <button class="btn btn-p" onclick="toast('Certificat de vaccination Rex généré ✅')">📄 Certificat</button>
-          <button class="btn btn-ghost" onclick="openModal('modal-vacc-new')">➕ Ajouter vaccination</button>
-        </div>
+    <div id="vacc-historique-content"></div>
+  </div>
+</div>
+
+<!-- Modal: Enregistrer vaccination -->
+<div class="overlay" id="modal-vacc-new">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-hdr"><div class="modal-title">💉 Enregistrer une vaccination</div><button class="btn-ico" onclick="closeModal('modal-vacc-new')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div class="fg"><label class="lbl">Animal *</label><select class="sel" id="vacc-new-patient"></select></div>
+      <div class="fg"><label class="lbl">Vaccin administré *</label>
+        <select class="sel" id="vacc-new-vaccine" onchange="document.getElementById('vacc-new-custom-wrap').style.display=this.value==='autre'?'block':'none'">
+          <option value="">— Sélectionner —</option>
+          <optgroup label="🐕 Chien">
+            <option>CHPPi J1 (Canigen)</option>
+            <option>CHPPiL (Hexadog)</option>
+            <option>CHPPiL + Rage (Hexadog + Rabisin)</option>
+            <option>Rage seule (Rabisin)</option>
+            <option>Letifend (Leishmaniose)</option>
+            <option>Parvovirus seul</option>
+          </optgroup>
+          <optgroup label="🐈 Chat">
+            <option>CHPCH (Feligen CRP)</option>
+            <option>CHPCH + Rage</option>
+            <option>FeLV (Leucogen)</option>
+            <option>Rage seule (Rabisin)</option>
+          </optgroup>
+          <option value="autre">Autre (saisie libre)</option>
+        </select>
       </div>
-      <div class="card">
-        <div class="card-title">👥 Sélectionner un patient</div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="padding:10px 14px;border:1.5px solid var(--sage);border-radius:10px;cursor:pointer;background:rgba(74,124,89,.04)" onclick="toast('Historique Rex affiché')">
-            <div style="display:flex;justify-content:space-between;align-items:center"><strong>🐕 Rex</strong> · Benali Ahmed<span class="bdg bdg-c">🚨 Dû</span></div>
-            <div style="font-size:11px;color:var(--muted)">CHPPiL+Rage · Dernier : 22/04/2025 · Prochain : 22/04/2026</div>
-          </div>
-          <div style="padding:10px 14px;border:1px solid var(--brd);border-radius:10px;cursor:pointer" onclick="toast('Historique Fido affiché')">
-            <div style="display:flex;justify-content:space-between;align-items:center"><strong>🐕 Fido</strong> · Hamdi Karim<span class="bdg bdg-u">⚠️ Proche</span></div>
-            <div style="font-size:11px;color:var(--muted)">CHPPiL+Rage · Dernier : 14/04/2025 · Prochain : 28/04/2026</div>
-          </div>
-          <div style="padding:10px 14px;border:1px solid var(--brd);border-radius:10px;cursor:pointer" onclick="toast('Historique Misty affiché')">
-            <div style="display:flex;justify-content:space-between;align-items:center"><strong>🐈 Misty</strong> · Kaci Fatima<span class="bdg bdg-n">✅ OK</span></div>
-            <div style="font-size:11px;color:var(--muted)">CHPCH+Rage · Dernier : 20/05/2025 · Prochain : 20/05/2026</div>
-          </div>
-          <div style="padding:10px 14px;border:1px solid var(--brd);border-radius:10px;cursor:pointer" onclick="toast('Historique Luna affiché')">
-            <div style="display:flex;justify-content:space-between;align-items:center"><strong>🐈 Luna</strong> · Hamdi Karim<span class="bdg bdg-n">✅ OK</span></div>
-            <div style="font-size:11px;color:var(--muted)">CHPCH+Rage · Dernier : 02/05/2025 · Prochain : 02/05/2026</div>
-          </div>
-        </div>
-        <button class="btn btn-p btn-full" style="margin-top:12px" onclick="openModal('modal-vacc-new')">➕ Enregistrer vaccination</button>
+      <div class="fg" id="vacc-new-custom-wrap" style="display:none"><label class="lbl">Nom du vaccin</label><input class="inp" id="vacc-new-custom" placeholder="Nom du vaccin"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="lbl">Date vaccination *</label><input class="inp" type="date" id="vacc-new-date"/></div>
+        <div class="fg"><label class="lbl">N° de lot</label><input class="inp" id="vacc-new-lot" placeholder="HD-23847A"/></div>
       </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="lbl">Vétérinaire</label><input class="inp" id="vacc-new-vet" placeholder="Dr. Kherbache"/></div>
+        <div class="fg"><label class="lbl">Prochain rappel</label><input class="inp" type="date" id="vacc-new-rappel"/></div>
+      </div>
+      <div style="display:flex;gap:10px"><button class="btn btn-p" style="flex:1;justify-content:center" onclick="saveNewVaccination()">💉 Enregistrer</button><button class="btn btn-ghost" onclick="closeModal('modal-vacc-new')">Annuler</button></div>
     </div>
   </div>
 </div>
@@ -2992,14 +2978,45 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <!-- Cage New / Admission -->
 <div class="overlay" id="modal-cage-new">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:540px">
     <div class="modal-hdr"><div class="modal-title">🏥 Admettre un animal</div><button class="btn-ico" onclick="closeModal('modal-cage-new')">✕</button></div>
-    <div class="row2"><div class="fg"><label class="lbl">Cage *</label><select class="sel"><option>C2 — Libre</option><option>C5 — Libre</option><option>C6 — Libre</option><option>C11 — Libre</option><option>C12 — Libre</option></select></div><div class="fg"><label class="lbl">Animal *</label><select class="sel"><option>Rex (Benali Ahmed)</option><option>Fido (Hamdi Karim)</option><option>Misty (Kaci Fatima)</option></select></div></div>
-    <div class="fg"><label class="lbl">Motif d'hospitalisation *</label><input class="inp" placeholder="Ex: Parvovirose — surveillance post-traitement"/></div>
-    <div class="row2"><div class="fg"><label class="lbl">Date d'entrée</label><input class="inp" type="datetime-local"/></div><div class="fg"><label class="lbl">Date sortie prévue</label><input class="inp" type="date"/></div></div>
-    <div class="fg"><label class="lbl">Notes</label><textarea class="tex" rows="2" placeholder="Instructions particulières, régime alimentaire…"></textarea></div>
-    <div class="ibox ibox-b">📧 Un email de confirmation sera envoyé au propriétaire si un email est disponible.</div>
-    <div style="display:flex;gap:10px"><button class="btn btn-p" style="flex:1;justify-content:center" onclick="closeModal('modal-cage-new');toast('Animal admis ✅ — Cage mise à jour')">Admettre</button><button class="btn btn-ghost" onclick="closeModal('modal-cage-new')">Annuler</button></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Cage selection -->
+      <div class="fg"><label class="lbl">Cage *</label><select class="sel" id="admit-cage-id"></select></div>
+      <!-- Mode toggle -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button type="button" class="btn btn-p" id="admission-mode-existing" onclick="toggleCageAdmissionMode('existing')">Client existant</button>
+        <button type="button" class="btn btn-ghost" id="admission-mode-new" onclick="toggleCageAdmissionMode('new')">Nouveau client</button>
+      </div>
+      <input type="hidden" id="admission-mode" value="existing"/>
+      <!-- Existing client: animal select -->
+      <div class="fg" id="admit-existing-wrap"><label class="lbl">Animal *</label><select class="sel" id="admit-animal-id"></select></div>
+      <!-- New client fields -->
+      <div id="admission-new-client" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="fg"><label class="lbl">Prénom client *</label><input class="inp" id="admit-client-first" placeholder="Ahmed"/></div>
+          <div class="fg"><label class="lbl">Nom client *</label><input class="inp" id="admit-client-last" placeholder="Benali"/></div>
+        </div>
+        <div class="fg" style="margin-bottom:10px"><label class="lbl">Téléphone</label><input class="inp" id="admit-client-phone" placeholder="0550 000 000"/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+          <div class="fg"><label class="lbl">Nom animal *</label><input class="inp" id="admit-animal-new" placeholder="Bella"/></div>
+          <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="admit-species-new"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="fg"><label class="lbl">Race</label><input class="inp" id="admit-race-new" placeholder="Labrador"/></div>
+          <div class="fg"><label class="lbl">Poids (kg)</label><input class="inp" id="admit-weight-new" placeholder="18"/></div>
+        </div>
+      </div>
+      <!-- Common fields -->
+      <div class="fg"><label class="lbl">Motif d'hospitalisation *</label><input class="inp" id="admit-motif" placeholder="Ex: Parvovirose — surveillance post-traitement"/></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="fg"><label class="lbl">Date d'entrée</label><input class="inp" type="datetime-local" id="admit-entry-date"/></div>
+        <div class="fg"><label class="lbl">Date sortie prévue</label><input class="inp" type="date" id="admit-exit-date"/></div>
+      </div>
+      <div class="fg"><label class="lbl">Notes</label><textarea class="tex" rows="2" id="admit-notes" placeholder="Instructions particulières, régime alimentaire…"></textarea></div>
+      <div class="ibox ibox-b">📧 Un email de confirmation sera envoyé au propriétaire si un email est disponible.</div>
+      <div style="display:flex;gap:10px"><button class="btn btn-p" style="flex:1;justify-content:center" onclick="saveAdmission()">Admettre</button><button class="btn btn-ghost" onclick="closeModal('modal-cage-new')">Annuler</button></div>
+    </div>
   </div>
 </div>
 
@@ -3644,19 +3661,7 @@ function ensureModalBindings(){
     const saveBtn = drugModal.querySelector('.btn.btn-p');
     if (saveBtn) saveBtn.onclick = saveDrug;
   }
-  const cageModal = document.getElementById('modal-cage-new');
-  if (cageModal) {
-    const selects = cageModal.querySelectorAll('select');
-    const inputs = cageModal.querySelectorAll('input, textarea');
-    if (selects[0]) selects[0].id = 'admit-cage-id';
-    if (selects[1]) selects[1].id = 'admit-animal-id';
-    if (inputs[0]) inputs[0].id = 'admit-motif';
-    if (inputs[1]) inputs[1].id = 'admit-entry-date';
-    if (inputs[2]) inputs[2].id = 'admit-exit-date';
-    if (inputs[3]) inputs[3].id = 'admit-notes';
-    const saveBtn = cageModal.querySelector('.btn.btn-p');
-    if (saveBtn) saveBtn.onclick = saveAdmission;
-  }
+  // Cage admission modal already has IDs built-in — no index-based assignment needed
   const rdvModal = document.getElementById('modal-rdv');
   if (rdvModal) {
     const fields = rdvModal.querySelectorAll('select, input');
@@ -3800,32 +3805,7 @@ function saveClientAnimalBundle(){
   toast('Client et animal enregistres pour cet utilisateur');
 }
 function ensureCageAdmissionEnhancements(){
-  const modal = document.getElementById('modal-cage-new');
-  if (!modal || document.getElementById('admission-mode')) return;
-  const title = modal.querySelector('.modal-title');
-  if (!title) return;
-  title.insertAdjacentHTML('afterend', `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 14px">
-      <button type="button" class="btn btn-p" id="admission-mode-existing" onclick="toggleCageAdmissionMode('existing')">Client existant</button>
-      <button type="button" class="btn btn-ghost" id="admission-mode-new" onclick="toggleCageAdmissionMode('new')">Nouveau client</button>
-    </div>
-    <input type="hidden" id="admission-mode" value="existing"/>
-    <div id="admission-new-client" style="display:none;margin-bottom:12px">
-      <div class="row2">
-        <div class="fg"><label class="lbl">Prenom client</label><input class="inp" id="admit-client-first" placeholder="Ahmed"/></div>
-        <div class="fg"><label class="lbl">Nom client</label><input class="inp" id="admit-client-last" placeholder="Benali"/></div>
-      </div>
-      <div class="row2">
-        <div class="fg"><label class="lbl">Telephone</label><input class="inp" id="admit-client-phone" placeholder="0550 000 000"/></div>
-        <div class="fg"><label class="lbl">Nom animal</label><input class="inp" id="admit-animal-new" placeholder="Bella"/></div>
-      </div>
-      <div class="row3">
-        <div class="fg"><label class="lbl">Espece</label><select class="sel" id="admit-species-new"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
-        <div class="fg"><label class="lbl">Race</label><input class="inp" id="admit-race-new" placeholder="Labrador"/></div>
-        <div class="fg"><label class="lbl">Poids</label><input class="inp" id="admit-weight-new" placeholder="18"/></div>
-      </div>
-    </div>
-  `);
+  // Modal already has built-in structure with IDs — no dynamic injection needed
 }
 function toggleCageAdmissionMode(mode){
   const input = document.getElementById('admission-mode');
@@ -4195,6 +4175,7 @@ function persistAppState(){
     suivi: SUIVI_HISTORY,
     appointments: APPOINTMENTS,
     vaccineReminders: VACCINE_REMINDERS,
+    vaccHistory: VACC_HISTORY,
     patients: PATIENTS,
     clients: CLIENTS,
   }));
@@ -4224,6 +4205,7 @@ function initializePersistentState(){
   replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
   replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
   replaceArrayContents(VACCINE_REMINDERS, saved?.vaccineReminders || defaults.vaccineReminders);
+  replaceArrayContents(VACC_HISTORY, saved?.vaccHistory || getDefaultVaccHistory());
   replaceObjectContents(SUIVI_HISTORY, saved?.suivi || defaults.suivi);
   PATIENTS = deepClone(saved?.patients || defaults.patients);
   CLIENTS = deepClone(saved?.clients || defaults.clients);
@@ -6324,6 +6306,171 @@ function setVaccTab(el, tab) {
   chips.forEach(c => c.classList.remove('on'));
   if (el) el.classList.add('on');
   if (tab === 'rappels') renderVaccineReminders();
+  if (tab === 'historique') renderVaccHistorique();
+}
+
+// ── Vaccination History Data ──
+let VACC_HISTORY = [];
+function getDefaultVaccHistory() {
+  return [
+    {id:'vh1',patientId:'rex-benali-ahmed',animal:'Rex',owner:'Benali Ahmed',species:'Chien',vaccine:'CHPPiL + Rage (Hexadog + Rabisin)',lot:'HD-23847A / RS-11203',vet:'Dr. Kherbache',date:'2025-04-22',rappel:'2026-04-22'},
+    {id:'vh2',patientId:'rex-benali-ahmed',animal:'Rex',owner:'Benali Ahmed',species:'Chien',vaccine:'CHPPiL + Rage',lot:'HD-22156B / RS-10021',vet:'Dr. Kherbache',date:'2024-04-22',rappel:'2025-04-22'},
+    {id:'vh3',patientId:'rex-benali-ahmed',animal:'Rex',owner:'Benali Ahmed',species:'Chien',vaccine:'Letifend (Leishmaniose J3)',lot:'LF-21099C',vet:'Dr. Kherbache',date:'2024-01-15',rappel:'2025-01-15'},
+    {id:'vh4',patientId:'rex-benali-ahmed',animal:'Rex',owner:'Benali Ahmed',species:'Chien',vaccine:'Letifend (J2)',lot:'LF-20988B',vet:'Dr. Kherbache',date:'2023-12-25',rappel:''},
+    {id:'vh5',patientId:'rex-benali-ahmed',animal:'Rex',owner:'Benali Ahmed',species:'Chien',vaccine:'Letifend (J1)',lot:'LF-20877A',vet:'Dr. Kherbache',date:'2023-12-04',rappel:''},
+    {id:'vh6',patientId:'rex-benali-ahmed',animal:'Rex',owner:'Benali Ahmed',species:'Chien',vaccine:'CHPPi J1 (Canigen)',lot:'CG-19334A',vet:'Dr. Kherbache',date:'2022-06-12',rappel:''},
+    {id:'vh7',patientId:'rex-benali-ahmed',animal:'Rex',owner:'Benali Ahmed',species:'Chien',vaccine:'CHPPiL + Rage J2 (Hexadog + Rabisin)',lot:'HD-19411B / RS-9021',vet:'Dr. Kherbache',date:'2022-07-10',rappel:''},
+  ];
+}
+
+let _vaccHistSelectedPatient = null;
+
+function renderVaccHistorique() {
+  const wrap = document.getElementById('vacc-historique-content') || document.getElementById('vacc-historique');
+  if (!wrap) return;
+  const patients = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).slice().sort((a,b) => a.name.localeCompare(b.name));
+  const selectedId = _vaccHistSelectedPatient || (patients[0]?.id || '');
+  const selectedPatient = patients.find(p => p.id === selectedId);
+  const history = VACC_HISTORY.filter(v => v.patientId === selectedId).sort((a,b) => b.date.localeCompare(a.date));
+
+  wrap.innerHTML = `
+    <div class="g2">
+      <div class="card">
+        <div class="card-title">📜 Historique${selectedPatient ? ' — ' + displayAnimalName(selectedPatient.name, selectedPatient.species) + ' (' + selectedPatient.owner + ')' : ''}</div>
+        ${history.length ? `<table class="tbl">
+          <thead><tr><th>Date</th><th>Vaccin</th><th>Lot</th><th>Vétérinaire</th><th>Prochain rappel</th></tr></thead>
+          <tbody>
+            ${history.map(v => {
+              const rappelStyle = v.rappel && new Date(v.rappel) < new Date() ? 'color:var(--danger);font-weight:700' : '';
+              const rappelIcon = v.rappel && new Date(v.rappel) < new Date() ? ' 🚨' : (v.rappel ? ' ✅' : '');
+              return `<tr><td>${shortFrDate(v.date)}</td><td><strong>${v.vaccine}</strong></td><td>${v.lot||'—'}</td><td>${v.vet||'—'}</td><td style="${rappelStyle}">${v.rappel ? shortFrDate(v.rappel) + rappelIcon : '—'}</td></tr>`;
+            }).join('')}
+          </tbody>
+        </table>` : '<div style="padding:24px;text-align:center;color:var(--muted)">Aucune vaccination enregistrée pour ce patient</div>'}
+        <div style="display:flex;gap:9px;margin-top:12px">
+          <button class="btn btn-p" onclick="generateVaccCertificate('${selectedId}')">📄 Certificat</button>
+          <button class="btn btn-ghost" onclick="openVaccModal('${selectedId}')">➕ Ajouter vaccination</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">👥 Sélectionner un patient</div>
+        <div style="display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto">
+          ${patients.length ? patients.map(p => {
+            const isActive = p.id === selectedId;
+            const lastVacc = VACC_HISTORY.filter(v => v.patientId === p.id).sort((a,b) => b.date.localeCompare(a.date))[0];
+            const nextDue = lastVacc?.rappel || '';
+            const overdue = nextDue && new Date(nextDue) < new Date();
+            const badge = overdue ? '<span class="bdg bdg-c">🚨 Dû</span>' : (nextDue ? '<span class="bdg bdg-n">✅ OK</span>' : '');
+            return `<div style="padding:10px 14px;border:${isActive ? '1.5px solid var(--sage)' : '1px solid var(--brd)'};border-radius:10px;cursor:pointer;${isActive ? 'background:rgba(74,124,89,.04)' : ''}" onclick="selectVaccPatient('${p.id}')">
+              <div style="display:flex;justify-content:space-between;align-items:center"><strong>${displayAnimalName(p.name, p.species)}</strong> · ${p.owner}${badge}</div>
+              ${lastVacc ? '<div style="font-size:11px;color:var(--muted)">' + lastVacc.vaccine + ' · Dernier : ' + shortFrDate(lastVacc.date) + (nextDue ? ' · Prochain : ' + shortFrDate(nextDue) : '') + '</div>' : '<div style="font-size:11px;color:var(--muted)">Aucune vaccination</div>'}
+            </div>`;
+          }).join('') : '<div style="padding:24px;text-align:center;color:var(--muted)">Aucun patient enregistré</div>'}
+        </div>
+        <button class="btn btn-p btn-full" style="margin-top:12px" onclick="openModal('modal-vacc-new')">➕ Enregistrer vaccination</button>
+      </div>
+    </div>
+  `;
+}
+
+function selectVaccPatient(patientId) {
+  _vaccHistSelectedPatient = patientId;
+  renderVaccHistorique();
+}
+
+function openVaccModal(patientId) {
+  populateVaccPatientSelect();
+  const sel = document.getElementById('vacc-new-patient');
+  if (sel && patientId) sel.value = patientId;
+  // Set today as default date
+  const dateInput = document.getElementById('vacc-new-date');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().slice(0,10);
+  openModal('modal-vacc-new');
+}
+
+function populateVaccPatientSelect() {
+  const sel = document.getElementById('vacc-new-patient');
+  if (!sel) return;
+  const patients = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).slice().sort((a,b) => a.name.localeCompare(b.name));
+  sel.innerHTML = patients.map(p => `<option value="${p.id}">${displayAnimalName(p.name, p.species)} (${p.owner})</option>`).join('') || '<option value="">Aucun patient</option>';
+}
+
+function saveNewVaccination() {
+  const patientId = document.getElementById('vacc-new-patient')?.value;
+  const vaccineSelect = document.getElementById('vacc-new-vaccine')?.value;
+  const customVaccine = document.getElementById('vacc-new-custom')?.value?.trim();
+  const vaccine = vaccineSelect === 'autre' ? customVaccine : vaccineSelect;
+  const date = document.getElementById('vacc-new-date')?.value;
+  const lot = document.getElementById('vacc-new-lot')?.value?.trim() || '';
+  const vet = document.getElementById('vacc-new-vet')?.value?.trim() || '';
+  const rappel = document.getElementById('vacc-new-rappel')?.value || '';
+
+  if (!patientId || !vaccine || !date) { toast('Animal, vaccin et date sont requis'); return; }
+  const patient = getPatientById(patientId);
+  if (!patient) { toast('Patient introuvable'); return; }
+
+  VACC_HISTORY.unshift({
+    id: 'vh-' + Date.now(),
+    patientId,
+    animal: patient.name,
+    owner: patient.owner,
+    species: patient.species || 'Chien',
+    vaccine,
+    lot,
+    vet,
+    date,
+    rappel,
+  });
+
+  // Auto-create reminder if rappel date set
+  if (rappel) {
+    VACCINE_REMINDERS.unshift({
+      id: 'vacc-' + Date.now(),
+      patientId,
+      animal: patient.name,
+      owner: patient.owner,
+      vaccine,
+      reminderDate: rappel,
+      channel: 'sms',
+      status: classifyReminderStatus(rappel),
+    });
+  }
+
+  persistAppState();
+  closeModal('modal-vacc-new');
+  _vaccHistSelectedPatient = patientId;
+  renderVaccHistorique();
+  toast('Vaccination enregistrée ✅');
+}
+
+function generateVaccCertificate(patientId) {
+  const patient = getPatientById(patientId);
+  if (!patient) { toast('Sélectionnez un patient'); return; }
+  const history = VACC_HISTORY.filter(v => v.patientId === patientId).sort((a,b) => b.date.localeCompare(a.date));
+  if (!history.length) { toast('Aucune vaccination enregistrée pour ce patient'); return; }
+
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Certificat Vaccination - ${patient.name}</title>
+  <style>body{font-family:Arial,sans-serif;max-width:700px;margin:40px auto;padding:20px}
+  h1{text-align:center;color:#1a3c34;border-bottom:3px solid #4a7c59;padding-bottom:10px}
+  h2{color:#4a7c59}table{width:100%;border-collapse:collapse;margin:15px 0}
+  th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#f0f4f0;color:#1a3c34}
+  .header{display:flex;justify-content:space-between;margin-bottom:20px}
+  .stamp{text-align:center;margin-top:40px;color:#666;font-style:italic}
+  @media print{button{display:none!important}}</style></head>
+  <body>
+  <h1>🏥 Certificat de Vaccination</h1>
+  <div class="header"><div><strong>Animal :</strong> ${patient.name}<br><strong>Espèce :</strong> ${patient.species || 'Non précisé'}<br><strong>Race :</strong> ${patient.race || 'Non précisé'}</div>
+  <div><strong>Propriétaire :</strong> ${patient.owner}<br><strong>Tél :</strong> ${patient.phone || 'Non précisé'}<br><strong>Date :</strong> ${new Date().toLocaleDateString('fr-FR')}</div></div>
+  <h2>Historique vaccinal</h2>
+  <table><thead><tr><th>Date</th><th>Vaccin</th><th>N° Lot</th><th>Vétérinaire</th><th>Rappel</th></tr></thead>
+  <tbody>${history.map(v => `<tr><td>${shortFrDate(v.date)}</td><td>${v.vaccine}</td><td>${v.lot||'—'}</td><td>${v.vet||'—'}</td><td>${v.rappel ? shortFrDate(v.rappel) : '—'}</td></tr>`).join('')}</tbody></table>
+  <div class="stamp"><p>Certifié conforme — VetPro Algérie</p><p>Cachet et signature du vétérinaire</p></div>
+  <button onclick="window.print()" style="display:block;margin:20px auto;padding:10px 30px;background:#4a7c59;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:16px">🖨️ Imprimer</button>
+  </body></html>`;
+
+  const w = window.open('', '_blank');
+  if (w) { w.document.write(html); w.document.close(); }
+  else toast('Popup bloqué — autorisez les popups');
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -7595,72 +7742,7 @@ function saveDrug() {
   toast('✅ Médicament enregistré et sauvegardé');
 }
 
-function saveAdmission() {
-  const cageId = document.getElementById('admit-cage-id')?.value;
-  const patientId = document.getElementById('admit-animal-id')?.value;
-  const motif = document.getElementById('admit-motif')?.value?.trim();
-  if (!cageId || !patientId || !motif) { toast('⚠️ Cage, animal et motif sont requis'); return; }
-  const cage = CAGES.find(c => c.id === cageId);
-  const patient = getPatientById(patientId);
-  if (!cage || !patient) { toast('⚠️ Impossible de trouver la cage ou le patient'); return; }
-  cage.statut = 'occup茅e';
-  cage.statut = 'occup茅e';
-  cage.animal = displayAnimalName(patient.name, patient.species);
-  cage.statut = 'occup茅e';
-  cage.motif = motif;
-  cage.statut = 'occup茅e';
-  cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
-  cage.notes = document.getElementById('admit-notes')?.value?.trim() || null;
-  if (!SUIVI_HISTORY[cageId]) SUIVI_HISTORY[cageId] = [];
-  patient.nextRdv = shortFrDate(document.getElementById('admit-exit-date')?.value || '') || patient.nextRdv;
-  upsertClientFromPatient(patient);
-  persistAppState();
-  closeModal('modal-cage-new');
-  activeCageId = cageId;
-  renderCages();
-  selectCage(cageId);
-  toast(`✅ ${patient.name} admis en ${cageId}`);
-}
-
-function saveAdmission() {
-  const cageId = document.getElementById('admit-cage-id')?.value;
-  const motif = document.getElementById('admit-motif')?.value?.trim();
-  const mode = document.getElementById('admission-mode')?.value || 'existing';
-  if (!cageId || !motif) { toast('Cage et motif sont requis'); return; }
-  const cage = CAGES.find(c => c.id === cageId);
-  let patient = null;
-  if (mode === 'new') {
-    const owner = [document.getElementById('admit-client-first')?.value?.trim(), document.getElementById('admit-client-last')?.value?.trim()].filter(Boolean).join(' ').trim();
-    const animalName = document.getElementById('admit-animal-new')?.value?.trim();
-    if (!owner || !animalName) { toast('Client et animal requis pour une nouvelle admission'); return; }
-    patient = upsertPatient({
-      name: animalName,
-      species: document.getElementById('admit-species-new')?.value || 'Chien',
-      race: document.getElementById('admit-race-new')?.value?.trim() || '',
-      weight: document.getElementById('admit-weight-new')?.value?.trim() ? `${document.getElementById('admit-weight-new').value.trim()} kg` : '',
-      owner,
-      phone: document.getElementById('admit-client-phone')?.value?.trim() || '',
-      nextRdv: shortFrDate(document.getElementById('admit-exit-date')?.value || ''),
-    });
-  } else {
-    patient = getPatientById(document.getElementById('admit-animal-id')?.value);
-  }
-  if (!cage || !patient) { toast('Impossible de trouver la cage ou le patient'); return; }
-  cage.statut = 'occup茅e';
-  cage.animal = displayAnimalName(patient.name, patient.species);
-  cage.motif = motif;
-  cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
-  cage.notes = document.getElementById('admit-notes')?.value?.trim() || null;
-  if (!SUIVI_HISTORY[cageId]) SUIVI_HISTORY[cageId] = [];
-  patient.nextRdv = shortFrDate(document.getElementById('admit-exit-date')?.value || '') || patient.nextRdv;
-  upsertClientFromPatient(patient);
-  persistAppState();
-  closeModal('modal-cage-new');
-  activeCageId = cageId;
-  renderCages();
-  selectCage(cageId);
-  toast(`${patient.name} admis en ${cageId}`);
-}
+// saveAdmission defined below with full new/existing client support
 
 function saveNewCase() {
   ensureCaseFormEnhancements();
@@ -7729,46 +7811,6 @@ function saveNewCase() {
   populatePatientSelects();
   toast('✅ Cas clinique enregistré et sauvegardé');
   nav('historique');
-}
-
-function saveAdmission() {
-  const cageId = document.getElementById('admit-cage-id')?.value;
-  const motif = document.getElementById('admit-motif')?.value?.trim();
-  const mode = document.getElementById('admission-mode')?.value || 'existing';
-  if (!cageId || !motif) { toast('Cage et motif sont requis'); return; }
-  const cage = CAGES.find(c => c.id === cageId);
-  let patient = null;
-  if (mode === 'new') {
-    const owner = [document.getElementById('admit-client-first')?.value?.trim(), document.getElementById('admit-client-last')?.value?.trim()].filter(Boolean).join(' ').trim();
-    const animalName = document.getElementById('admit-animal-new')?.value?.trim();
-    if (!owner || !animalName) { toast('Client et animal requis pour une nouvelle admission'); return; }
-    patient = upsertPatient({
-      name: animalName,
-      species: document.getElementById('admit-species-new')?.value || 'Chien',
-      race: document.getElementById('admit-race-new')?.value?.trim() || '',
-      weight: document.getElementById('admit-weight-new')?.value?.trim() ? `${document.getElementById('admit-weight-new').value.trim()} kg` : '',
-      owner,
-      phone: document.getElementById('admit-client-phone')?.value?.trim() || '',
-      nextRdv: shortFrDate(document.getElementById('admit-exit-date')?.value || ''),
-    });
-  } else {
-    patient = getPatientById(document.getElementById('admit-animal-id')?.value);
-  }
-  if (!cage || !patient) { toast('Impossible de trouver la cage ou le patient'); return; }
-  cage.statut = 'occup茅e';
-  cage.animal = displayAnimalName(patient.name, patient.species);
-  cage.motif = motif;
-  cage.depuis = shortFrDate(document.getElementById('admit-entry-date')?.value || '') || todayFr().slice(0,5);
-  cage.notes = document.getElementById('admit-notes')?.value?.trim() || null;
-  if (!SUIVI_HISTORY[cageId]) SUIVI_HISTORY[cageId] = [];
-  patient.nextRdv = shortFrDate(document.getElementById('admit-exit-date')?.value || '') || patient.nextRdv;
-  upsertClientFromPatient(patient);
-  persistAppState();
-  closeModal('modal-cage-new');
-  activeCageId = cageId;
-  renderCages();
-  selectCage(cageId);
-  toast(`${patient.name} admis en ${cageId}`);
 }
 
 function saveAdmission() {
@@ -9605,6 +9647,7 @@ function saveAdmission() {
       suivi: SUIVI_HISTORY,
       appointments: APPOINTMENTS,
       vaccineReminders: VACCINE_REMINDERS,
+      vaccHistory: VACC_HISTORY,
       patients: PATIENTS,
       clients: CLIENTS
     };
@@ -9620,6 +9663,7 @@ function saveAdmission() {
     replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
     replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
     replaceArrayContents(VACCINE_REMINDERS, saved?.vaccineReminders || defaults.vaccineReminders);
+    if (typeof VACC_HISTORY !== 'undefined') replaceArrayContents(VACC_HISTORY, saved?.vaccHistory || getDefaultVaccHistory());
     replaceObjectContents(SUIVI_HISTORY, saved?.suivi || defaults.suivi);
     PATIENTS = deepClone(saved?.patients || defaults.patients);
     CLIENTS = deepClone(saved?.clients || defaults.clients);
@@ -11514,12 +11558,14 @@ function saveAdmission() {
     overlay.querySelector('#vetpro-start-zero').onclick = () => {
       const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
       const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
-      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
+      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
       if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
+      if (typeof VACC_HISTORY !== 'undefined') VACC_HISTORY.splice(0, VACC_HISTORY.length);
       if (typeof persistAppState === 'function') persistAppState();
       if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
       if (typeof renderFinancesPage === 'function') renderFinancesPage();
       if (typeof renderStatistics === 'function') renderStatistics();
+      if (typeof renderVaccHistorique === 'function') renderVaccHistorique();
       localStorage.setItem(key, 'done');
       overlay.remove();
       toast('Espace démarré à zéro');
@@ -11876,12 +11922,14 @@ function saveAdmission() {
     overlay.querySelector('#vetpro-start-zero-ultra').onclick = () => {
       const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
       const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
-      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], patients:[], clients:[] };
+      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
       if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
+      if (typeof VACC_HISTORY !== 'undefined') VACC_HISTORY.splice(0, VACC_HISTORY.length);
       if (typeof persistAppState === 'function') persistAppState();
       if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
       if (typeof renderFinancesPage === 'function') renderFinancesPage();
       if (typeof renderStatistics === 'function') renderStatistics();
+      if (typeof renderVaccHistorique === 'function') renderVaccHistorique();
       localStorage.setItem(key, 'done');
       overlay.remove();
       toast('Espace démarré à zéro');
@@ -12306,6 +12354,8 @@ function saveAdmission() {
     .kpi-row{grid-template-columns:1fr 1fr!important}
     .stats-mini-grid,.feature-list,.pricing-wrap,.contact-grid{grid-template-columns:1fr!important}
     .row2{grid-template-columns:1fr!important}
+    .row3{grid-template-columns:1fr!important}
+    #modal-cage-new [style*="grid-template-columns"]{grid-template-columns:1fr!important}
 
     /* Tables become horizontally scrollable cards */
     .tbl, table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
@@ -18509,6 +18559,8 @@ function saveAdmission() {
           try {
             if (Array.isArray(window.DRUGS)) window.DRUGS.forEach(d => { d.s = 0; });
             if (Array.isArray(window.LAB_EXAMS)) window.LAB_EXAMS.length = 0;
+            if (Array.isArray(window.VACC_HISTORY)) window.VACC_HISTORY.length = 0;
+            if (Array.isArray(window.VACCINE_REMINDERS)) window.VACCINE_REMINDERS.length = 0;
             if (Array.isArray(window.CAGES)) {
               window.CAGES.forEach(c => {
                 c.statut = 'libre'; c.animal = null; c.motif = null; c.depuis = null; c.notes = null;
@@ -18524,6 +18576,8 @@ function saveAdmission() {
             if (typeof window.refreshPersistentViews === 'function') window.refreshPersistentViews();
             if (window.__vpRepaintDashboard) window.__vpRepaintDashboard();
             if (typeof window.vpRenderLabExams === 'function') window.vpRenderLabExams();
+            if (typeof window.renderVaccHistorique === 'function') window.renderVaccHistorique();
+            if (typeof window.renderVaccineReminders === 'function') window.renderVaccineReminders();
             // Force-save to cloud
             if (typeof window.vpFullSave === 'function') window.vpFullSave();
             else if (typeof window.vpSaveRemoteFixed === 'function') window.vpSaveRemoteFixed();
