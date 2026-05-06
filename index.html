@@ -43,25 +43,13 @@
     width:100%;padding:14px;margin-top:20px;border:none;cursor:pointer;
     background:linear-gradient(135deg,#0F3D2A,#2E7D52);border-radius:14px;
     color:#fff;font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;
-    transition:.2s;position:relative;overflow:hidden;
-    -webkit-tap-highlight-color:rgba(56,211,124,.4);
+    transition:.2s;position:relative;
+    -webkit-tap-highlight-color:rgba(56,211,124,.3);
     touch-action:manipulation;
-    min-height:50px;
-    -webkit-user-select:none;user-select:none;
-    pointer-events:auto !important;
   }
   .login-btn:hover{opacity:.9;transform:translateY(-1px)}
   .login-btn:active{transform:translateY(0);opacity:.85}
   .login-btn[disabled],.login-btn:disabled{opacity:.7;cursor:not-allowed}
-  /* Mobile-specific: ensure landing CTA buttons are tappable */
-  .landing-btn{
-    -webkit-tap-highlight-color:rgba(56,211,124,.4);
-    touch-action:manipulation;
-    min-height:48px;
-    pointer-events:auto !important;
-    -webkit-user-select:none;user-select:none;
-  }
-  .landing-btn:active{opacity:.85}
   .login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
   .login-error{
     margin-top:12px;padding:10px 14px;background:rgba(220,38,38,.2);
@@ -3397,13 +3385,8 @@ const TITLES={
 };
 
 function nav(id){
-  // Close any open modals first to prevent stuck UI on mobile
+  // Close any open modals to prevent stuck UI
   document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
-  document.body.style.overflow = '';
-  // Close mobile sidebar if it's open
-  document.body.classList.remove('sb-open');
-  document.querySelector('.sidebar')?.classList.remove('open');
-  document.querySelector('.mobile-overlay')?.classList.remove('open');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
   const pg=document.getElementById('page-'+id);
@@ -3434,63 +3417,31 @@ function openModal(id){
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.add('open');
-  // Lock body scroll on mobile to prevent ghost taps
-  document.body.style.overflow = 'hidden';
 }
 function closeModal(id){
   const el = document.getElementById(id);
   if (el) el.classList.remove('open');
-  // Re-enable body scroll only if no other modal is open
-  if (!document.querySelector('.overlay.open')) {
-    document.body.style.overflow = '';
-  }
 }
 function closeAllModals(){
   document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
-  document.body.style.overflow = '';
 }
-// Event delegation: close ANY overlay when clicking the backdrop (works for dynamically-added modals too)
-// IMPORTANT: bubble phase (not capture) so it never interferes with login/auth buttons
+// Backdrop click closes modal — works for dynamically-added overlays
+// Uses BUBBLE phase so it never interferes with button clicks
 document.addEventListener('click', function(e){
   try {
-    if (e.target && e.target.classList && e.target.classList.contains('overlay') && e.target.classList.contains('open')) {
-      e.target.classList.remove('open');
-      if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+    const t = e.target;
+    if (t && t.classList && t.classList.contains('overlay') && t.classList.contains('open')) {
+      t.classList.remove('open');
     }
-  } catch(err) { /* never block any click */ }
+  } catch(err) {}
 });
-// Escape key closes the topmost modal
+// Escape key closes topmost modal
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') {
-    const openOverlays = document.querySelectorAll('.overlay.open');
-    if (openOverlays.length) {
-      openOverlays[openOverlays.length - 1].classList.remove('open');
-      if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
-    }
+    const open = document.querySelectorAll('.overlay.open');
+    if (open.length) open[open.length - 1].classList.remove('open');
   }
 });
-// Safety: ensure body overflow is reset whenever login screen becomes visible
-(function watchLoginVisibility(){
-  function ensureLoginUsable(){
-    const ls = document.getElementById('login-screen');
-    if (ls && !ls.classList.contains('hidden')) {
-      // Login screen is visible — guarantee body is scrollable + no leftover modal locks
-      document.body.style.overflow = '';
-      // Close any leftover modal
-      document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
-    }
-  }
-  // Run now and on every DOM mutation involving login-screen
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', ensureLoginUsable);
-  } else {
-    ensureLoginUsable();
-  }
-  const ls = document.getElementById('login-screen');
-  if (ls) {
-    new MutationObserver(ensureLoginUsable).observe(ls, { attributes: true, attributeFilter: ['class'] });
-  }
-})();
 
 // ── TOAST ──
 function toast(msg,dur=3200){
@@ -5335,18 +5286,63 @@ function showDrug(id){
   setTimeout(()=>{const el=document.getElementById('dw-kg');if(el)el.focus();},200);
 }
 
-// Edit drug price (and optionally stock) — useful to match supplier
+// Edit drug price (and optionally stock) — uses inline modal (mobile-safe, no prompt())
 function editDrugPrice(drugId) {
   const d = DRUGS.find(x => x.id === drugId);
   if (!d) return;
-  const newPrice = prompt(`Nouveau prix pour ${d.n} (DA) :\n\nPrix actuel : ${d.p} DA\nFournisseur indicatif : Vetoquinol/Boehringer DZ`, d.p);
-  if (newPrice === null) return;
-  const priceNum = parseInt(newPrice, 10);
-  if (isNaN(priceNum) || priceNum < 0) { toast('Prix invalide'); return; }
-  d.p = priceNum;
+  // Build modal on-the-fly if not present
+  let m = document.getElementById('modal-edit-drug-price');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'modal-edit-drug-price';
+    m.className = 'overlay';
+    m.innerHTML = `
+      <div class="modal" style="max-width:420px">
+        <div class="modal-hdr">
+          <div class="modal-title">✏️ Modifier prix & stock</div>
+          <button class="btn-ico" onclick="closeModal('modal-edit-drug-price')">✕</button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div id="edp-drug-name" style="font-weight:700;font-size:14px;color:var(--ink);padding:10px;background:var(--surface2);border-radius:8px"></div>
+          <div class="fg"><label class="lbl">Nouveau prix (DA) *</label><input class="inp" type="number" min="0" id="edp-price" inputmode="numeric"/></div>
+          <div class="fg"><label class="lbl">Stock actuel</label><input class="inp" type="number" min="0" id="edp-stock" inputmode="numeric"/></div>
+          <div class="fg"><label class="lbl">Seuil d'alerte (stock minimum)</label><input class="inp" type="number" min="0" id="edp-smin" inputmode="numeric"/></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-p" style="flex:1;justify-content:center" onclick="saveDrugPriceEdit()">💾 Enregistrer</button>
+            <button class="btn btn-ghost" onclick="closeModal('modal-edit-drug-price')">Annuler</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(m);
+  }
+  // Populate fields
+  document.getElementById('edp-drug-name').textContent = d.n + ' — ' + (d.m || '');
+  document.getElementById('edp-price').value = d.p;
+  document.getElementById('edp-stock').value = d.s;
+  document.getElementById('edp-smin').value = d.smin;
+  m.dataset.drugId = drugId;
+  openModal('modal-edit-drug-price');
+}
+
+function saveDrugPriceEdit() {
+  const m = document.getElementById('modal-edit-drug-price');
+  const drugId = m?.dataset?.drugId;
+  if (!drugId) return;
+  const d = DRUGS.find(x => x.id === drugId);
+  if (!d) return;
+  const newPrice = parseInt(document.getElementById('edp-price')?.value || d.p, 10);
+  const newStock = parseInt(document.getElementById('edp-stock')?.value || d.s, 10);
+  const newSmin = parseInt(document.getElementById('edp-smin')?.value || d.smin, 10);
+  if (isNaN(newPrice) || newPrice < 0) { toast('Prix invalide'); return; }
+  d.p = newPrice;
+  if (!isNaN(newStock) && newStock >= 0) d.s = newStock;
+  if (!isNaN(newSmin) && newSmin >= 0) d.smin = newSmin;
   if (typeof persistAppState === 'function') persistAppState();
-  showDrug(drugId); // refresh modal
-  toast(`✅ Prix mis à jour : ${priceNum} DA`);
+  closeModal('modal-edit-drug-price');
+  if (typeof renderDrugs === 'function') renderDrugs(drugFilter || '', drugSearch || '');
+  // Refresh detail modal if open
+  if (document.getElementById('modal-drug')?.classList.contains('open')) showDrug(drugId);
+  toast(`✅ ${d.n} mis à jour : ${newPrice} DA · stock ${d.s}`);
 }
 
 // Weight-based drug dose calculator
