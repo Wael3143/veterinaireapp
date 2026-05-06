@@ -44,9 +44,24 @@
     background:linear-gradient(135deg,#0F3D2A,#2E7D52);border-radius:14px;
     color:#fff;font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;
     transition:.2s;position:relative;overflow:hidden;
+    -webkit-tap-highlight-color:rgba(56,211,124,.4);
+    touch-action:manipulation;
+    min-height:50px;
+    -webkit-user-select:none;user-select:none;
+    pointer-events:auto !important;
   }
   .login-btn:hover{opacity:.9;transform:translateY(-1px)}
-  .login-btn:active{transform:translateY(0)}
+  .login-btn:active{transform:translateY(0);opacity:.85}
+  .login-btn[disabled],.login-btn:disabled{opacity:.7;cursor:not-allowed}
+  /* Mobile-specific: ensure landing CTA buttons are tappable */
+  .landing-btn{
+    -webkit-tap-highlight-color:rgba(56,211,124,.4);
+    touch-action:manipulation;
+    min-height:48px;
+    pointer-events:auto !important;
+    -webkit-user-select:none;user-select:none;
+  }
+  .landing-btn:active{opacity:.85}
   .login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
   .login-error{
     margin-top:12px;padding:10px 14px;background:rgba(220,38,38,.2);
@@ -3435,12 +3450,15 @@ function closeAllModals(){
   document.body.style.overflow = '';
 }
 // Event delegation: close ANY overlay when clicking the backdrop (works for dynamically-added modals too)
+// IMPORTANT: bubble phase (not capture) so it never interferes with login/auth buttons
 document.addEventListener('click', function(e){
-  if (e.target && e.target.classList && e.target.classList.contains('overlay') && e.target.classList.contains('open')) {
-    e.target.classList.remove('open');
-    if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
-  }
-}, true);
+  try {
+    if (e.target && e.target.classList && e.target.classList.contains('overlay') && e.target.classList.contains('open')) {
+      e.target.classList.remove('open');
+      if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+    }
+  } catch(err) { /* never block any click */ }
+});
 // Escape key closes the topmost modal
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') {
@@ -3451,6 +3469,28 @@ document.addEventListener('keydown', function(e){
     }
   }
 });
+// Safety: ensure body overflow is reset whenever login screen becomes visible
+(function watchLoginVisibility(){
+  function ensureLoginUsable(){
+    const ls = document.getElementById('login-screen');
+    if (ls && !ls.classList.contains('hidden')) {
+      // Login screen is visible — guarantee body is scrollable + no leftover modal locks
+      document.body.style.overflow = '';
+      // Close any leftover modal
+      document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
+    }
+  }
+  // Run now and on every DOM mutation involving login-screen
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ensureLoginUsable);
+  } else {
+    ensureLoginUsable();
+  }
+  const ls = document.getElementById('login-screen');
+  if (ls) {
+    new MutationObserver(ensureLoginUsable).observe(ls, { attributes: true, attributeFilter: ['class'] });
+  }
+})();
 
 // ── TOAST ──
 function toast(msg,dur=3200){
