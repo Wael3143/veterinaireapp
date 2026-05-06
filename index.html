@@ -66,13 +66,24 @@
     display:inline-block;vertical-align:middle;margin-right:6px;
   }
   #logout-btn{
-    display:none;position:fixed;bottom:20px;right:20px;z-index:100;
+    display:none;position:fixed;bottom:20px;right:20px;z-index:9999;
     background:var(--ink);color:#fff;border:1px solid rgba(255,255,255,.1);
-    border-radius:12px;padding:8px 14px;cursor:pointer;
-    font-size:12px;font-family:'Outfit',sans-serif;font-weight:600;
+    border-radius:12px;padding:12px 18px;cursor:pointer;
+    font-size:13px;font-family:'Outfit',sans-serif;font-weight:600;
     transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.3);
+    -webkit-tap-highlight-color:rgba(192,57,43,.3);
+    touch-action:manipulation;
+    min-height:44px;min-width:44px;
+    -webkit-user-select:none;user-select:none;
   }
-  #logout-btn:hover{background:var(--danger);border-color:var(--danger)}
+  #logout-btn:hover,#logout-btn:active{background:var(--danger);border-color:var(--danger)}
+  @media (max-width:768px){
+    #logout-btn{
+      bottom:16px;right:16px;padding:14px 20px;font-size:14px;
+      min-height:48px;border-radius:14px;
+      box-shadow:0 6px 20px rgba(0,0,0,.4);
+    }
+  }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -285,7 +296,8 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var
 .btn-sm{padding:5px 13px;font-size:11.5px;border-radius:8px}
 .btn-lg{padding:12px 28px;font-size:14px;border-radius:12px}
 .btn-full{width:100%;justify-content:center}
-.btn-ico{width:32px;height:32px;border-radius:9px;border:none;cursor:pointer;background:var(--surface2);color:var(--muted);font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:.14s}.btn-ico:hover{background:var(--forest);color:#fff}
+.btn-ico{width:36px;height:36px;border-radius:9px;border:none;cursor:pointer;background:var(--surface2);color:var(--muted);font-size:14px;display:inline-flex;align-items:center;justify-content:center;transition:.14s;-webkit-tap-highlight-color:rgba(192,57,43,.3);touch-action:manipulation}.btn-ico:hover,.btn-ico:active{background:var(--forest);color:#fff}
+@media (max-width:768px){.btn-ico{min-width:44px;min-height:44px;font-size:16px}.modal-hdr .btn-ico{background:var(--surface2);border:1px solid var(--brd)}}
 
 /* ── FORMS ── */
 .fg{margin-bottom:13px}
@@ -639,17 +651,6 @@ async function doLogin() {
   }
 }
 
-async function doLogout() {
-  if (_sb && SUPA_URL !== 'VOTRE_SUPABASE_URL') {
-    await _sb.auth.signOut();
-  }
-  setCurrentUserContext(null);
-  initializePersistentState();
-  document.getElementById('login-screen')?.classList.remove('hidden');
-  document.getElementById('logout-btn').style.display = 'none';
-  toast('Déconnecté avec succès 👋');
-}
-
 function showLoginError(msg) {
   const el = document.getElementById('login-error');
   if (el) { el.textContent = '❌ ' + msg; el.style.display = 'block'; }
@@ -807,15 +808,33 @@ async function doForgotPassword(){
   }
 }
 async function doLogout() {
-  if (_sb && SUPA_URL !== 'VOTRE_SUPABASE_URL') {
-    await _sb.auth.signOut();
+  // Show immediate feedback so user knows it registered (mobile tap delay UX)
+  const btn = document.getElementById('logout-btn');
+  if (btn) {
+    btn.textContent = '⏳ Déconnexion…';
+    btn.style.pointerEvents = 'none';
   }
-  setCurrentUserContext(null);
-  initializePersistentState();
+  try {
+    if (_sb && SUPA_URL !== 'VOTRE_SUPABASE_URL') {
+      // Use Promise.race with timeout so logout never hangs on mobile network
+      await Promise.race([
+        _sb.auth.signOut(),
+        new Promise(resolve => setTimeout(resolve, 3000))
+      ]);
+    }
+  } catch (e) {
+    console.warn('[VetPro] signOut error:', e);
+  }
+  try { setCurrentUserContext(null); } catch(e) {}
+  try { initializePersistentState(); } catch(e) {}
   document.getElementById('login-screen')?.classList.remove('hidden');
-  document.getElementById('logout-btn').style.display = 'none';
-  showAuthMode('login');
-  toast('Deconnecte avec succes');
+  if (btn) {
+    btn.textContent = '🚪 Déconnexion';
+    btn.style.pointerEvents = '';
+    btn.style.display = 'none';
+  }
+  try { showAuthMode('login'); } catch(e) {}
+  toast('Déconnecté avec succès');
 }
 function showLoginError(msg) {
   const el = document.getElementById('login-error');
@@ -1119,7 +1138,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <button class="btn btn-p" onclick="openModal('modal-drug-new')">➕ Nouveau médicament</button>
   </div>
 
-  <div class="ibox ibox-a" style="margin-bottom:14px" id="stock-alert">⚠️ <strong>Alertes stock :</strong> Imidocarbe (2 unités restantes) · Frontline Chat (0 — RUPTURE) · Méloxicam inj. (1 unité)</div>
+  <div class="ibox ibox-a" style="margin-bottom:14px;display:none" id="stock-alert"></div>
 
   <div style="display:flex;gap:12px;margin-bottom:14px;align-items:center">
     <div class="search-wrap" style="flex:1">
@@ -3363,6 +3382,13 @@ const TITLES={
 };
 
 function nav(id){
+  // Close any open modals first to prevent stuck UI on mobile
+  document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
+  document.body.style.overflow = '';
+  // Close mobile sidebar if it's open
+  document.body.classList.remove('sb-open');
+  document.querySelector('.sidebar')?.classList.remove('open');
+  document.querySelector('.mobile-overlay')?.classList.remove('open');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
   const pg=document.getElementById('page-'+id);
@@ -3389,9 +3415,42 @@ function nav(id){
 }
 
 // ── MODALS ──
-function openModal(id){document.getElementById(id).classList.add('open')}
-function closeModal(id){document.getElementById(id).classList.remove('open')}
-document.querySelectorAll('.overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+function openModal(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('open');
+  // Lock body scroll on mobile to prevent ghost taps
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id){
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('open');
+  // Re-enable body scroll only if no other modal is open
+  if (!document.querySelector('.overlay.open')) {
+    document.body.style.overflow = '';
+  }
+}
+function closeAllModals(){
+  document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
+  document.body.style.overflow = '';
+}
+// Event delegation: close ANY overlay when clicking the backdrop (works for dynamically-added modals too)
+document.addEventListener('click', function(e){
+  if (e.target && e.target.classList && e.target.classList.contains('overlay') && e.target.classList.contains('open')) {
+    e.target.classList.remove('open');
+    if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+  }
+}, true);
+// Escape key closes the topmost modal
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') {
+    const openOverlays = document.querySelectorAll('.overlay.open');
+    if (openOverlays.length) {
+      openOverlays[openOverlays.length - 1].classList.remove('open');
+      if (!document.querySelector('.overlay.open')) document.body.style.overflow = '';
+    }
+  }
+});
 
 // ── TOAST ──
 function toast(msg,dur=3200){
@@ -3861,7 +3920,7 @@ function saveClientAnimalBundle(){
     const motif = document.getElementById('client-intake-cage-motif')?.value?.trim() || 'Admission depuis fiche client';
     const cage = CAGES.find(item => item.id === cageId);
     if (cage) {
-      cage.statut = 'occup茅e';
+      cage.statut = 'occupée';
       cage.animal = displayAnimalName(patient.name, patient.species);
       cage.motif = motif;
       cage.depuis = todayFr().slice(0,5);
@@ -4054,68 +4113,7 @@ function populatePatientSelects(){
   if (quickCageSelect) {
     const current = quickCageSelect.value;
     quickCageSelect.innerHTML = CAGES
-      .filter(c => c.statut !== 'occup茅e')
-      .map(c => `<option value="${c.id}">${c.id}</option>`)
-      .join('') || '<option value="">Aucune cage libre</option>';
-    if (current && quickCageSelect.querySelector(`option[value="${current}"]`)) quickCageSelect.value = current;
-  }
-  renderVaccineReminders();
-}
-function populatePatientSelects(){
-  ensureModalBindings();
-  ensureClientIntakePanel();
-  ensureCageAdmissionEnhancements();
-  const patientOptions = PATIENTS
-    .slice()
-    .sort((a,b) => a.name.localeCompare(b.name))
-    .map(patient => {
-      const label = `${displayAnimalName(patient.name, patient.species)} 路 ${patient.race || patient.species}${patient.weight ? ' 路 ' + patient.weight : ''} (${patient.owner})`;
-      return `<option value="${patient.id}">${label}</option>`;
-    }).join('');
-  const ordoSelect = document.getElementById('on-animal');
-  if (ordoSelect) {
-    const current = ordoSelect.value;
-    ordoSelect.innerHTML = `<option value="">Select</option>${patientOptions}<option value="nouveau">+ Nouveau patient (saisie libre)</option>`;
-    if (current && ordoSelect.querySelector(`option[value="${current}"]`)) ordoSelect.value = current;
-  }
-  const admitSelect = document.getElementById('admit-animal-id');
-  if (admitSelect) {
-    const current = admitSelect.value;
-    admitSelect.innerHTML = patientOptions || '<option value="">Aucun animal enregistre</option>';
-    if (current && admitSelect.querySelector(`option[value="${current}"]`)) admitSelect.value = current;
-  }
-  const rdvSelect = document.getElementById('rdv-animal');
-  if (rdvSelect) {
-    const current = rdvSelect.value;
-    rdvSelect.innerHTML = PATIENTS
-      .slice()
-      .sort((a,b) => a.name.localeCompare(b.name))
-      .map(patient => `<option value="${patient.id}">${displayAnimalName(patient.name, patient.species)} (${patient.owner})</option>`)
-      .join('') || '<option value="">Aucun animal enregistre</option>';
-    if (current && rdvSelect.querySelector(`option[value="${current}"]`)) rdvSelect.value = current;
-  }
-  const cageSelect = document.getElementById('admit-cage-id');
-  if (cageSelect) {
-    const free = CAGES.filter(c => c.statut !== 'occup茅e');
-    const current = cageSelect.value;
-    cageSelect.innerHTML = free.map(c => `<option value="${c.id}">${c.id} - ${c.statut === 'nettoyage' ? 'Nettoyage' : 'Libre'}</option>`).join('');
-    if (current && cageSelect.querySelector(`option[value="${current}"]`)) cageSelect.value = current;
-  }
-  const clientSelect = document.getElementById('client-intake-existing');
-  if (clientSelect) {
-    const current = clientSelect.value;
-    clientSelect.innerHTML = `<option value="">Nouveau client</option>${CLIENTS
-      .slice()
-      .sort((a,b) => a.fullName.localeCompare(b.fullName))
-      .map(client => `<option value="${client.id}">${client.fullName}</option>`)
-      .join('')}`;
-    if (current && clientSelect.querySelector(`option[value="${current}"]`)) clientSelect.value = current;
-  }
-  const quickCageSelect = document.getElementById('client-intake-cage');
-  if (quickCageSelect) {
-    const current = quickCageSelect.value;
-    quickCageSelect.innerHTML = CAGES
-      .filter(c => c.statut !== 'occup茅e')
+      .filter(c => c.statut !== 'occupée')
       .map(c => `<option value="${c.id}">${c.id}</option>`)
       .join('') || '<option value="">Aucune cage libre</option>';
     if (current && quickCageSelect.querySelector(`option[value="${current}"]`)) quickCageSelect.value = current;
@@ -4180,7 +4178,7 @@ function saveAppointment(){
   });
   patient.nextRdv = shortFrDate(date);
   upsertClientFromPatient(patient);
-  cage.statut = 'occup茅e';
+  cage.statut = 'occupée';
   persistAppState();
   renderRdvPage();
   renderClientsPage();
@@ -5189,7 +5187,25 @@ const DRUGS=[
 // drugFilter/drugSearch declared above
 function filterDrugs(q){drugSearch=q;renderDrugs(drugFilter,q);}
 function setDrugFilter(el,g){drugFilter=g;document.querySelectorAll('#page-meds .fchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');renderDrugs(g,drugSearch);}
+function renderStockAlert() {
+  const alert = document.getElementById('stock-alert');
+  if (!alert || typeof DRUGS === 'undefined') return;
+  // Find drugs at/below minimum stock or out of stock
+  const lowItems = DRUGS.filter(d => Number(d.s) <= Number(d.smin || 0)).slice(0, 5);
+  if (lowItems.length === 0) {
+    alert.style.display = 'none';
+    return;
+  }
+  alert.style.display = 'block';
+  const parts = lowItems.map(d => {
+    if (d.s === 0) return `<strong>${d.n}</strong> (0 — RUPTURE)`;
+    return `${d.n} (${d.s} ${d.s === 1 ? 'unité restante' : 'unités restantes'})`;
+  });
+  alert.innerHTML = `⚠️ <strong>Alertes stock :</strong> ${parts.join(' · ')}`;
+}
+
 function renderDrugs(g,s){
+  renderStockAlert();
   const gr=document.getElementById('drug-grid');if(!gr)return;
   const f=DRUGS.filter(d=>(!g||d.g===g)&&(!s||d.n.toLowerCase().includes(s.toLowerCase())||d.m.toLowerCase().includes(s.toLowerCase())));
   const pct=d=>Math.max(0,Math.min(100,Math.round(d.s/Math.max(d.s,d.smin*3)*100)));
@@ -6212,6 +6228,7 @@ function libererCage() {
   if (ptl) ptl.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted)">← Cliquez sur une cage occupée</div>';
   const hcount = document.getElementById('hosp-count');
   if (hcount) hcount.textContent = CAGES.filter(c=>c.statut==='occupée').length;
+  if (typeof window.__vpRepaintDashboard === 'function') try { window.__vpRepaintDashboard(); } catch(e){}
   toast(`Cage ${cageId} libérée — ${animalName} sorti${etat==='nettoyage'?' · Désinfection en cours':' · Cage disponible'} ✅`);
 }
 
@@ -8126,7 +8143,10 @@ function saveNewCase() {
   renderClientsPage();
   renderHist('');
   populatePatientSelects();
-  toast('✅ Cas clinique enregistré et sauvegardé');
+  if (typeof renderFinancesPage === 'function') try { renderFinancesPage(); } catch(e){}
+  if (typeof renderStatistics === 'function') try { renderStatistics(); } catch(e){}
+  if (typeof window.__vpRepaintDashboard === 'function') try { window.__vpRepaintDashboard(); } catch(e){}
+  toast('✅ Cas enregistré · ajouté à Historique + Finances');
   nav('historique');
 }
 
@@ -8167,6 +8187,8 @@ function saveAdmission() {
   activeCageId = cageId;
   renderCages();
   selectCage(cageId);
+  // Repaint dashboard so KPIs/cages update immediately
+  if (typeof window.__vpRepaintDashboard === 'function') try { window.__vpRepaintDashboard(); } catch(e){}
   toast(`${patient.name} admis en ${cageId}`);
 }
 
@@ -12488,6 +12510,19 @@ function saveAdmission() {
     if (ordoEnabled) {
       ordonnanceNum = createOrdonnanceFromCase(patient, diagnosis, nextRdv, ordoNotes);
     }
+    // Read manually-entered treatment from the case form
+    const caseTreatment = document.getElementById('case-treatment')?.value?.trim() || '';
+    // Combine prescription-parsed traitements with manually-entered ones
+    const manualTraitements = caseTreatment
+      ? caseTreatment.split(/[·\n]/).map(s => s.trim()).filter(Boolean).map(line => ({
+          medicament: line,
+          posologie: '',
+          duree: '',
+          resultat: 'en-cours'
+        }))
+      : [];
+    const allTraitements = [...traitements, ...manualTraitements];
+
     HISTORIQUE_DATA.unshift({
       id: historiqueId,
       animal: displayAnimalName(patient.name, patient.species),
@@ -12501,14 +12536,16 @@ function saveAdmission() {
       dateSortie: null,
       diagnostic: diagnosis,
       urgence: urgencyScore >= 7 ? 'critique' : urgencyScore >= 4 ? 'urgent' : 'normal',
-      traitements,
-      statutTraitement: traitements.length ? 'en-cours' : 'non-traite',
+      traitements: allTraitements,
+      traitement: caseTreatment,
+      statutTraitement: allTraitements.length ? 'en-cours' : 'non-traite',
       resultat: 'stabilisation',
       notesCliniques: [
         document.getElementById('case-history')?.value?.trim(),
         document.getElementById('case-symptoms')?.value?.trim(),
         document.getElementById('case-observations')?.value?.trim(),
         document.getElementById('case-exams')?.value?.trim(),
+        caseTreatment ? `Traitement: ${caseTreatment}` : '',
         ordoNotes ? `Prescription: ${ordoNotes}` : ''
       ].filter(Boolean).join(' · '),
       conseilsSortie: nextRdv ? `Contrôle prévu le ${nextRdv}` : 'Contrôle à programmer',
@@ -12522,7 +12559,17 @@ function saveAdmission() {
     });
     persistEverything();
     if (typeof populatePatientSelects === 'function') populatePatientSelects();
-    if (typeof toast === 'function') toast(ordonnanceNum ? 'Cas et ordonnance enregistrés' : 'Cas clinique enregistré et sauvegardé');
+    if (typeof renderFinancesPage === 'function') try { renderFinancesPage(); } catch(e){}
+    if (typeof renderHist === 'function') try { renderHist(''); } catch(e){}
+    if (typeof renderClientsPage === 'function') try { renderClientsPage(); } catch(e){}
+    if (typeof renderStatistics === 'function') try { renderStatistics(); } catch(e){}
+    if (typeof window.__vpRepaintDashboard === 'function') try { window.__vpRepaintDashboard(); } catch(e){}
+    // Clear the case form for next entry
+    ['case-animal-name','case-client-name','case-client-phone','case-race','case-age','case-poids','case-treatment','case-amount','case-paid','case-history','case-symptoms','case-observations','case-exams','diag-inp','case-client-email'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    if (typeof toast === 'function') toast(ordonnanceNum ? '✅ Cas + ordonnance enregistrés · ajouté à Historique + Finances' : '✅ Cas enregistré · ajouté à Historique + Finances');
     if (typeof nav === 'function') nav('historique');
   };
 
@@ -14340,7 +14387,9 @@ function saveAdmission() {
   window.__vetproDashV2Loaded = true;
 
   function safeGet(name) {
-    try { return window[name]; } catch(e) { return undefined; }
+    // const declarations don't attach to window — use eval as fallback
+    try { if (typeof window[name] !== 'undefined') return window[name]; } catch(e) {}
+    try { return eval(name); } catch(e) { return undefined; }
   }
   function asArr(v){ return Array.isArray(v) ? v : []; }
 
@@ -14382,20 +14431,44 @@ function saveAdmission() {
     const patients = asArr(safeGet('PATIENTS'));
     const appts = asArr(safeGet('APPOINTMENTS'));
     const reminders = asArr(safeGet('VACCINE_REMINDERS'));
+    const historique = asArr(safeGet('HISTORIQUE_DATA'));
 
     const occupied = cages.filter(c => c?.statut === 'occupée').length;
     const free = cages.filter(c => c?.statut === 'libre').length;
     const total = cages.length;
 
-    const lowStock = drugs.filter(d => Number(d?.s) <= Number(d?.smin || 0)).length;
+    const lowStock = drugs.filter(d => Number(d?.s) > 0 && Number(d?.s) <= Number(d?.smin || 0)).length;
     const ruptures = drugs.filter(d => Number(d?.s) === 0).length;
 
     const today = new Date().toISOString().slice(0,10);
     const upcomingAppts = appts.filter(a => (a?.date || '').slice(0,10) >= today).length;
 
+    // Cases this month — supports JJ/MM/AAAA and YYYY-MM-DD
+    const now = new Date();
+    const cm = String(now.getMonth() + 1).padStart(2, '0');
+    const cy = String(now.getFullYear());
+    const casesThisMonth = historique.filter(h => {
+      const d = String(h?.date || '');
+      const m1 = d.match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+      if (m1) return m1[2] === cm && m1[3] === cy;
+      const m2 = d.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m2) return m2[2] === cm && m2[1] === cy;
+      return false;
+    }).length;
+
+    // Revenue (from HISTORIQUE_DATA.montant)
+    const revenue = historique.reduce((sum, h) => {
+      const amt = parseInt(h?.montant, 10) || 0;
+      if (h?.paiement === 'paye') return sum + amt;
+      if (h?.paiement === 'partiel') return sum + Math.floor(amt / 2);
+      return sum;
+    }, 0);
+    const pending = historique.filter(h => h?.paiement === 'impaye' || h?.paiement === 'partiel').length;
+
     return {
       patients: patients.length,
-      cases: patients.length, // active patient ≈ active case in this app
+      cases: casesThisMonth,
+      casesTotal: historique.length,
       hospitalized: occupied,
       cagesFree: free,
       cagesTotal: total,
@@ -14403,19 +14476,21 @@ function saveAdmission() {
       ruptures,
       appts: upcomingAppts,
       reminders: reminders.length,
+      revenue,
+      pending,
     };
   }
 
   function recentCases(){
-    const patients = asArr(safeGet('PATIENTS'));
-    if (!patients.length) return null;
-    return patients.slice(-4).reverse().map(p => ({
-      name: p?.nom || p?.name || 'Animal',
-      species: p?.espece || '',
-      owner: p?.proprietaire || p?.owner || '',
-      diag: p?.diagnostic || p?.motif || 'En consultation',
-      severity: p?.urgence || 'normal',
-      pay: p?.paiement || 'unknown',
+    const historique = asArr(safeGet('HISTORIQUE_DATA'));
+    if (!historique.length) return null;
+    return historique.slice(0, 4).map(h => ({
+      name: h?.animal || 'Animal',
+      species: '',
+      owner: h?.client || '',
+      diag: h?.diagnostic || 'En consultation',
+      severity: h?.urgence || 'normal',
+      pay: h?.paiement === 'paye' ? 'paid' : h?.paiement === 'partiel' ? 'partial' : h?.paiement === 'impaye' ? 'unpaid' : 'unknown',
     }));
   }
 
@@ -14489,12 +14564,12 @@ function saveAdmission() {
 
       <!-- KPI grid -->
       <div class="vp-kpis">
-        <div class="vp-kpi info" tabindex="0" onclick="nav('cas')" onkeypress="if(event.key==='Enter')nav('cas')">
+        <div class="vp-kpi info" tabindex="0" onclick="nav('historique')" onkeypress="if(event.key==='Enter')nav('historique')">
           <div class="vp-kpi-ico">📋</div>
           <div class="vp-kpi-body">
             <div class="vp-kpi-val">${fmt(k.cases)}</div>
-            <div class="vp-kpi-lbl">Patients suivis</div>
-            <div class="vp-kpi-trend">📈 ${k.cases ? 'Voir tous les cas' : 'Aucun pour l\\'instant'}</div>
+            <div class="vp-kpi-lbl">Cas ce mois</div>
+            <div class="vp-kpi-trend">📈 ${k.casesTotal} au total</div>
           </div>
         </div>
         <div class="vp-kpi" tabindex="0" onclick="nav('cages')" onkeypress="if(event.key==='Enter')nav('cages')">
@@ -14505,18 +14580,18 @@ function saveAdmission() {
             <div class="vp-kpi-trend">${k.cagesFree}/${k.cagesTotal} cages libres</div>
           </div>
         </div>
-        <div class="vp-kpi warm" tabindex="0" onclick="nav('rdv')" onkeypress="if(event.key==='Enter')nav('rdv')">
-          <div class="vp-kpi-ico">📅</div>
+        <div class="vp-kpi warm" tabindex="0" onclick="nav('finances')" onkeypress="if(event.key==='Enter')nav('finances')">
+          <div class="vp-kpi-ico">💰</div>
           <div class="vp-kpi-body">
-            <div class="vp-kpi-val">${fmt(k.appts)}</div>
-            <div class="vp-kpi-lbl">RDV à venir</div>
-            <div class="vp-kpi-trend">${k.reminders} rappels vaccin</div>
+            <div class="vp-kpi-val">${k.revenue >= 1000 ? Math.round(k.revenue/1000) + 'K' : fmt(k.revenue)}</div>
+            <div class="vp-kpi-lbl">Recettes (DA)</div>
+            <div class="vp-kpi-trend">${k.pending ? k.pending + ' paiement' + (k.pending > 1 ? 's' : '') + ' en attente' : 'Tout réglé ✅'}</div>
           </div>
         </div>
         <div class="vp-kpi danger" tabindex="0" onclick="nav('meds')" onkeypress="if(event.key==='Enter')nav('meds')">
           <div class="vp-kpi-ico">💊</div>
           <div class="vp-kpi-body">
-            <div class="vp-kpi-val">${fmt(k.lowStock)}</div>
+            <div class="vp-kpi-val">${fmt(k.lowStock + k.ruptures)}</div>
             <div class="vp-kpi-lbl">Stocks faibles</div>
             <div class="vp-kpi-trend">${k.ruptures} rupture${k.ruptures > 1 ? 's' : ''}</div>
           </div>
@@ -18846,11 +18921,16 @@ function saveAdmission() {
 
     const obs = new MutationObserver(() => {
       const text = dash.textContent || '';
-      if (/Benali Ahmed|Hamdi Karim|Kaci Fatima|Saâdi Omar|Cas ce mois/.test(text)) {
-        // Reset wipe flag and re-wipe
-        dash.dataset.vpWipedInstant = '';
-        instantWipeDashboardDemo();
-        if (window.__vpRepaintDashboard) try { window.__vpRepaintDashboard(); } catch(e){}
+      // Only trigger on demo-owner names, not on label text "Cas ce mois"
+      if (/Benali Ahmed|Hamdi Karim|Kaci Fatima|Saâdi Omar/.test(text)) {
+        // Only wipe demo if no real data exists
+        const hist = (typeof HISTORIQUE_DATA !== 'undefined') ? HISTORIQUE_DATA : [];
+        const realHist = hist.filter(h => !/Benali Ahmed|Hamdi Karim|Kaci Fatima|Saâdi Omar/.test(h.client || ''));
+        if (realHist.length === 0 && hist.length === 0) {
+          dash.dataset.vpWipedInstant = '';
+          instantWipeDashboardDemo();
+          if (window.__vpRepaintDashboard) try { window.__vpRepaintDashboard(); } catch(e){}
+        }
       }
     });
     obs.observe(dash, { childList: true, subtree: true, characterData: true });
