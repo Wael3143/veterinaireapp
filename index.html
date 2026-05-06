@@ -1280,6 +1280,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <div id="diag-ac" style="display:none;position:absolute;left:0;right:0;background:#fff;border:1.5px solid var(--sage);border-radius:10px;box-shadow:var(--sh2);z-index:50;overflow:hidden;margin-top:3px"></div>
         </div>
         <div class="fg"><label class="lbl">Examens complémentaires</label><textarea class="tex" rows="2" placeholder="NFS, biochimie, test rapide, radiographie…"></textarea></div>
+        <div class="fg"><label class="lbl">💊 Traitement administré / prescrit</label><textarea class="tex" id="case-treatment" rows="3" placeholder="Ex: Shotapen 1.5mL IM 1x/j x5j · Méloxicam 0.5mL SC J1 · Ringer Lactate 500mL IV · Maropitant 1cp/j x3j…"></textarea></div>
         <div class="row2">
           <div class="fg"><label class="lbl">Montant consultation (DA)</label><input class="inp" type="number" placeholder="5000"/></div>
           <div class="fg"><label class="lbl">Paiement reçu (DA)</label><input class="inp" type="number" placeholder="0"/></div>
@@ -1388,8 +1389,9 @@ window.addEventListener('DOMContentLoaded', () => {
      PAGE: CLIENTS
 ══════════════════════════════════════════════════════════════ -->
 <div id="page-clients" class="page">
-  <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center">
-    <div class="search-wrap" style="flex:1"><span style="color:var(--muted)">🔍</span><input placeholder="Rechercher un client…"/></div>
+  <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+    <div class="search-wrap" style="flex:1;min-width:220px"><span style="color:var(--muted)">🔍</span><input placeholder="Rechercher un client…"/></div>
+    <button class="btn btn-ghost" onclick="openImportModal()">📥 Importer Excel/IA</button>
     <button class="btn btn-p" onclick="openModal('modal-client')">➕ Nouveau client</button>
   </div>
   <div class="g2">
@@ -2360,6 +2362,77 @@ window.addEventListener('DOMContentLoaded', () => {
   <!-- TAB: Historique (dynamically rendered) -->
   <div id="vacc-historique" style="display:none">
     <div id="vacc-historique-content"></div>
+  </div>
+</div>
+
+<!-- Modal: Import depuis Excel/ChatGPT -->
+<div class="overlay" id="modal-import">
+  <div class="modal" style="max-width:720px">
+    <div class="modal-hdr"><div class="modal-title">📥 Importer données (Excel + IA)</div><button class="btn-ico" onclick="closeModal('modal-import')">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <!-- Stepper -->
+      <div class="ibox ibox-b" style="font-size:12.5px">
+        <strong>📋 Méthode rapide en 3 étapes :</strong><br>
+        1️⃣ Copiez le prompt ci-dessous et collez-le dans ChatGPT (avec votre fichier Excel)<br>
+        2️⃣ ChatGPT vous renverra un JSON formaté pour VetPro<br>
+        3️⃣ Collez ce JSON ici puis cliquez sur "Importer"
+      </div>
+
+      <!-- Step 1: ChatGPT prompt -->
+      <div class="card" style="margin:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <strong style="color:var(--ink);font-size:13px">📝 Étape 1 — Prompt à copier dans ChatGPT</strong>
+          <button class="btn btn-sm btn-p" onclick="copyImportPrompt()">📋 Copier le prompt</button>
+        </div>
+        <textarea id="import-prompt-text" readonly rows="10" class="tex" style="font-family:monospace;font-size:11.5px;background:#F8F9FA">Tu es un assistant qui convertit des données vétérinaires Excel en JSON pour l'application VetPro Algérie.
+
+Voici les données Excel que je te fournis (clients, animaux, consultations, vaccinations).
+
+Ta tâche : convertis ces données en JSON STRICT au format suivant :
+
+{
+  "clients": [
+    {"fullName": "Nom Prénom", "phone": "0550 000 000", "email": "client@mail.com", "address": "Adresse"}
+  ],
+  "patients": [
+    {"name": "Nom animal", "species": "Chien|Chat|NAC", "race": "Race", "age": "3 ans", "weight": "18 kg", "sexe": "Mâle|Femelle", "owner": "Nom Prénom du propriétaire", "phone": "0550 000 000", "email": "", "nextRdv": "JJ/MM"}
+  ],
+  "historique": [
+    {"animal": "Nom", "espece": "chien|chat", "race": "", "age": "", "poids": "", "client": "Nom propriétaire", "tel": "", "date": "JJ/MM/AAAA", "diagnostic": "Texte diagnostic", "traitement": "Texte traitement", "montant": 5000, "paiement": "paye|partiel|impaye", "rdv": "JJ/MM/AAAA ou A planifier"}
+  ],
+  "vaccHistory": [
+    {"animal": "Nom animal", "owner": "Propriétaire", "species": "Chien|Chat", "vaccine": "CHPPiL + Rage", "lot": "", "vet": "Dr. Nom", "date": "AAAA-MM-JJ", "rappel": "AAAA-MM-JJ"}
+  ],
+  "appointments": [
+    {"patientName": "Nom animal", "owner": "Propriétaire", "date": "AAAA-MM-JJ", "time": "HH:MM", "type": "Consultation|Vaccination|Contrôle", "motif": "Raison du RDV"}
+  ]
+}
+
+Règles importantes :
+- Si une info manque, mets "" (chaîne vide) ou null, jamais d'inventions
+- Dates clientes au format JJ/MM/AAAA, dates techniques au format AAAA-MM-JJ
+- Téléphones algériens : 0550, 0661, 0770, 0555, 0699 etc.
+- Espèces : "Chien", "Chat" ou "NAC" uniquement
+- Renvoie UNIQUEMENT le JSON, sans explications, sans markdown ```
+
+Voici les données Excel :
+[COLLEZ ICI LE CONTENU DE VOTRE EXCEL OU JOIGNEZ LE FICHIER]</textarea>
+      </div>
+
+      <!-- Step 2: Paste JSON -->
+      <div class="card" style="margin:0">
+        <strong style="color:var(--ink);font-size:13px;display:block;margin-bottom:8px">📥 Étape 2 — Collez le JSON renvoyé par ChatGPT</strong>
+        <textarea id="import-json-text" rows="8" class="tex" style="font-family:monospace;font-size:11.5px" placeholder='{"clients":[...], "patients":[...], "historique":[...]}'></textarea>
+        <div id="import-preview" style="display:none;margin-top:10px;padding:10px;background:#F0F4F0;border-radius:8px;font-size:12px"></div>
+      </div>
+
+      <!-- Action buttons -->
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-ghost" onclick="previewImportJson()">👁️ Aperçu</button>
+        <button class="btn btn-p" style="flex:1;justify-content:center" onclick="executeImport()">✅ Importer maintenant</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-import')">Annuler</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -4269,55 +4342,55 @@ const CAGES=[
 // ── DRUGS DATA ──
 // drugsRendered declared above
 const DRUGS=[
-  {id:'shotapen',n:'Shotapen Inj.',m:'Amox.+Streptomycine',g:'Antibiotiques',f:'Injectable',v:'IM/SC',p:650,s:20,smin:5,c:'#1462C8',
+  {id:'shotapen',n:'Shotapen Inj.',m:'Amox.+Streptomycine',g:'Antibiotiques',f:'Injectable',v:'IM/SC',p:950,s:20,smin:5,c:'#1462C8',
    ind:'Infections bactériennes, pneumonie, dermatite, leptospirose, prophylaxie chirurgicale',
    ci:'Hypersensibilité pénicillines · Insuffisance rénale sévère',
    eff:'Réaction locale injection · Diarrhée légère',
    inter:'Prudence avec AINS (toxicité rénale additive)',
    poso:'1 mL/10 kg IM · 1x/j · 3 à 5 jours',
    notice:'<b>COMPOSITION :</b> Amoxicilline trihydrate 150 mg + Dihydrostreptomycine sulfate 200 mg par mL. Excipients : lécithine de soja, butyl-hydroxytoluène (BHT), huile de sésame qsp 1 mL.<br/><b>FORME PHARMACEUTIQUE :</b> Suspension injectable huileuse blanche à jaunâtre en flacon multidose 100 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat, bovins, ovins, caprins, porcins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 1 mL/10 kg IM ou SC profonde, 1x/j, 3-5 jours (soit 15 mg amox. + 20 mg streptomycine/kg). Chat : idem, adapter volume seringue 1 mL.<br/><b>MODE D\'ADMINISTRATION :</b> Bien agiter le flacon avant emploi. Injection IM profonde dans le muscle de la cuisse ou SC en région du flanc. Alterner les sites d\'injection. Désinfecter le bouchon.<br/><b>DURÉE DE TRAITEMENT :</b> 3 à 5 jours. Prolonger à 7 jours si infection sévère.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 28 jours. Lait : 3 jours (bovins).<br/><b>SURDOSAGE :</b> Symptômes : vomissements, diarrhée, réaction locale sévère. CAT : traitement symptomatique, pas d\'antidote spécifique.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Après première ponction : utiliser dans les 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 1-2 h (IM). Demi-vie amoxicilline : 1-1.5 h. Demi-vie streptomycine : 2-3 h. Élimination rénale principalement.'},
-  {id:'lavamox',n:'Lavamox LA 150',m:'Amoxicilline 150mg/mL LA',g:'Antibiotiques',f:'Injectable',v:'SC',p:750,s:15,smin:4,c:'#1462C8',
+  {id:'lavamox',n:'Lavamox LA 150',m:'Amoxicilline 150mg/mL LA',g:'Antibiotiques',f:'Injectable',v:'SC',p:1350,s:15,smin:4,c:'#1462C8',
    ind:'Infections bactériennes légères à modérées · Prophylaxie chirurgicale (dose unique)',
    ci:'Hypersensibilité pénicillines · Pas en IV',
    eff:'Réaction locale · Diarrhée',
    inter:'Synergie avec métronidazole sur anaérobies',
    poso:'1 mL/10 kg SC · 1x/48h · Durée selon infection',
    notice:'<b>COMPOSITION :</b> Amoxicilline trihydrate 150 mg/mL (forme longue action). Excipients : huile de coco fractionnée, stéarate d\'aluminium.<br/><b>FORME PHARMACEUTIQUE :</b> Suspension injectable huileuse LA (longue action) en flacon 100 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat, bovins, ovins, porcins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15 mg/kg (1 mL/10 kg) SC, 1 injection/48 h. Chat : 15 mg/kg SC, même intervalle. La formulation LA permet un espacement des injections.<br/><b>MODE D\'ADMINISTRATION :</b> Voie SC stricte (pas d\'IM). Agiter vigoureusement avant emploi. Injecter en SC lâche inter-scapulaire ou du flanc. Volume max par site : 5 mL (chien), 2 mL (chat).<br/><b>DURÉE DE TRAITEMENT :</b> 3 à 5 injections (6-10 jours effectifs). Adapter selon réponse clinique.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 25 jours. Lait : 2,5 jours.<br/><b>SURDOSAGE :</b> Symptômes : réaction locale importante, diarrhée profuse. CAT : traitement symptomatique.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 3-6 h (SC, libération prolongée). Demi-vie apparente : 12-15 h. Élimination rénale sous forme active (60%).'},
-  {id:'ganamic',n:'Ganamic (Gentamicine)',m:'Gentamicine 50 mg/mL',g:'Antibiotiques',f:'Injectable',v:'IM/SC',p:500,s:12,smin:3,c:'#1462C8',
+  {id:'ganamic',n:'Ganamic (Gentamicine)',m:'Gentamicine 50 mg/mL',g:'Antibiotiques',f:'Injectable',v:'IM/SC',p:850,s:12,smin:3,c:'#1462C8',
    ind:'Infections Gram- sévères · Pseudomonas · Septicémie · Pyélonéphrite',
    ci:'⚠️ NÉPHROTOXIQUE — CI insuffisance rénale · Déshydratation non corrigée',
    eff:'Néphrotoxicité · Ototoxicité · Réaction locale',
    inter:'❌ Éviter Furosémide (toxicité rénale+auriculaire) · ❌ Éviter AINS',
    poso:'2–4 mg/kg IM · 2x/j · 5 à 7 jours — Surveiller créatinine !',
    notice:'<b>COMPOSITION :</b> Gentamicine sulfate 50 mg/mL (équivalent base). Excipients : méthylparabène, propylparabène, EDTA disodique, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide incolore, flacon 50 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (avec précautions), bovins, équins.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 2-4 mg/kg IM ou SC, 2x/j pendant 5-7 jours. Chat : 2-3 mg/kg IM, 2x/j, max 5 jours (néphrotoxicité accrue).<br/><b>MODE D\'ADMINISTRATION :</b> IM profonde dans la cuisse. SC possible. Jamais en IV rapide (bloc neuromusculaire). Surveiller créatinine et urée à J3 et J5.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours maximum. Ne pas dépasser 10 jours.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 90 jours. Lait : 5 jours.<br/><b>SURDOSAGE :</b> Symptômes : oligurie, anurie, surdité, ataxie vestibulaire. CAT : fluidothérapie intensive, diurèse forcée, dialyse péritonéale si anurie. Pas d\'antidote.<br/><b>CONSERVATION :</b> 15-25 °C. Ne pas congeler. Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 0.5-1 h (IM). Demi-vie : 1.5-2.5 h (chien), 2-3 h (chat). Élimination rénale 90% sous forme inchangée. Index thérapeutique étroit.'},
-  {id:'metro',n:'Métronidazole 250mg',m:'Métronidazole',g:'Antibiotiques',f:'Comprimé',v:'PO',p:280,s:25,smin:5,c:'#1462C8',
+  {id:'metro',n:'Métronidazole 250mg',m:'Métronidazole',g:'Antibiotiques',f:'Comprimé',v:'PO',p:380,s:25,smin:5,c:'#1462C8',
    ind:'Giardiose · Infections anaérobies · Gingivite · Diarrhée à Clostridium · Encéphalopathie hépatique',
    ci:'Troubles neurologiques · Grossesse (1er trim.) · Ne pas dépasser 10 jours',
    eff:'Nausées · Neurotoxicité (surdose) · Goût amer',
    inter:'Synergie avec amoxicilline (infections mixtes) · Prudence phénobarbital (inhibition hépatique)',
    poso:'15–25 mg/kg PO · 2x/j · 5 à 7 jours · Giardia : 25 mg/kg × 5j',
    notice:'<b>COMPOSITION :</b> Métronidazole 250 mg par comprimé. Excipients : amidon de maïs, cellulose microcristalline, stéarate de magnésium.<br/><b>FORME PHARMACEUTIQUE :</b> Comprimé pelliculé sécable, boîte de 20.<br/><b>ESPÈCES CIBLES :</b> Chien, chat (usage courant hors AMM vétérinaire).<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 15-25 mg/kg PO 2x/j, 5-7 jours. Giardia : 25 mg/kg 1x/j pendant 5 jours. Chat : 10-15 mg/kg PO 2x/j, 5-7 jours (prudence neurotoxicité).<br/><b>MODE D\'ADMINISTRATION :</b> Voie orale avec nourriture (réduit nausées). Comprimé au goût très amer : enrober dans aliment appétent. Chat : écraser et mélanger ou utiliser forme suspension.<br/><b>DURÉE DE TRAITEMENT :</b> 5-7 jours standard. Giardiose : 5 jours. Ne pas dépasser 10 jours (neurotoxicité).<br/><b>DÉLAI D\'ATTENTE :</b> Non applicable (animaux de compagnie).<br/><b>SURDOSAGE :</b> Symptômes : nystagmus, ataxie, rigidité, convulsions, anorexie. CAT : arrêt immédiat, diazépam si convulsions, soins de support. Réversible en 1-2 semaines.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière et de l\'humidité.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 1-2 h (PO). Biodisponibilité orale ~100%. Demi-vie : 4-5 h (chien), 8 h (chat). Métabolisme hépatique (oxydation). Élimination urinaire (urine brun-rougeâtre = normal).'},
-  {id:'imidocarbe',n:'Imidocarbe 85mg/mL',m:'Imidocarbe dipropionate',g:'Antiparasitaires',f:'Injectable',v:'IM',p:1200,s:2,smin:5,c:'#059669',
+  {id:'imidocarbe',n:'Imidocarbe 85mg/mL',m:'Imidocarbe dipropionate',g:'Antiparasitaires',f:'Injectable',v:'IM',p:2200,s:2,smin:5,c:'#059669',
    ind:'Piroplasmose (Babésiose) — TRAITEMENT DE CHOIX · Ehrlichiose (partiel)',
    ci:'⛔ CHAT : CONTRE-INDIQUÉ ABSOLUMENT · Insuffisance hépatique/rénale sévère · Grossesse',
    eff:'Effets parasympathomimétiques (hypersalivation, bradycardie, tremblements)',
    inter:'✅ OBLIGATOIRE Atropine 30 min avant · Synergie Doxycycline si Ehrlichia associée',
    poso:'7 mg/kg IM profonde · J0 + J14 — TOUJOURS Atropine avant !',
    notice:'<b>COMPOSITION :</b> Imidocarbe dipropionate 85 mg/mL. Excipients : propylène glycol, eau ppi.<br/><b>FORME PHARMACEUTIQUE :</b> Solution injectable limpide jaune pâle, flacon 20 mL.<br/><b>ESPÈCES CIBLES :</b> Chien, bovins, équins. CONTRE-INDIQUÉ CHEZ LE CHAT.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chien : 7 mg/kg (0.08 mL/kg) IM profonde, 2 injections à J0 et J14. Babésiose sévère : dose unique de 7 mg/kg peut suffire.<br/><b>MODE D\'ADMINISTRATION :</b> OBLIGATOIRE : prémédication Atropine 0.02 mg/kg SC/IM 30 min avant (prévient effets cholinergiques). Injection IM profonde dans le muscle de la cuisse. Ne pas injecter en SC (nécrose). Garder l\'animal en observation 1h post-injection.<br/><b>DURÉE DE TRAITEMENT :</b> 2 injections espacées de 14 jours (babésiose). Ehrlichiose : associer doxycycline 4 semaines.<br/><b>DÉLAI D\'ATTENTE :</b> Viande : 213 jours (bovins). Lait : ne pas utiliser chez vache laitière.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation sévère, bradycardie, vomissements, diarrhée, tremblements, collapsus. CAT : Atropine 0.04 mg/kg IV immédiatement, fluidothérapie, monitoring cardiaque.<br/><b>CONSERVATION :</b> 15-25 °C à l\'abri de la lumière. Ne pas réfrigérer (cristallisation). Après ouverture : 28 jours.<br/><b>PHARMACOCINÉTIQUE :</b> Tmax : 2-4 h (IM). Demi-vie : 5-7 h. Forte liaison aux protéines tissulaires (foie, rein). Élimination rénale lente. Accumulation hépatique.'},
-  {id:'frontline-cat',n:'Frontline Chat',m:'Fipronil+S-Méthoprène',g:'Antiparasitaires',f:'Spot-on',v:'Topique',p:1200,s:0,smin:5,c:'#059669',
+  {id:'frontline-cat',n:'Frontline Chat',m:'Fipronil+S-Méthoprène',g:'Antiparasitaires',f:'Spot-on',v:'Topique',p:950,s:0,smin:5,c:'#059669',
    ind:'Traitement et prévention puces · Prévention tiques · Prévention DAPP',
    ci:'🐕 CHIEN : NE PAS UTILISER (formule chat only) · Ne pas exposer eau 48h',
    eff:'Réaction locale transitoire · Hypersalivation si léché',
    inter:'Compatible antiparasitaires internes',
    poso:'1 pipette sur la nuque · 1x/mois — RUPTURE DE STOCK',
    notice:'<b>COMPOSITION :</b> Fipronil 9.7%, S-méthoprène 11.8%. Excipients : hydroxyéthylcellulose, butoxyde de pipéronyle, huile minérale.<br/><b>FORME PHARMACEUTIQUE :</b> Solution spot-on en pipette monodose (0.5 mL pour chat).<br/><b>ESPÈCES CIBLES :</b> Chat uniquement (formule chat). NE PAS UTILISER CHEZ LE CHIEN.<br/><b>POSOLOGIE DÉTAILLÉE :</b> Chat : 1 pipette (0.5 mL) topique, 1x/mois. Appliquer sur la peau sèche à la base du crâne, zone inaccessible au léchage.<br/><b>MODE D\'ADMINISTRATION :</b> Écarter les poils au niveau de la nuque. Appliquer directement sur la peau. Ne pas immerger dans l\'eau 48h après l\'application. Laisser sécher avant contact.<br/><b>DURÉE DE TRAITEMENT :</b> 1 mois de protection par application. Renouveler mensuellement si infestation persistante.<br/><b>SURDOSAGE :</b> Symptômes : hypersalivation, tremblements, ataxie (si léché). CAT : rinçage abondant, soins symptomatiques.<br/><b>CONSERVATION :</b> 15-25 °C. Pipette fermée : 3 ans. Après ouverture : usage immédiat.<br/><b>PHARMACOCINÉTIQUE :</b> Action locale et systémique. Fipronil : absorption cutanée lente. Demi-vie : 17-19 jours (accumulation cutanée). S-méthoprène : inhibe développement larves, inhibition réversible.'},
-  {id:'ketamine',n:'Kétamine 50mg/mL',m:'Kétamine HCl',g:'Anesthésiques',f:'Injectable',v:'IV/IM',p:1500,s:10,smin:3,c:'#7C3AED',
+  {id:'ketamine',n:'Kétamine 50mg/mL',m:'Kétamine HCl',g:'Anesthésiques',f:'Injectable',v:'IV/IM',p:3200,s:10,smin:3,c:'#7C3AED',
    ind:'Induction anesthésique · Contention chimique · Analgésie dissociative',
    ci:'HTA sévère · Traumatisme crânien (relatif) · Convulsions non contrôlées · Utilisation seule sans myorelaxant',
    eff:'Hypersalivation · Tonus musculaire excessif si seul · Réveil agité',
    inter:'✅ TOUJOURS avec Diazépam IV · ✅ Atropine systématique · Prudence Propofol',
    poso:'Induction IV : 5–10 mg/kg + Diazépam · Contention IM : 10–15 mg/kg'},
-  {id:'meloxicam',n:'Méloxicam 1.5mg/mL',m:'Méloxicam (AINS COX-2)',g:'Anti-inflammatoires',f:'Injectable',v:'SC/PO',p:700,s:1,smin:5,c:'#B45309',
+  {id:'meloxicam',n:'Méloxicam 1.5mg/mL',m:'Méloxicam (AINS COX-2)',g:'Anti-inflammatoires',f:'Injectable',v:'SC/PO',p:2200,s:1,smin:5,c:'#B45309',
    ind:'Analgésie post-opératoire · Douleurs chroniques · Arthrose · Fièvre · Anti-inflammatoire',
    ci:'Insuffisance rénale/hépatique · Hémorragie digestive · Déshydratation · ⛔ Avec corticoïdes',
    eff:'Gastro-intestinaux (nausées, ulcère si prolongé) · Toxicité rénale rare',
@@ -5154,6 +5227,10 @@ function showDrug(id){
       <span class="drug-group" style="background:${d.c}18;color:${d.c};border:1px solid ${d.c}40;border-radius:20px;padding:3px 12px">${d.g}</span>
       <span class="drug-group" style="background:var(--surface2);color:var(--muted);border:1px solid var(--brd);border-radius:20px;padding:3px 12px">${d.f} · Voie: ${d.v}</span>
       <span style="background:${d.s===0?'#FDEDEC':d.s<=d.smin?'#FEF9E7':'#D5F5E3'};color:${d.s===0?'var(--danger)':d.s<=d.smin?'var(--warning)':'var(--forest)'};border-radius:20px;padding:3px 12px;font-size:10.5px;font-weight:700">${d.s===0?'❌ Rupture':d.s<=d.smin?`⚠️ Stock faible: ${d.s}`:`✅ Stock: ${d.s}`} · ${d.p.toLocaleString()} DA</span>
+      <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();editDrugPrice('${d.id}')" style="font-size:10.5px;padding:3px 12px">✏️ Modifier prix</button>
+    </div>
+    <div style="background:#FEF9E7;border:1px solid #F39C12;border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11.5px;color:#784212">
+      💡 <strong>Prix indicatif</strong> basé sur le marché vétérinaire algérien 2025-2026 (Vetoquinol DZ, Boehringer DZ, Biopharm, Sevana, MSD). Cliquez sur "Modifier prix" pour ajuster selon votre fournisseur.
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;padding-bottom:5px;border-bottom:2px solid var(--brd)">✅ Indications</div><div style="font-size:12.5px;line-height:1.7">${d.ind.split(' · ').map(i=>`<div style="display:flex;gap:6px"><span style="color:var(--sage);flex-shrink:0">•</span>${i}</div>`).join('')}</div></div>
@@ -5200,6 +5277,20 @@ function showDrug(id){
   openModal('modal-drug');
   // Auto-focus poids
   setTimeout(()=>{const el=document.getElementById('dw-kg');if(el)el.focus();},200);
+}
+
+// Edit drug price (and optionally stock) — useful to match supplier
+function editDrugPrice(drugId) {
+  const d = DRUGS.find(x => x.id === drugId);
+  if (!d) return;
+  const newPrice = prompt(`Nouveau prix pour ${d.n} (DA) :\n\nPrix actuel : ${d.p} DA\nFournisseur indicatif : Vetoquinol/Boehringer DZ`, d.p);
+  if (newPrice === null) return;
+  const priceNum = parseInt(newPrice, 10);
+  if (isNaN(priceNum) || priceNum < 0) { toast('Prix invalide'); return; }
+  d.p = priceNum;
+  if (typeof persistAppState === 'function') persistAppState();
+  showDrug(drugId); // refresh modal
+  toast(`✅ Prix mis à jour : ${priceNum} DA`);
 }
 
 // Weight-based drug dose calculator
@@ -6441,6 +6532,228 @@ function saveNewVaccination() {
   _vaccHistSelectedPatient = patientId;
   renderVaccHistorique();
   toast('Vaccination enregistrée ✅');
+}
+
+// ══════════════════════════════════════════════════════════════
+// IMPORT FROM EXCEL/CHATGPT
+// ══════════════════════════════════════════════════════════════
+function openImportModal() {
+  openModal('modal-import');
+}
+
+function copyImportPrompt() {
+  const text = document.getElementById('import-prompt-text')?.value;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    toast('✅ Prompt copié — ouvrez ChatGPT et collez avec votre Excel');
+  }).catch(() => {
+    // Fallback: select text
+    const ta = document.getElementById('import-prompt-text');
+    ta.select();
+    document.execCommand('copy');
+    toast('✅ Prompt copié');
+  });
+}
+
+function parseImportJson() {
+  const raw = document.getElementById('import-json-text')?.value?.trim();
+  if (!raw) { toast('Collez d\'abord le JSON renvoyé par ChatGPT'); return null; }
+  // Strip markdown code fences if present
+  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {
+    toast('❌ JSON invalide : ' + e.message);
+    return null;
+  }
+}
+
+function previewImportJson() {
+  const data = parseImportJson();
+  if (!data) return;
+  const preview = document.getElementById('import-preview');
+  if (!preview) return;
+  const counts = {
+    clients: Array.isArray(data.clients) ? data.clients.length : 0,
+    patients: Array.isArray(data.patients) ? data.patients.length : 0,
+    historique: Array.isArray(data.historique) ? data.historique.length : 0,
+    vaccHistory: Array.isArray(data.vaccHistory) ? data.vaccHistory.length : 0,
+    appointments: Array.isArray(data.appointments) ? data.appointments.length : 0,
+  };
+  preview.style.display = 'block';
+  preview.innerHTML = `
+    <strong>📊 Aperçu des données à importer :</strong><br>
+    👥 Clients : <strong>${counts.clients}</strong><br>
+    🐾 Animaux : <strong>${counts.patients}</strong><br>
+    📜 Cas cliniques : <strong>${counts.historique}</strong><br>
+    💉 Vaccinations : <strong>${counts.vaccHistory}</strong><br>
+    📅 Rendez-vous : <strong>${counts.appointments}</strong>
+  `;
+}
+
+function parseDateToISO(str) {
+  if (!str) return '';
+  // Already ISO?
+  if (/^\d{4}-\d{2}-\d{2}/.test(str)) return str.slice(0,10);
+  // JJ/MM/AAAA
+  const m = String(str).match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (m) {
+    const dd = m[1].padStart(2, '0');
+    const mm = m[2].padStart(2, '0');
+    let yy = m[3];
+    if (yy.length === 2) yy = '20' + yy;
+    return `${yy}-${mm}-${dd}`;
+  }
+  return '';
+}
+
+function executeImport() {
+  const data = parseImportJson();
+  if (!data) return;
+
+  let imported = { clients: 0, patients: 0, historique: 0, vacc: 0, rdv: 0 };
+
+  try {
+    // 1) Import patients (which auto-creates clients via upsertClientFromPatient)
+    if (Array.isArray(data.patients)) {
+      data.patients.forEach(p => {
+        if (!p.name || !p.owner) return;
+        const patient = upsertPatient({
+          name: p.name,
+          species: p.species || 'Chien',
+          race: p.race || '',
+          age: p.age || '',
+          weight: p.weight || '',
+          owner: p.owner,
+          phone: p.phone || '',
+          email: p.email || '',
+          sexe: p.sexe || '',
+          nextRdv: p.nextRdv || '',
+        });
+        if (patient) {
+          upsertClientFromPatient(patient);
+          imported.patients++;
+        }
+      });
+    }
+
+    // 2) Import standalone clients (no animal)
+    if (Array.isArray(data.clients)) {
+      data.clients.forEach(c => {
+        if (!c.fullName) return;
+        const exists = CLIENTS.find(x => x.fullName === c.fullName);
+        if (!exists) {
+          CLIENTS.push({
+            id: 'cli-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+            fullName: c.fullName,
+            phone: c.phone || '',
+            email: c.email || '',
+            address: c.address || '',
+          });
+          imported.clients++;
+        } else {
+          // Update missing fields
+          if (c.phone && !exists.phone) exists.phone = c.phone;
+          if (c.email && !exists.email) exists.email = c.email;
+          if (c.address && !exists.address) exists.address = c.address;
+        }
+      });
+    }
+
+    // 3) Import historique (clinical cases)
+    if (Array.isArray(data.historique)) {
+      data.historique.forEach(h => {
+        if (!h.diagnostic) return;
+        const id = 'h-imp-' + Date.now() + '-' + Math.random().toString(36).slice(2,7);
+        HISTORIQUE_DATA.unshift({
+          id,
+          animal: typeof displayAnimalName === 'function' ? displayAnimalName(h.animal || '?', h.espece || 'Chien') : (h.animal || '?'),
+          espece: (h.espece || 'chien').toLowerCase(),
+          race: h.race || '',
+          age: h.age || '-',
+          poids: h.poids || '-',
+          client: h.client || '',
+          tel: h.tel || '-',
+          date: h.date || (typeof todayFr === 'function' ? todayFr() : new Date().toLocaleDateString('fr-FR')),
+          dateSortie: null,
+          diagnostic: h.diagnostic,
+          urgence: h.urgence || 'normal',
+          traitements: h.traitement ? h.traitement.split(/[·\n]/).map(s => s.trim()).filter(Boolean) : [],
+          traitement: h.traitement || '',
+          statutTraitement: 'en-cours',
+          resultat: h.resultat || 'stabilisation',
+          notesCliniques: h.notes || '',
+          conseilsSortie: h.conseils || '',
+          montant: parseInt(h.montant, 10) || 0,
+          paiement: h.paiement || 'impaye',
+          rdv: h.rdv || 'A planifier',
+          vaccAJour: false,
+          ordonnance: null,
+        });
+        imported.historique++;
+      });
+    }
+
+    // 4) Import vaccinations
+    if (Array.isArray(data.vaccHistory) && typeof VACC_HISTORY !== 'undefined') {
+      data.vaccHistory.forEach(v => {
+        if (!v.animal || !v.vaccine || !v.date) return;
+        // Find patient by name + owner to get patientId
+        const patient = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).find(p =>
+          p.name?.toLowerCase() === v.animal?.toLowerCase() &&
+          (!v.owner || p.owner?.toLowerCase() === v.owner?.toLowerCase())
+        );
+        VACC_HISTORY.unshift({
+          id: 'vh-imp-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+          patientId: patient?.id || '',
+          animal: v.animal,
+          owner: v.owner || patient?.owner || '',
+          species: v.species || patient?.species || 'Chien',
+          vaccine: v.vaccine,
+          lot: v.lot || '',
+          vet: v.vet || '',
+          date: parseDateToISO(v.date) || v.date,
+          rappel: parseDateToISO(v.rappel) || '',
+        });
+        imported.vacc++;
+      });
+    }
+
+    // 5) Import appointments
+    if (Array.isArray(data.appointments) && typeof APPOINTMENTS !== 'undefined') {
+      data.appointments.forEach(a => {
+        if (!a.patientName || !a.date) return;
+        const patient = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).find(p =>
+          p.name?.toLowerCase() === a.patientName?.toLowerCase()
+        );
+        APPOINTMENTS.unshift({
+          id: 'apt-imp-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
+          patientId: patient?.id || '',
+          patientName: a.patientName,
+          owner: a.owner || patient?.owner || '',
+          date: parseDateToISO(a.date) || a.date,
+          time: a.time || '09:00',
+          type: a.type || 'Consultation',
+          motif: a.motif || '',
+          status: 'planned',
+        });
+        imported.rdv++;
+      });
+    }
+
+    // Persist + refresh
+    if (typeof persistAppState === 'function') persistAppState();
+    if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
+    if (typeof renderClientsPage === 'function') renderClientsPage();
+    if (typeof renderHist === 'function') renderHist('');
+    if (typeof renderVaccHistorique === 'function') renderVaccHistorique();
+
+    closeModal('modal-import');
+    toast(`✅ Import réussi : ${imported.patients} animaux, ${imported.clients} clients, ${imported.historique} cas, ${imported.vacc} vaccinations, ${imported.rdv} RDV`);
+  } catch (e) {
+    console.error('[VetPro] Import error:', e);
+    toast('❌ Erreur lors de l\'import : ' + e.message);
+  }
 }
 
 function generateVaccCertificate(patientId) {
@@ -7789,7 +8102,11 @@ function saveNewCase() {
     dateSortie: null,
     diagnostic: diagnosis,
     urgence: urgencyScore >= 7 ? 'critique' : urgencyScore >= 4 ? 'urgent' : 'normal',
-    traitements: [],
+    traitements: (function(){
+      const t = document.getElementById('case-treatment')?.value?.trim();
+      return t ? t.split(/[·\n]/).map(s => s.trim()).filter(Boolean) : [];
+    })(),
+    traitement: document.getElementById('case-treatment')?.value?.trim() || '',
     statutTraitement: 'en-cours',
     resultat: 'stabilisation',
     notesCliniques: [

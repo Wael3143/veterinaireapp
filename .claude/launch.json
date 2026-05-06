@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "vetpro-static",
-      "runtimeExecutable": "node",
-      "runtimeArgs": ["__serve_temp__.js"],
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-ExecutionPolicy", "Bypass", "-File", "serve.ps1"],
       "port": 3000
     },
     {
