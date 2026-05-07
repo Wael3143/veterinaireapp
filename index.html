@@ -5942,7 +5942,51 @@ function initAI(){
   appendAIMsg('bot','Bonjour Dr. Kherbache Wail ! 👋\n\nJe suis votre assistant IA — <strong>Gemini 2.0 Flash via Google AI Studio, 100% gratuit</strong>.\n\n🔬 Diagnostics différentiels\n⚖️ Posologie & interactions médicamenteuses\n💊 40+ médicaments disponibles en Algérie\n🔪 Chirurgie · 👁 Ophtalmologie · 🦷 Dentisterie\n💧 Calcul perfusion · 💉 Anesthésie\n📚 Références VIN, WSAVA, BSAVA, IRIS\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement — © Dr. Kherbache Wail · ENSV Algérie</em>');
 }
 
-async function sendAI(){if(aiLoading)return;GEMINI_API_KEY=localStorage.getItem("vetpro-gemini-key")||"";if(!GEMINI_API_KEY){appendAIMsg("bot","⚠️ <strong>Clé API Gemini non configurée.</strong><br><br>Allez dans <strong>Paramètres</strong> (menu latéral) et entrez votre clé Google AI Studio dans le champ prévu.<br><br><a href='https://aistudio.google.com/apikey' target='_blank' style='color:#4ADE80'>➡️ Obtenir une clé gratuite ici</a>");return;}var ta=document.getElementById("ai-ta");var msg=ta.value.trim();if(!msg)return;var espece=document.getElementById("ctx-espece");espece=espece?espece.value:"";var poids=document.getElementById("ctx-poids");poids=poids?poids.value:"";var age=document.getElementById("ctx-age");age=age?age.value:"";var race=document.getElementById("ctx-race");race=race?race.value:"";ta.value="";appendAIMsg("user",msg);chatHist.push({role:"user",content:msg});appendTyping();aiLoading=true;var btn=document.getElementById("ai-btn");btn.disabled=true;btn.textContent="⏳";try{var parts=[];if(espece)parts.push("Espèce: "+espece);if(poids)parts.push("Poids: "+poids+"kg");if(age)parts.push("Âge: "+age);if(race)parts.push("Race: "+race);var ctx=parts.join(", ");var sys=ctx?SYS+"\n\nCONTEXTE PATIENT : "+ctx:SYS;var geminiContents=chatHist.slice(-16).map(function(m){return{role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]};});var endpoint="https://generativelanguage.googleapis.com/v1beta/models/"+GEMINI_MODEL+":generateContent?key="+GEMINI_API_KEY;var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:geminiContents,generationConfig:{temperature:0.35,maxOutputTokens:2048}})});removeTyping();if(!res.ok){var errData=await res.json().catch(function(){return{};});appendAIMsg("bot","❌ Erreur Gemini API ("+res.status+"): "+(errData&&errData.error&&errData.error.message||"Erreur inconnue")+".");}else{var data=await res.json();var rep=(data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||"Réponse vide.";appendAIMsg("bot",rep);chatHist.push({role:"assistant",content:rep});}}catch(e){removeTyping();appendAIMsg("bot","❌ Erreur de connexion. Vérifiez votre réseau et réessayez.");}aiLoading=false;btn.disabled=false;btn.textContent="➤";}
+async function sendAI(){
+if(aiLoading)return;
+var ta=document.getElementById("ai-ta");
+var msg=ta.value.trim();if(!msg)return;
+var espece=document.getElementById("ctx-espece");espece=espece?espece.value:"";
+var poids=document.getElementById("ctx-poids");poids=poids?poids.value:"";
+var age=document.getElementById("ctx-age");age=age?age.value:"";
+var race=document.getElementById("ctx-race");race=race?race.value:"";
+ta.value="";appendAIMsg("user",msg);chatHist.push({role:"user",content:msg});
+appendTyping();aiLoading=true;
+var btn=document.getElementById("ai-btn");btn.disabled=true;btn.textContent="⏳";
+try{
+  var ctxParts=[];
+  if(espece)ctxParts.push("Espèce: "+espece);
+  if(poids)ctxParts.push("Poids: "+poids+"kg");
+  if(age)ctxParts.push("Âge: "+age);
+  if(race)ctxParts.push("Race: "+race);
+  var ctx=ctxParts.join(", ");
+  var sys=ctx?SYS+"\n\nCONTEXTE PATIENT : "+ctx:SYS;
+  var messages=[{role:"system",content:sys}].concat(chatHist.slice(-16));
+  var rep="";
+  var useEdge=(_sb && SUPA_URL !== "VOTRE_SUPABASE_URL");
+  if(useEdge){
+    var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:2048,temperature:0.35,messages:messages}});
+    var d=invRes.data;var e=invRes.error;
+    removeTyping();
+    if(e){appendAIMsg("bot","❌ Erreur: "+(e.message||"Erreur inconnue"));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
+    if(d&&d.error){appendAIMsg("bot","❌ "+d.error+(d.hint?"\n\n"+d.hint:""));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
+    rep=d&&d.content||d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
+  }else{
+    GEMINI_API_KEY=localStorage.getItem("vetpro-gemini-key")||"";
+    if(!GEMINI_API_KEY){removeTyping();appendAIMsg("bot","⚠️ <strong>Clé API Gemini non configurée.</strong><br><br>Allez dans <strong>Paramètres</strong> et entrez votre clé Google AI Studio.");aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
+    var geminiContents=chatHist.slice(-16).map(function(m){return{role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]};});
+    var endpoint="https://generativelanguage.googleapis.com/v1beta/models/"+GEMINI_MODEL+":generateContent?key="+GEMINI_API_KEY;
+    var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:geminiContents,generationConfig:{temperature:0.35,maxOutputTokens:2048}})});
+    removeTyping();
+    if(!res.ok){var errData=await res.json().catch(function(){return{};});appendAIMsg("bot","❌ Erreur Gemini ("+res.status+"): "+(errData&&errData.error&&errData.error.message||"Erreur inconnue"));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
+    var data=await res.json();
+    rep=(data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||"";
+  }
+  if(!rep)rep="Réponse vide.";
+  appendAIMsg("bot",rep);chatHist.push({role:"assistant",content:rep});
+}catch(ex){removeTyping();appendAIMsg("bot","❌ Erreur de connexion. Vérifiez votre réseau et réessayez.");}
+aiLoading=false;btn.disabled=false;btn.textContent="➤";
+}
 
 function askAI(q){
   nav('ai');
