@@ -13908,6 +13908,33 @@ function saveAdmission() {
   function fixIOSTouch(){
     if (window.__vpIOSTouchFixed) return;
     window.__vpIOSTouchFixed = true;
+
+    /* helper: fire a button that iOS ignored */
+    function fireBtn(btn, e){
+      e.preventDefault();
+      /* data-vp-action */
+      var action = btn.getAttribute('data-vp-action');
+      if (action){
+        if (action === 'open-login' && typeof window.openAuthCard === 'function') window.openAuthCard('login');
+        if (action === 'open-signup' && typeof window.openAuthCard === 'function') window.openAuthCard('signup');
+        return;
+      }
+      /* data-vp-scroll */
+      var scrollTarget = btn.getAttribute('data-vp-scroll');
+      if (scrollTarget){
+        if (typeof window.vpScrollLandingTo === 'function') window.vpScrollLandingTo(scrollTarget);
+        return;
+      }
+      /* onclick attribute */
+      var oc = btn.getAttribute('onclick');
+      if (oc){ try { new Function(oc).call(btn); } catch(err){} return; }
+      /* onclick property (dynamically assigned, e.g. Google auth button) */
+      if (typeof btn.onclick === 'function'){ btn.onclick.call(btn, e); return; }
+      /* .click() fallback */
+      btn.click();
+    }
+
+    /* A) Sidebar nav items */
     var sidebar = document.querySelector('.sidebar');
     if (sidebar){
       sidebar.addEventListener('touchend', function(e){
@@ -13922,27 +13949,36 @@ function saveAdmission() {
         }
       }, {passive: false});
     }
+
+    /* B) ALL buttons / links inside #login-screen (auth card + landing) */
     document.addEventListener('touchend', function(e){
       var screen = document.getElementById('login-screen');
       if (!screen || !screen.contains(e.target)) return;
-      var btn = e.target.closest('.landing-btn, .login-btn, [data-vp-action], [data-vp-scroll]');
+      /* skip inputs so they still receive focus */
+      if (e.target.closest('input, textarea, select')) return;
+      var btn = e.target.closest('button, a[href], .landing-btn, .login-btn, [data-vp-action], [data-vp-scroll]');
       if (!btn) return;
-      var action = btn.getAttribute('data-vp-action');
-      if (action){
-        e.preventDefault();
-        if (action === 'open-login' && typeof window.openAuthCard === 'function') window.openAuthCard('login');
-        if (action === 'open-signup' && typeof window.openAuthCard === 'function') window.openAuthCard('signup');
-        return;
-      }
-      var scrollTarget = btn.getAttribute('data-vp-scroll');
-      if (scrollTarget){
-        e.preventDefault();
-        if (typeof window.vpScrollLandingTo === 'function') window.vpScrollLandingTo(scrollTarget);
-        return;
-      }
-      var oc = btn.getAttribute('onclick');
-      if (oc){ e.preventDefault(); try { new Function(oc).call(btn); } catch(err){} }
+      fireBtn(btn, e);
     }, {passive: false});
+
+    /* C) First-login modal overlay — buttons use .onclick property */
+    document.addEventListener('touchend', function(e){
+      var overlay = document.getElementById('vetpro-first-login-ultra');
+      if (!overlay || !overlay.contains(e.target)) return;
+      var btn = e.target.closest('button');
+      if (!btn) return;
+      fireBtn(btn, e);
+    }, {passive: false});
+
+    /* D) Ensure inputs inside fixed #login-screen can receive focus on iOS */
+    document.addEventListener('touchend', function(e){
+      var screen = document.getElementById('login-screen');
+      if (!screen || !screen.contains(e.target)) return;
+      var input = e.target.closest('input, textarea, select');
+      if (input && document.activeElement !== input){
+        setTimeout(function(){ input.focus(); }, 0);
+      }
+    }, {passive: true});
   }
 
   // 9) WIRING — bootstrap + auth listener
@@ -16207,6 +16243,19 @@ function saveAdmission() {
   button, .btn, .login-btn, .landing-btn, a, .sb-item,
   .vp-quick-btn, .vp-kpi, .vp-cage, .vp-contact-item,
   .stat-card, .card, input, select, textarea, label {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(13,148,136,.18);
+  }
+
+  /* ── iOS: ensure inputs inside fixed containers get focus ─────────── */
+  #login-screen input, #login-screen textarea, #login-screen select {
+    cursor: text;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  /* ── iOS: first-login modal buttons must be tappable ────────────── */
+  #vetpro-first-login-ultra button {
+    cursor: pointer;
     touch-action: manipulation;
     -webkit-tap-highlight-color: rgba(13,148,136,.18);
   }
