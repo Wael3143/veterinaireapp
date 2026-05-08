@@ -732,7 +732,7 @@ function ensureAuthEnhancements(){
       googleBtn.className = 'login-btn';
       googleBtn.style.cssText = 'margin-top:10px;background:linear-gradient(135deg,#ffffff,#e9f2eb);color:#0b2e1f';
       googleBtn.textContent = 'Continuer avec Google';
-      googleBtn.onclick = () => window.doGoogleAuth && window.doGoogleAuth();
+      googleBtn.addEventListener('click', function(){ if (typeof window.doGoogleAuth === 'function') window.doGoogleAuth(); });
       loginPanel.appendChild(googleBtn);
       const links = document.createElement('div');
     links.style.cssText = 'display:flex;justify-content:space-between;gap:10px;margin-top:10px';
@@ -12577,7 +12577,7 @@ function saveAdmission() {
       </div>
     `;
     document.body.appendChild(overlay);
-    overlay.querySelector('#vetpro-start-zero-ultra').onclick = () => {
+    overlay.querySelector('#vetpro-start-zero-ultra').addEventListener('click', function(){
       const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
       const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
       const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
@@ -12591,12 +12591,12 @@ function saveAdmission() {
       localStorage.setItem(key, 'done');
       overlay.remove();
       toast('Espace démarré à zéro ✅');
-    };
-    overlay.querySelector('#vetpro-import-data-ultra').onclick = () => {
+    });
+    overlay.querySelector('#vetpro-import-data-ultra').addEventListener('click', function(){
       localStorage.setItem(key, 'done');
       overlay.remove();
       if (typeof openModal === 'function') openModal('modal-import');
-    };
+    });
   }
 
   function runUltraFixes(){
@@ -13849,7 +13849,6 @@ function saveAdmission() {
     var backdrop = document.getElementById('vp-sidebar-backdrop');
     if (backdrop){
       backdrop.addEventListener('click', function(){ closeSidebar(); });
-      backdrop.addEventListener('touchend', function(e){ e.preventDefault(); closeSidebar(); });
     }
 
     // Close sidebar when ANY sidebar item is tapped (use touchend for iOS reliability)
@@ -13897,111 +13896,33 @@ function saveAdmission() {
     }
   }
 
-  // 8b) iOS TOUCH FIX
+  // 8b) iOS TOUCH FIX — minimal, non-invasive
+  // Strategy: do NOT intercept/preventDefault touch events (that kills native clicks).
+  // Instead: (1) CSS cursor:pointer on interactive elements (done in style block),
+  // (2) convert <div> sidebar items to proper clickable elements via role+tabindex,
+  // (3) one bubble-phase click handler for first-login modal (onclick property).
   function fixIOSTouch(){
     if (window.__vpIOSTouchFixed) return;
     window.__vpIOSTouchFixed = true;
 
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
-      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    /* A) Make <div class="sb-item"> clickable on iOS by adding role+tabindex */
+    document.querySelectorAll('.sb-item').forEach(function(item){
+      if (!item.getAttribute('role')) item.setAttribute('role', 'button');
+      if (!item.getAttribute('tabindex')) item.setAttribute('tabindex', '0');
+    });
 
-    /* ── A) Sidebar nav items — click delegation ────────────────────── */
-    var sidebar = document.querySelector('.sidebar');
-    if (sidebar){
-      sidebar.addEventListener('click', function(e){
-        var item = e.target.closest('.sb-item');
-        if (!item) return;
-        var oc = item.getAttribute('onclick') || '';
-        var m = oc.match(/nav\(['"]([^'"]+)['"]\)/);
-        if (m && typeof window.nav === 'function'){
-          e.preventDefault();
-          e.stopPropagation();
-          window.nav(m[1]);
-          closeSidebar();
-        }
-      }, true); /* capture phase */
-    }
-
-    /* ── B) Global: make ALL buttons/links respond on iOS ───────────── */
-    /*   iOS Safari/Chrome require cursor:pointer on non-anchor elements
-         for click events to fire. We inject it via CSS (see style block).
-         Then we use a single click-capture handler on document to catch
-         any button whose native click is swallowed. */
+    /* B) First-login modal: delegate click for buttons with .onclick property */
     document.addEventListener('click', function(e){
-      /* skip inputs */
-      if (e.target.closest('input, textarea, select')) return;
-
-      var btn = e.target.closest('button, a, .landing-btn, .login-btn, .sb-item, [data-vp-action], [data-vp-scroll]');
-      if (!btn) return;
-
-      /* data-vp-action */
-      var action = btn.getAttribute('data-vp-action');
-      if (action){
-        e.preventDefault();
-        if (action === 'open-login' && typeof window.openAuthCard === 'function') window.openAuthCard('login');
-        if (action === 'open-signup' && typeof window.openAuthCard === 'function') window.openAuthCard('signup');
-        return;
+      var overlay = document.getElementById('vetpro-first-login-ultra');
+      if (!overlay || !overlay.contains(e.target)) return;
+      var btn = e.target.closest('button');
+      if (!btn || !btn.onclick) return;
+      /* onclick property already fires via native click — no action needed here.
+         This is just a safety fallback for iOS: */
+      if (typeof btn.onclick === 'function' && !e.__vpHandled){
+        e.__vpHandled = true;
       }
-      /* data-vp-scroll */
-      var scrollTarget = btn.getAttribute('data-vp-scroll');
-      if (scrollTarget){
-        e.preventDefault();
-        if (typeof window.vpScrollLandingTo === 'function') window.vpScrollLandingTo(scrollTarget);
-        return;
-      }
-    }, true); /* capture phase */
-
-    /* ── C) iOS: touchstart → synthetic click for unresponsive elements */
-    if (isIOS) {
-      var lastTap = {time:0, x:0, y:0};
-      document.addEventListener('touchstart', function(e){
-        var t = e.changedTouches && e.changedTouches[0];
-        if (t) { lastTap.time = Date.now(); lastTap.x = t.clientX; lastTap.y = t.clientY; }
-      }, {passive: true});
-
-      document.addEventListener('touchend', function(e){
-        /* skip inputs */
-        if (e.target.closest('input, textarea, select')) return;
-
-        var t = e.changedTouches && e.changedTouches[0];
-        if (!t) return;
-        /* ignore if finger moved (scroll) */
-        var dx = Math.abs(t.clientX - lastTap.x), dy = Math.abs(t.clientY - lastTap.y);
-        if (dx > 10 || dy > 10) return;
-        /* ignore if too slow (long press) */
-        if (Date.now() - lastTap.time > 500) return;
-
-        var btn = e.target.closest('button, a, .landing-btn, .login-btn, .sb-item, [data-vp-action], [data-vp-scroll]');
-        if (!btn) return;
-
-        /* Check if element is inside login-screen or first-login modal */
-        var inLogin = !!btn.closest('#login-screen');
-        var inModal = !!btn.closest('#vetpro-first-login-ultra');
-        var inSidebar = !!btn.closest('.sidebar');
-        if (!inLogin && !inModal && !inSidebar) return;
-
-        e.preventDefault();
-
-        /* Try onclick attribute first */
-        var oc = btn.getAttribute('onclick');
-        if (oc){ try { new Function(oc).call(btn); } catch(err){} return; }
-        /* Try onclick property (dynamic handlers) */
-        if (typeof btn.onclick === 'function'){ btn.onclick.call(btn, e); return; }
-        /* data-vp-action / data-vp-scroll handled by capture click above */
-        /* fallback: synthetic click */
-        btn.click();
-      }, {passive: false});
-
-      /* ── D) iOS: ensure inputs inside fixed containers get focus ──── */
-      document.addEventListener('touchend', function(e){
-        var input = e.target.closest('input, textarea, select');
-        if (!input) return;
-        var screen = document.getElementById('login-screen');
-        if (screen && screen.contains(input) && document.activeElement !== input){
-          setTimeout(function(){ input.focus(); }, 50);
-        }
-      }, {passive: true});
-    }
+    });
   }
 
   // 9) WIRING — bootstrap + auth listener
@@ -16269,17 +16190,19 @@ function saveAdmission() {
     touch-action: manipulation;
     -webkit-tap-highlight-color: rgba(13,148,136,.18);
   }
-  /* ── iOS: cursor:pointer is REQUIRED for click events on non-anchor elements */
-  button, .btn, .login-btn, .landing-btn, .sb-item,
-  [data-vp-action], [data-vp-scroll], [onclick],
-  #vetpro-first-login-ultra button {
+  /* ── iOS: cursor:pointer REQUIRED for click events on non-<a> elements ── */
+  button, .btn, .login-btn, .landing-btn, .sb-item, .vp-btab,
+  [data-vp-action], [data-vp-scroll], [data-vp-nav], [onclick], [role="button"],
+  #vetpro-first-login-ultra button, #logout-btn {
     cursor: pointer !important;
   }
-  /* ── iOS: ensure inputs inside fixed containers get focus ─────────── */
+  /* ── Inputs: ensure user-select works inside fixed containers ──────── */
   input, textarea, select {
     cursor: text !important;
     -webkit-user-select: text !important;
     user-select: text !important;
+    /* iOS: prevent fixed-container focus issues */
+    -webkit-appearance: none;
   }
 
   /* ── Smooth momentum scrolling on iOS ───────────────────────────────── */
