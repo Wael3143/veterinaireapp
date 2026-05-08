@@ -82,9 +82,10 @@
   #logout-btn:hover,#logout-btn:active{background:var(--danger);border-color:var(--danger)}
   @media (max-width:768px){
     #logout-btn{
-      bottom:16px;right:16px;padding:14px 20px;font-size:14px;
-      min-height:48px;border-radius:14px;
+      bottom:74px;right:16px;padding:10px 16px;font-size:12px;
+      min-height:40px;border-radius:12px;
       box-shadow:0 6px 20px rgba(0,0,0,.4);
+      z-index:120;
     }
   }
 
@@ -2202,22 +2203,14 @@ window.addEventListener('DOMContentLoaded', () => {
         <div class="fg"><label class="lbl">Pied de page ordonnances</label><textarea class="tex" rows="2">N° Ordre: DZ-VET-2026-004782 · ENSV Algérie · Tous droits réservés</textarea></div>
       </div>
 
-      <!-- Gemini AI -->
-      <div class="settings-section">
+      <!-- Gemini AI (key managed server-side via Supabase Edge Function) -->
+      <div class="settings-section" style="display:none">
         <div class="settings-title">🤖 Assistant IA (Google Gemini)</div>
         <div class="fg">
           <label class="lbl">Clé API Google AI Studio</label>
           <input class="inp" type="password" id="settings-gemini-key" placeholder="AIzaSy..." autocomplete="off"/>
         </div>
-        <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
-          <button class="btn btn-p btn-sm" onclick="saveGeminiKey()">💾 Enregistrer</button>
-          <button class="btn btn-ghost btn-sm" onclick="testGeminiKey()">🧪 Tester</button>
-          <a href="https://aistudio.google.com/apikey" target="_blank" style="font-size:11px;color:var(--sage);font-weight:600">🔑 Obtenir une clé gratuite</a>
-        </div>
         <div id="gemini-key-status" style="margin-top:8px;font-size:11.5px;display:none"></div>
-        <div class="ibox ibox-b" style="margin-top:10px;font-size:11px">
-          💡 Votre clé API est stockée localement dans votre navigateur — jamais envoyée à nos serveurs.
-        </div>
       </div>
     </div>
 
@@ -13055,7 +13048,7 @@ function saveAdmission() {
     #login-screen .landing-shell{grid-template-columns:1fr!important;gap:18px}
 
     /* Logout button bottom-right repositioned to avoid hamburger */
-    #logout-btn{bottom:14px!important;right:14px!important;font-size:11px!important;padding:7px 12px!important}
+    #logout-btn{bottom:74px!important;right:14px!important;font-size:11px!important;padding:7px 12px!important}
   }
 
   /* Very small phones */
@@ -13909,12 +13902,42 @@ function saveAdmission() {
     if (window.__vpIOSTouchFixed) return;
     window.__vpIOSTouchFixed = true;
 
-    /* helper: fire a button that iOS ignored */
-    function fireBtn(btn, e){
-      e.preventDefault();
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    /* ── A) Sidebar nav items — click delegation ────────────────────── */
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar){
+      sidebar.addEventListener('click', function(e){
+        var item = e.target.closest('.sb-item');
+        if (!item) return;
+        var oc = item.getAttribute('onclick') || '';
+        var m = oc.match(/nav\(['"]([^'"]+)['"]\)/);
+        if (m && typeof window.nav === 'function'){
+          e.preventDefault();
+          e.stopPropagation();
+          window.nav(m[1]);
+          closeSidebar();
+        }
+      }, true); /* capture phase */
+    }
+
+    /* ── B) Global: make ALL buttons/links respond on iOS ───────────── */
+    /*   iOS Safari/Chrome require cursor:pointer on non-anchor elements
+         for click events to fire. We inject it via CSS (see style block).
+         Then we use a single click-capture handler on document to catch
+         any button whose native click is swallowed. */
+    document.addEventListener('click', function(e){
+      /* skip inputs */
+      if (e.target.closest('input, textarea, select')) return;
+
+      var btn = e.target.closest('button, a, .landing-btn, .login-btn, .sb-item, [data-vp-action], [data-vp-scroll]');
+      if (!btn) return;
+
       /* data-vp-action */
       var action = btn.getAttribute('data-vp-action');
       if (action){
+        e.preventDefault();
         if (action === 'open-login' && typeof window.openAuthCard === 'function') window.openAuthCard('login');
         if (action === 'open-signup' && typeof window.openAuthCard === 'function') window.openAuthCard('signup');
         return;
@@ -13922,63 +13945,63 @@ function saveAdmission() {
       /* data-vp-scroll */
       var scrollTarget = btn.getAttribute('data-vp-scroll');
       if (scrollTarget){
+        e.preventDefault();
         if (typeof window.vpScrollLandingTo === 'function') window.vpScrollLandingTo(scrollTarget);
         return;
       }
-      /* onclick attribute */
-      var oc = btn.getAttribute('onclick');
-      if (oc){ try { new Function(oc).call(btn); } catch(err){} return; }
-      /* onclick property (dynamically assigned, e.g. Google auth button) */
-      if (typeof btn.onclick === 'function'){ btn.onclick.call(btn, e); return; }
-      /* .click() fallback */
-      btn.click();
-    }
+    }, true); /* capture phase */
 
-    /* A) Sidebar nav items */
-    var sidebar = document.querySelector('.sidebar');
-    if (sidebar){
-      sidebar.addEventListener('touchend', function(e){
-        var item = e.target.closest('.sb-item');
-        if (!item) return;
-        var oc = item.getAttribute('onclick') || '';
-        var m = oc.match(/nav\(['"]([^'"]+)['"]\)/);
-        if (m && typeof window.nav === 'function'){
-          e.preventDefault();
-          window.nav(m[1]);
-          closeSidebar();
-        }
+    /* ── C) iOS: touchstart → synthetic click for unresponsive elements */
+    if (isIOS) {
+      var lastTap = {time:0, x:0, y:0};
+      document.addEventListener('touchstart', function(e){
+        var t = e.changedTouches && e.changedTouches[0];
+        if (t) { lastTap.time = Date.now(); lastTap.x = t.clientX; lastTap.y = t.clientY; }
+      }, {passive: true});
+
+      document.addEventListener('touchend', function(e){
+        /* skip inputs */
+        if (e.target.closest('input, textarea, select')) return;
+
+        var t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        /* ignore if finger moved (scroll) */
+        var dx = Math.abs(t.clientX - lastTap.x), dy = Math.abs(t.clientY - lastTap.y);
+        if (dx > 10 || dy > 10) return;
+        /* ignore if too slow (long press) */
+        if (Date.now() - lastTap.time > 500) return;
+
+        var btn = e.target.closest('button, a, .landing-btn, .login-btn, .sb-item, [data-vp-action], [data-vp-scroll]');
+        if (!btn) return;
+
+        /* Check if element is inside login-screen or first-login modal */
+        var inLogin = !!btn.closest('#login-screen');
+        var inModal = !!btn.closest('#vetpro-first-login-ultra');
+        var inSidebar = !!btn.closest('.sidebar');
+        if (!inLogin && !inModal && !inSidebar) return;
+
+        e.preventDefault();
+
+        /* Try onclick attribute first */
+        var oc = btn.getAttribute('onclick');
+        if (oc){ try { new Function(oc).call(btn); } catch(err){} return; }
+        /* Try onclick property (dynamic handlers) */
+        if (typeof btn.onclick === 'function'){ btn.onclick.call(btn, e); return; }
+        /* data-vp-action / data-vp-scroll handled by capture click above */
+        /* fallback: synthetic click */
+        btn.click();
       }, {passive: false});
+
+      /* ── D) iOS: ensure inputs inside fixed containers get focus ──── */
+      document.addEventListener('touchend', function(e){
+        var input = e.target.closest('input, textarea, select');
+        if (!input) return;
+        var screen = document.getElementById('login-screen');
+        if (screen && screen.contains(input) && document.activeElement !== input){
+          setTimeout(function(){ input.focus(); }, 50);
+        }
+      }, {passive: true});
     }
-
-    /* B) ALL buttons / links inside #login-screen (auth card + landing) */
-    document.addEventListener('touchend', function(e){
-      var screen = document.getElementById('login-screen');
-      if (!screen || !screen.contains(e.target)) return;
-      /* skip inputs so they still receive focus */
-      if (e.target.closest('input, textarea, select')) return;
-      var btn = e.target.closest('button, a[href], .landing-btn, .login-btn, [data-vp-action], [data-vp-scroll]');
-      if (!btn) return;
-      fireBtn(btn, e);
-    }, {passive: false});
-
-    /* C) First-login modal overlay — buttons use .onclick property */
-    document.addEventListener('touchend', function(e){
-      var overlay = document.getElementById('vetpro-first-login-ultra');
-      if (!overlay || !overlay.contains(e.target)) return;
-      var btn = e.target.closest('button');
-      if (!btn) return;
-      fireBtn(btn, e);
-    }, {passive: false});
-
-    /* D) Ensure inputs inside fixed #login-screen can receive focus on iOS */
-    document.addEventListener('touchend', function(e){
-      var screen = document.getElementById('login-screen');
-      if (!screen || !screen.contains(e.target)) return;
-      var input = e.target.closest('input, textarea, select');
-      if (input && document.activeElement !== input){
-        setTimeout(function(){ input.focus(); }, 0);
-      }
-    }, {passive: true});
   }
 
   // 9) WIRING — bootstrap + auth listener
@@ -16225,11 +16248,11 @@ function saveAdmission() {
      · montant/paid not saving (defensive extract-from-form, post-save patch)
      ═══════════════════════════════════════════════════════════════════ -->
 <style id="vetpro-mobile-ui-v3-style">
-  /* ── Force horizontal text on EVERY element (kills vertical letter stack) ─ */
-  html, body, * {
+  /* ── Force horizontal text (targeted — avoids * selector for performance) ─ */
+  html, body, div, span, section, nav, main, aside, header, footer,
+  p, h1, h2, h3, h4, h5, h6, a, button, input, select, textarea,
+  label, table, td, th, li, ul, ol, form, fieldset {
     writing-mode: horizontal-tb !important;
-    text-orientation: mixed !important;
-    -webkit-text-orientation: mixed !important;
   }
   /* But allow truly intentional RTL (Arabic) */
   body.vp-rtl, body.vp-rtl * { direction: rtl; }
@@ -16246,18 +16269,17 @@ function saveAdmission() {
     touch-action: manipulation;
     -webkit-tap-highlight-color: rgba(13,148,136,.18);
   }
-
-  /* ── iOS: ensure inputs inside fixed containers get focus ─────────── */
-  #login-screen input, #login-screen textarea, #login-screen select {
-    cursor: text;
-    -webkit-user-select: text;
-    user-select: text;
-  }
-  /* ── iOS: first-login modal buttons must be tappable ────────────── */
+  /* ── iOS: cursor:pointer is REQUIRED for click events on non-anchor elements */
+  button, .btn, .login-btn, .landing-btn, .sb-item,
+  [data-vp-action], [data-vp-scroll], [onclick],
   #vetpro-first-login-ultra button {
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: rgba(13,148,136,.18);
+    cursor: pointer !important;
+  }
+  /* ── iOS: ensure inputs inside fixed containers get focus ─────────── */
+  input, textarea, select {
+    cursor: text !important;
+    -webkit-user-select: text !important;
+    user-select: text !important;
   }
 
   /* ── Smooth momentum scrolling on iOS ───────────────────────────────── */
@@ -16376,6 +16398,27 @@ function saveAdmission() {
     /* Show backdrop when sidebar is open */
     .sidebar.vp-open ~ #vp-sidebar-backdrop,
     body.vp-sidebar-open #vp-sidebar-backdrop{display:block}
+    /* Logout button above bottom bar */
+    #logout-btn{bottom:74px!important}
+  }
+
+  /* ── Android/low-end performance: reduce heavy effects ──────────── */
+  @media (max-width: 768px) {
+    /* Reduce backdrop-filter to improve scroll/render perf on Android */
+    .landing-topnav, .vp-trust-pill, .vp-hero-tag {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    /* Simpler box-shadows on cards */
+    .landing-card, .pricing-card, .vetpro-center-section {
+      box-shadow: 0 4px 16px rgba(0,0,0,.12) !important;
+    }
+    /* Reduce animated pseudo-elements */
+    .vet-pulse, .vet-pulse.alt {
+      display: none !important;
+    }
+    /* Avoid layout thrashing from animations */
+    .vp-async-skeleton { animation-duration: 1.5s !important; }
   }
 </style>
 
