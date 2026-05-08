@@ -5935,7 +5935,8 @@ function loadGeminiKeyToSettings(){var inp=document.getElementById("settings-gem
 function initAI(){
   var msgs=document.getElementById('ai-msgs');if(!msgs)return;msgs.innerHTML='';
   var name='';
-  try{var el=document.querySelector('.tb-name-main');name=el?el.textContent.trim():'';}catch(e){}
+  try{if(typeof window.vpGetCurrentName==='function'){name=window.vpGetCurrentName()||'';}}catch(e){}
+  if(!name)try{var el=document.querySelector('.tb-name-main');name=el?el.textContent.trim():'';}catch(e){}
   if(!name)try{name=(typeof getActiveDisplayName==='function')?getActiveDisplayName():'';}catch(e){}
   var h=new Date().getHours();
   var timeWord=h<5?'Bonne nuit':h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';
@@ -7995,6 +7996,18 @@ const HISTORIQUE_DATA = [
   },
 ];
 
+/* Expose all data arrays on window so IIFEs can access them for reset/KPI */
+window.CAGES = CAGES;
+window.DRUGS = DRUGS;
+window.HISTORIQUE_DATA = HISTORIQUE_DATA;
+window.ORDOS = ORDOS;
+window.SUIVI_HISTORY = SUIVI_HISTORY;
+window.PATIENTS = PATIENTS;
+window.CLIENTS = CLIENTS;
+window.APPOINTMENTS = APPOINTMENTS;
+window.VACCINE_REMINDERS = VACCINE_REMINDERS;
+window.VACC_HISTORY = VACC_HISTORY;
+
 // Render historique table
 function renderHist(filter) {
   const tbody  = document.getElementById('hist-tbody');
@@ -8752,7 +8765,7 @@ function saveAdmission() {
 
   function getSettings(){
     const defaults = {
-      vetFirstName: 'Codex',
+      vetFirstName: '',
       vetLastName: '',
       title: 'Médecin vétérinaire',
       orderNumber: 'À compléter',
@@ -8793,6 +8806,9 @@ function saveAdmission() {
   function saveSettings(next){
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   }
+  /* Expose globally so other IIFEs (currentName, getUserName, etc.) can read settings */
+  window.getSettings = getSettings;
+  window.saveSettings = saveSettings;
 
   function renameBranding(){
     document.title = 'VetPro - Plateforme vétérinaire';
@@ -12213,16 +12229,25 @@ function saveAdmission() {
       toast('Mode démo conservé');
     };
     overlay.querySelector('#vetpro-start-zero').onclick = () => {
-      const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
-      const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
-      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
-      if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
-      if (typeof VACC_HISTORY !== 'undefined') VACC_HISTORY.splice(0, VACC_HISTORY.length);
+      /* Reset cages to libre */
+      var cages = window.CAGES;
+      if (Array.isArray(cages)) cages.forEach(c => { c.statut='libre'; c.animal=null; c.motif=null; c.depuis=null; c.notes=null; });
+      /* Reset drug stocks to smin */
+      var drugs = window.DRUGS;
+      if (Array.isArray(drugs)) drugs.forEach(d => { d.s = (d.smin || 5) + 5; });
+      /* Wipe clinical data arrays */
+      ['HISTORIQUE_DATA','ORDOS','CLIENTS','PATIENTS','APPOINTMENTS','VACCINE_REMINDERS','VACC_HISTORY'].forEach(name => {
+        try { var a = window[name]; if (Array.isArray(a)) a.splice(0, a.length); } catch(e){}
+      });
+      try { var sh = window.SUIVI_HISTORY; if (sh && typeof sh === 'object') Object.keys(sh).forEach(k => delete sh[k]); } catch(e){}
+      var empty = { cages: cages||[], drugs: drugs||[], ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
+      if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, typeof getDefaultState === 'function' ? getDefaultState() : {});
       if (typeof persistAppState === 'function') persistAppState();
       if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
       if (typeof renderFinancesPage === 'function') renderFinancesPage();
       if (typeof renderStatistics === 'function') renderStatistics();
       if (typeof renderVaccHistorique === 'function') renderVaccHistorique();
+      try { if (typeof nav === 'function') nav('dashboard'); } catch(e){}
       localStorage.setItem(key, 'done');
       overlay.remove();
       toast('Espace démarré à zéro');
@@ -12350,6 +12375,10 @@ function saveAdmission() {
     document.body.classList.toggle('vetpro-reduced-motion', !!getSettings()?.display?.reducedMotion);
   }
 
+  /* Expose unified name function globally so all IIFEs can use it */
+  window.vpGetCurrentName = currentName;
+  window.vpGetInitials = initialsFrom;
+
   function applyUltraIdentity(){
     const name = currentName();
     const initials = initialsFrom(name);
@@ -12373,7 +12402,7 @@ function saveAdmission() {
     if (fields[1]) fields[1].value = s.vetLastName || '';
     if (fields[2]) fields[2].value = s.title || '';
     if (fields[3]) fields[3].value = s.orderNumber || '';
-    if (fields[4]) fields[4].value = s.email || 'w.kherbache@etud.ensv.dz';
+    if (fields[4]) fields[4].value = s.email || '';
     if (fields[5]) fields[5].value = s.phone || '';
     if (fields[7]) fields[7].value = s.clinicName || '';
     if (fields[8]) fields[8].value = s.clinicAddress || '';
@@ -12412,7 +12441,7 @@ function saveAdmission() {
     next.vetLastName = fields[1]?.value?.trim() || '';
     next.title = fields[2]?.value?.trim() || next.title || '';
     next.orderNumber = fields[3]?.value?.trim() || next.orderNumber || '';
-    next.email = fields[4]?.value?.trim() || 'w.kherbache@etud.ensv.dz';
+    next.email = fields[4]?.value?.trim() || '';
     next.phone = fields[5]?.value?.trim() || '';
     next.clinicName = fields[7]?.value?.trim() || '';
     next.clinicAddress = fields[8]?.value?.trim() || '';
@@ -12436,6 +12465,10 @@ function saveAdmission() {
     if (typeof applyThemeAndLanguage === 'function') applyThemeAndLanguage();
     applyUltraTheme();
     applyUltraIdentity();
+    /* Refresh dashboard greeting to show updated name */
+    if (typeof window.vpRefreshDashboardWelcome === 'function') window.vpRefreshDashboardWelcome();
+    /* Re-paint dashboard hero with new name */
+    if (typeof window.__vpRepaintDashboard === 'function') window.__vpRepaintDashboard();
     if (typeof renderStatistics === 'function') renderStatistics();
     if (typeof renderFinancesPage === 'function') renderFinancesPage();
     toast('Paramètres sauvegardés');
@@ -12584,20 +12617,26 @@ function saveAdmission() {
     `;
     document.body.appendChild(overlay);
     overlay.querySelector('#vetpro-start-zero-ultra').addEventListener('click', function(){
-      const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
-      const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
-      const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
-      if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
-      /* Clear global arrays directly so dashboard KPIs read 0 */
-      if (typeof HISTORIQUE_DATA !== 'undefined' && Array.isArray(HISTORIQUE_DATA)) HISTORIQUE_DATA.splice(0, HISTORIQUE_DATA.length);
-      if (typeof ORDOS !== 'undefined' && Array.isArray(ORDOS)) ORDOS.splice(0, ORDOS.length);
-      if (typeof CLIENTS !== 'undefined' && Array.isArray(CLIENTS)) CLIENTS.splice(0, CLIENTS.length);
-      if (typeof VACC_HISTORY !== 'undefined') VACC_HISTORY.splice(0, VACC_HISTORY.length);
+      /* Reset cages to libre */
+      var cages = window.CAGES;
+      if (Array.isArray(cages)) cages.forEach(function(c){ c.statut='libre'; c.animal=null; c.motif=null; c.depuis=null; c.notes=null; });
+      /* Reset drug stocks to smin (avoids "132 ruptures") */
+      var drugs = window.DRUGS;
+      if (Array.isArray(drugs)) drugs.forEach(function(d){ d.s = (d.smin || 5) + 5; });
+      /* Wipe clinical data arrays */
+      var arrNames = ['HISTORIQUE_DATA','ORDOS','CLIENTS','PATIENTS','APPOINTMENTS','VACCINE_REMINDERS','VACC_HISTORY'];
+      arrNames.forEach(function(name){ try { var a = window[name]; if (Array.isArray(a)) a.splice(0, a.length); } catch(e){} });
+      /* Wipe suivi history object */
+      try { var sh = window.SUIVI_HISTORY; if (sh && typeof sh === 'object') Object.keys(sh).forEach(function(k){ delete sh[k]; }); } catch(e){}
+      /* Build snapshot and apply */
+      var empty = { cages: cages||[], drugs: drugs||[], ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
+      if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, typeof getDefaultState === 'function' ? getDefaultState() : {});
       if (typeof persistAppState === 'function') persistAppState();
       if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
       if (typeof renderFinancesPage === 'function') renderFinancesPage();
       if (typeof renderStatistics === 'function') renderStatistics();
       if (typeof renderVaccHistorique === 'function') renderVaccHistorique();
+      if (typeof renderHist === 'function') try { renderHist(''); } catch(e){}
       /* Re-render dashboard to update KPI cards */
       try { if (typeof nav === 'function') nav('dashboard'); } catch(e){}
       localStorage.setItem(key, 'done');
@@ -13337,6 +13376,10 @@ function saveAdmission() {
   // 2) WELCOME MESSAGE — once per session, otherwise show neutral title
   // ────────────────────────────────────────────────────────────────────────
   function getActiveDisplayName(){
+    /* Priority: vpGetCurrentName (checks settings first, then user_metadata) */
+    if (typeof window.vpGetCurrentName === 'function') {
+      try { const n = window.vpGetCurrentName(); if (n) return n; } catch (e) {}
+    }
     if (typeof currentUserName === 'function') {
       try { const n = currentUserName(); if (n) return n; } catch (e) {}
     }
@@ -13344,8 +13387,8 @@ function saveAdmission() {
       try { const n = getActiveUserName(); if (n) return n; } catch (e) {}
     }
     const tbName = document.querySelector('.tb-name-main')?.textContent?.trim();
-    if (tbName) return tbName;
-    return 'Dr.';
+    if (tbName && tbName !== 'VetPro') return tbName;
+    return 'VetPro';
   }
 
   function getTimeGreetingKey(){
@@ -13360,11 +13403,11 @@ function saveAdmission() {
     var hero = document.querySelector('#page-dashboard .page-hero h2');
     if (!hero) return;
     var welcomed = sessionStorage.getItem('vetpro-welcomed-once') === '1';
-    var firstName = (getActiveDisplayName().split(' ')[0]) || 'Dr.';
+    var firstName = (getActiveDisplayName().split(' ')[0]) || 'VetPro';
     if (welcomed) {
       hero.textContent = t('dashboard_title');
     } else {
-      hero.textContent = t(getTimeGreetingKey(), { name: firstName });
+      hero.textContent = t(getTimeGreetingKey(), { name: 'Dr. ' + firstName });
     }
   }
   window.vpRefreshDashboardWelcome = refreshDashboardWelcome;
@@ -13859,13 +13902,15 @@ function saveAdmission() {
 
     // Backdrop click closes sidebar
     var backdrop = document.getElementById('vp-sidebar-backdrop');
-    if (backdrop){
+    if (backdrop && !backdrop.__vpClickWired){
+      backdrop.__vpClickWired = true;
       backdrop.addEventListener('click', function(){ closeSidebar(); });
     }
 
-    // Close sidebar when ANY sidebar item is tapped (use touchend for iOS reliability)
+    // Close sidebar when ANY sidebar item is tapped
     var sidebar = document.querySelector('.sidebar');
-    if (sidebar){
+    if (sidebar && !sidebar.__vpClickWired){
+      sidebar.__vpClickWired = true;
       sidebar.addEventListener('click', function(e){
         if (window.innerWidth > 768) return;
         if (e.target.closest('.sb-item')){
@@ -13874,16 +13919,22 @@ function saveAdmission() {
       });
     }
 
-    // Bottom tab bar
+    // Bottom tab bar (guard against duplicate handlers)
     var bar = document.getElementById('vp-bottom-bar');
-    if (bar){
+    if (bar && !bar.__vpClickWired){
+      bar.__vpClickWired = true;
       bar.addEventListener('click', function(e){
         var tab = e.target.closest('.vp-btab');
         if (!tab) return;
         var target = tab.getAttribute('data-vp-nav');
         if (target === 'more'){
-          // "Plus" opens sidebar
-          openSidebar();
+          // "Plus" toggles sidebar open/close
+          var sidebar = document.querySelector('.sidebar');
+          if (sidebar && sidebar.classList.contains('vp-open')){
+            closeSidebar();
+          } else {
+            openSidebar();
+          }
           return;
         }
         if (typeof window.nav === 'function') window.nav(target);
@@ -14819,16 +14870,22 @@ function saveAdmission() {
   function asArr(v){ return Array.isArray(v) ? v : []; }
 
   function getUserName(){
+    /* Use the unified name function if available (checks settings first) */
+    if (typeof window.vpGetCurrentName === 'function') {
+      try { const n = window.vpGetCurrentName(); if (n) return n; } catch(e) {}
+    }
     try {
-      const sb = window._sb;
-      // Fallback chain
       const ls = (typeof localStorage !== 'undefined' && localStorage.getItem('vetpro-user-name')) || '';
       if (ls) return ls;
     } catch(e) {}
-    return 'Dr.';
+    return 'VetPro';
   }
 
   async function getUserNameAsync(){
+    /* Check settings-based name first (same priority as topbar/sidebar) */
+    if (typeof window.vpGetCurrentName === 'function') {
+      try { const n = window.vpGetCurrentName(); if (n) return n; } catch(e) {}
+    }
     try {
       if (window._sb?.auth?.getSession) {
         const { data: { session } } = await window._sb.auth.getSession();
@@ -14957,7 +15014,7 @@ function saveAdmission() {
       const cls = c.statut === 'occupée' ? 'busy' : c.statut === 'nettoyage' ? 'clean' : 'free';
       const lbl = c.statut === 'occupée' ? 'Occupée' : c.statut === 'nettoyage' ? 'Nettoyage' : 'Libre';
       const animal = c.animal ? `<div class="vp-cage-mini">${c.animal}</div>` : `<div class="vp-cage-mini">${lbl}</div>`;
-      return `<div class="vp-cage ${cls}" onclick="nav('cages')" title="${c.id} — ${lbl}">
+      return `<div class="vp-cage ${cls}" role="button" style="cursor:pointer" onclick="nav('cages')" title="${c.id} — ${lbl}">
         <div class="vp-cage-num">${c.id}</div>${animal}
       </div>`;
     }).join('') + `</div>`;
@@ -14978,7 +15035,7 @@ function saveAdmission() {
       <!-- HERO -->
       <div class="vp-hero">
         <div class="vp-hero-tag">🌿 Algérie 🇩🇿 · VétérinApp Pro</div>
-        <h1>${greeting}, ${name} 👋</h1>
+        <h1>${greeting}, Dr. ${name} 👋</h1>
         <p>Voici l'aperçu de votre clinique aujourd'hui · Diagnostics · Hospitalisations · Stocks · IA gratuite</p>
         <div class="vp-hero-meta">
           <span>📅 <strong>${todayDA()}</strong></span>
@@ -14989,7 +15046,7 @@ function saveAdmission() {
 
       <!-- KPI grid -->
       <div class="vp-kpis">
-        <div class="vp-kpi info" tabindex="0" onclick="nav('historique')" onkeypress="if(event.key==='Enter')nav('historique')">
+        <div class="vp-kpi info" tabindex="0" role="button" style="cursor:pointer" onclick="nav('historique')" onkeypress="if(event.key==='Enter')nav('historique')">
           <div class="vp-kpi-ico">📋</div>
           <div class="vp-kpi-body">
             <div class="vp-kpi-val">${fmt(k.cases)}</div>
@@ -14997,7 +15054,7 @@ function saveAdmission() {
             <div class="vp-kpi-trend">📈 ${k.casesTotal} au total</div>
           </div>
         </div>
-        <div class="vp-kpi" tabindex="0" onclick="nav('cages')" onkeypress="if(event.key==='Enter')nav('cages')">
+        <div class="vp-kpi" tabindex="0" role="button" style="cursor:pointer" onclick="nav('cages')" onkeypress="if(event.key==='Enter')nav('cages')">
           <div class="vp-kpi-ico">🏥</div>
           <div class="vp-kpi-body">
             <div class="vp-kpi-val">${fmt(k.hospitalized)}</div>
@@ -15005,7 +15062,7 @@ function saveAdmission() {
             <div class="vp-kpi-trend">${k.cagesFree}/${k.cagesTotal} cages libres</div>
           </div>
         </div>
-        <div class="vp-kpi warm" tabindex="0" onclick="nav('finances')" onkeypress="if(event.key==='Enter')nav('finances')">
+        <div class="vp-kpi warm" tabindex="0" role="button" style="cursor:pointer" onclick="nav('finances')" onkeypress="if(event.key==='Enter')nav('finances')">
           <div class="vp-kpi-ico">💰</div>
           <div class="vp-kpi-body">
             <div class="vp-kpi-val">${k.revenue >= 1000 ? Math.round(k.revenue/1000) + 'K' : fmt(k.revenue)}</div>
@@ -15013,7 +15070,7 @@ function saveAdmission() {
             <div class="vp-kpi-trend">${k.pending ? k.pending + ' paiement' + (k.pending > 1 ? 's' : '') + ' en attente' : 'Tout réglé ✅'}</div>
           </div>
         </div>
-        <div class="vp-kpi danger" tabindex="0" onclick="nav('meds')" onkeypress="if(event.key==='Enter')nav('meds')">
+        <div class="vp-kpi danger" tabindex="0" role="button" style="cursor:pointer" onclick="nav('meds')" onkeypress="if(event.key==='Enter')nav('meds')">
           <div class="vp-kpi-ico">💊</div>
           <div class="vp-kpi-body">
             <div class="vp-kpi-val">${fmt(k.lowStock + k.ruptures)}</div>
@@ -15042,7 +15099,7 @@ function saveAdmission() {
             ${renderCageMini()}
           </div>
 
-          <div class="vp-ai-panel" onclick="nav('ai')">
+          <div class="vp-ai-panel" role="button" style="cursor:pointer" onclick="nav('ai')">
             <div class="vp-ai-panel-h">
               <div class="vp-ai-avatar">🤖</div>
               <div style="min-width:0">
