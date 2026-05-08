@@ -648,7 +648,7 @@ async function doLogin() {
     initializePersistentState();
     document.getElementById('login-screen')?.classList.add('hidden');
     document.getElementById('logout-btn').style.display = 'block';
-    toast('✅ Bienvenue Dr. Kherbache !');
+    toast('✅ Bienvenue !');
   } catch(err) {
     showLoginError(err.message || 'Erreur de connexion. Vérifiez vos identifiants.');
   } finally {
@@ -881,7 +881,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="paw-icon">🐾</div>
       <div>
         <h1>VétérinApp <span>Pro</span></h1>
-        <p>Dr. Kherbache Wail · ENSV</p>
+        <p>VetPro · Algérie</p>
       </div>
     </div>
     <div class="sb-version">🇩🇿 v5.0 · Algérie</div>
@@ -926,8 +926,8 @@ window.addEventListener('DOMContentLoaded', () => {
     <div style="display:flex;align-items:center;gap:10px">
       <div class="sb-footer-avatar">KW</div>
       <div class="sb-footer-info">
-        <div class="sb-footer-name">Dr. Kherbache Wail</div>
-        <div class="sb-footer-sub">ENSV Algérie · Vétérinaire</div>
+        <div class="sb-footer-name">VetPro</div>
+        <div class="sb-footer-sub">Vétérinaire</div>
       </div>
     </div>
   </div>
@@ -956,10 +956,10 @@ window.addEventListener('DOMContentLoaded', () => {
     </div>
     <div class="topbar-right">
       <div class="tb-divider"></div>
-      <div class="tb-avatar">KW</div>
+      <div class="tb-avatar">VP</div>
       <div class="tb-name">
-        <div class="tb-name-main">Dr. Kherbache Wail</div>
-        <div class="tb-name-sub">Vétérinaire · ENSV</div>
+        <div class="tb-name-main">VetPro</div>
+        <div class="tb-name-sub">Vétérinaire</div>
       </div>
     </div>
   </div>
@@ -973,7 +973,7 @@ window.addEventListener('DOMContentLoaded', () => {
 <div id="page-dashboard" class="page active">
   <div class="page-hero">
     <div class="tag">🌿 Algérie 🇩🇿 · VétérinApp Pro v5.0</div>
-    <h2>Bonjour, Dr. Kherbache Wail 👋</h2>
+    <h2>Bienvenue 👋</h2>
     <p>Gestion clinique · IA intégrée · Hospitalisations · Médicaments · Calculateurs</p>
   </div>
 
@@ -2177,16 +2177,16 @@ window.addEventListener('DOMContentLoaded', () => {
           <div style="flex:1">
             <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Cliquez sur l'avatar pour changer la photo de profil</div>
             <div class="row2">
-              <div class="fg"><label class="lbl">Prénom</label><input class="inp" value="Wail"/></div>
-              <div class="fg"><label class="lbl">Nom</label><input class="inp" value="Kherbache"/></div>
+              <div class="fg"><label class="lbl">Prénom</label><input class="inp" value="" placeholder="Votre prénom"/></div>
+              <div class="fg"><label class="lbl">Nom</label><input class="inp" value="" placeholder="Votre nom"/></div>
             </div>
           </div>
         </div>
-        <div class="fg"><label class="lbl">Titre / Grade</label><input class="inp" value="Docteur Vétérinaire · ENSV Algérie"/></div>
-        <div class="fg"><label class="lbl">N° Ordre national</label><input class="inp" value="DZ-VET-2026-004782"/></div>
+        <div class="fg"><label class="lbl">Titre / Grade</label><input class="inp" value="" placeholder="Médecin vétérinaire"/></div>
+        <div class="fg"><label class="lbl">N° Ordre national</label><input class="inp" value="" placeholder="À compléter"/></div>
         <div class="row2">
-          <div class="fg"><label class="lbl">Email</label><input class="inp" type="email" value="contact@vetpro.local"/></div>
-          <div class="fg"><label class="lbl">Téléphone</label><input class="inp" value="0550 000 000"/></div>
+          <div class="fg"><label class="lbl">Email</label><input class="inp" type="email" value="" placeholder="votre@email.com"/></div>
+          <div class="fg"><label class="lbl">Téléphone</label><input class="inp" value="" placeholder="0550 000 000"/></div>
         </div>
         <div class="fg"><label class="lbl">Spécialité</label><select class="sel"><option selected>Médecine des carnivores domestiques</option><option>Chirurgie</option><option>Ophtalmologie</option><option>Dermatologie</option><option>Cardiologie</option></select></div>
       </div>
@@ -2194,13 +2194,13 @@ window.addEventListener('DOMContentLoaded', () => {
       <!-- Clinic -->
       <div class="settings-section">
         <div class="settings-title">🏥 Informations clinique</div>
-        <div class="fg"><label class="lbl">Nom de la clinique</label><input class="inp" value="Cabinet Vétérinaire Dr. Kherbache"/></div>
-        <div class="fg"><label class="lbl">Adresse</label><input class="inp" value="Alger, Algérie"/></div>
+        <div class="fg"><label class="lbl">Nom de la clinique</label><input class="inp" value="" placeholder="Nom de votre cabinet"/></div>
+        <div class="fg"><label class="lbl">Adresse</label><input class="inp" value="" placeholder="Adresse de la clinique"/></div>
         <div class="row2">
-          <div class="fg"><label class="lbl">Téléphone clinique</label><input class="inp" value="023 XX XX XX"/></div>
-          <div class="fg"><label class="lbl">Horaires</label><input class="inp" value="08h00 – 18h00 (Sam-Jeu)"/></div>
+          <div class="fg"><label class="lbl">Téléphone clinique</label><input class="inp" value="" placeholder="Téléphone clinique"/></div>
+          <div class="fg"><label class="lbl">Horaires</label><input class="inp" value="" placeholder="08h00 – 18h00"/></div>
         </div>
-        <div class="fg"><label class="lbl">Pied de page ordonnances</label><textarea class="tex" rows="2">N° Ordre: DZ-VET-2026-004782 · ENSV Algérie · Tous droits réservés</textarea></div>
+        <div class="fg"><label class="lbl">Pied de page ordonnances</label><textarea class="tex" rows="2" placeholder="Pied de page pour vos ordonnances"></textarea></div>
       </div>
 
       <!-- Gemini AI (key managed server-side via Supabase Edge Function) -->
@@ -8555,7 +8555,7 @@ function saveAdmission() {
   <div class="login-card">
     <div class="login-logo">🐾</div>
     <div class="login-title">VétérinApp Pro</div>
-    <div class="login-sub">Dr. Kherbache Wail · ENSV Algérie 🇩🇿<br/>N° DZ-VET-2026-004782</div>
+    <div class="login-sub">Plateforme vétérinaire intelligente<br/>Connexion sécurisée VetPro</div>
 
     <div style="margin-bottom:14px">
       <label class="login-label">Adresse email</label>
@@ -8589,7 +8589,7 @@ function saveAdmission() {
     </div>
 
     <div style="text-align:center;margin-top:16px;color:rgba(255,255,255,.2);font-size:10px">
-      VétérinApp Pro v5.0 · © 2026 Dr. Kherbache Wail · ENSV Algérie
+      Vet Pro v5.0 · © 2026 VetPro · ENSV Algérie
     </div>
   </div>
 </div>
@@ -11143,6 +11143,13 @@ function saveAdmission() {
     hideLoginScreen();
     clearLoginFeedback();
     if (typeof toast === 'function') toast('Connexion réussie');
+    /* Ensure dashboard + identity refresh after login (fixes iOS stuck screen) */
+    setTimeout(function(){
+      if (typeof nav === 'function') nav('dashboard');
+      if (typeof applyUltraIdentity === 'function') applyUltraIdentity();
+      if (typeof refreshDashboardWelcome === 'function') refreshDashboardWelcome();
+      if (typeof vpRefreshDashboardWelcome === 'function') vpRefreshDashboardWelcome();
+    }, 150);
   }
 
   async function finalizeSessionAccess(sourceLabel){
@@ -12348,8 +12355,7 @@ function saveAdmission() {
     const initials = initialsFrom(name);
     document.querySelectorAll('.tb-name-main, .sb-footer-name').forEach(el => el.textContent = name);
     document.querySelectorAll('.tb-avatar, .sb-footer-avatar').forEach(el => el.textContent = initials);
-    const hero = document.querySelector('#page-dashboard .page-hero h2');
-    if (hero) hero.textContent = `Bonjour, ${name.split(' ')[0] || name} 👋`;
+    /* Dashboard greeting is handled by refreshDashboardWelcome() — don't override here */
   }
 
   function settingsFields(){
@@ -12582,12 +12588,18 @@ function saveAdmission() {
       const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
       const empty = { cages:zeroCages, drugs:zeroDrugs, ordos:[], historique:[], suivi:{}, appointments:[], vaccineReminders:[], vaccHistory:[], patients:[], clients:[] };
       if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(empty, getDefaultState());
+      /* Clear global arrays directly so dashboard KPIs read 0 */
+      if (typeof HISTORIQUE_DATA !== 'undefined' && Array.isArray(HISTORIQUE_DATA)) HISTORIQUE_DATA.splice(0, HISTORIQUE_DATA.length);
+      if (typeof ORDOS !== 'undefined' && Array.isArray(ORDOS)) ORDOS.splice(0, ORDOS.length);
+      if (typeof CLIENTS !== 'undefined' && Array.isArray(CLIENTS)) CLIENTS.splice(0, CLIENTS.length);
       if (typeof VACC_HISTORY !== 'undefined') VACC_HISTORY.splice(0, VACC_HISTORY.length);
       if (typeof persistAppState === 'function') persistAppState();
       if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
       if (typeof renderFinancesPage === 'function') renderFinancesPage();
       if (typeof renderStatistics === 'function') renderStatistics();
       if (typeof renderVaccHistorique === 'function') renderVaccHistorique();
+      /* Re-render dashboard to update KPI cards */
+      try { if (typeof nav === 'function') nav('dashboard'); } catch(e){}
       localStorage.setItem(key, 'done');
       overlay.remove();
       toast('Espace démarré à zéro ✅');
@@ -14813,7 +14825,7 @@ function saveAdmission() {
       const ls = (typeof localStorage !== 'undefined' && localStorage.getItem('vetpro-user-name')) || '';
       if (ls) return ls;
     } catch(e) {}
-    return 'Dr. Kherbache Wail';
+    return 'Dr.';
   }
 
   async function getUserNameAsync(){
@@ -18046,9 +18058,9 @@ function saveAdmission() {
     // Map labels to user data — by label text (defensive)
     const setIfEmpty = (input, value) => {
       if (!input) return;
-      // Always overwrite the hardcoded "Kherbache Wail" / "Wail" / etc.
+      // Overwrite if empty, placeholder-like, or leftover defaults
       const cur = (input.value || '').trim();
-      if (!cur || /Kherbache|Wail|admin@vetpro|w\.kherbache|781236686/i.test(cur)) {
+      if (!cur || /Kherbache|Wail|admin@vetpro|w\.kherbache|781236686|vetpro\.local|À compléter|cabinet.*vét/i.test(cur)) {
         input.value = value || '';
       }
     };
