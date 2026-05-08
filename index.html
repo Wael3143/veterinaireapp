@@ -931,6 +931,18 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 </nav>
 
+<!-- MOBILE: sidebar backdrop + bottom tab bar -->
+<div id="vp-sidebar-backdrop"></div>
+<nav id="vp-bottom-bar" aria-label="Navigation rapide">
+  <div class="vp-btab-row">
+    <button class="vp-btab active" data-vp-nav="dashboard" type="button"><span class="vp-btab-ico">🏠</span>Accueil</button>
+    <button class="vp-btab" data-vp-nav="cas" type="button"><span class="vp-btab-ico">📋</span>Cas</button>
+    <button class="vp-btab" data-vp-nav="clients" type="button"><span class="vp-btab-ico">👥</span>Clients</button>
+    <button class="vp-btab" data-vp-nav="ai" type="button"><span class="vp-btab-ico">🤖</span>IA</button>
+    <button class="vp-btab" data-vp-nav="more" type="button"><span class="vp-btab-ico">☰</span>Plus</button>
+  </div>
+</nav>
+
 <!-- ═══════════ MAIN ═══════════ -->
 <div class="main">
 
@@ -960,7 +972,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="page-hero">
     <div class="tag">🌿 Algérie 🇩🇿 · VétérinApp Pro v5.0</div>
     <h2>Bonjour, Dr. Kherbache Wail 👋</h2>
-    <p>Gestion clinique · IA Gemini 2.0 Flash gratuite · Hospitalisations · Médicaments · Calculateurs</p>
+    <p>Gestion clinique · IA Gemini 2.5 Flash gratuite · Hospitalisations · Médicaments · Calculateurs</p>
   </div>
 
   <!-- STATS -->
@@ -1046,7 +1058,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <div class="ai-avatar" style="width:40px;height:40px;font-size:18px">🤖</div>
           <div>
             <div style="color:#fff;font-weight:700;font-size:14px">IA Vétérinaire Gratuite</div>
-            <div style="color:rgba(255,255,255,.42);font-size:10.5px">Gemini 2.0 Flash · Google AI · 24h/24</div>
+            <div style="color:rgba(255,255,255,.42);font-size:10.5px">Gemini 2.5 Flash · Google AI · 24h/24</div>
           </div>
           <div class="ai-live">
             <div class="ai-live-dot"></div>
@@ -1187,7 +1199,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="ai-avatar">🤖</div>
       <div>
         <div class="ai-title">Assistant IA Vétérinaire — VétérinApp Pro v5.0</div>
-        <div class="ai-sub">Gemini 2.0 Flash · Google AI · Gratuit · © Dr. Kherbache Wail · ENSV Algérie</div>
+        <div class="ai-sub">Gemini 2.5 Flash · Google AI · Gratuit · © Dr. Kherbache Wail · ENSV Algérie</div>
       </div>
       <div class="ai-live">
         <div class="ai-live-dot"></div>
@@ -2203,7 +2215,7 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
         <div id="gemini-key-status" style="margin-top:8px;font-size:11.5px;display:none"></div>
         <div class="ibox ibox-b" style="margin-top:10px;font-size:11px">
-          💡 <strong>Gemini 2.0 Flash</strong> est gratuit. Votre clé est stockée localement dans votre navigateur — jamais envoyée à nos serveurs.
+          💡 <strong>Gemini 2.5 Flash</strong> est gratuit. Votre clé est stockée localement dans votre navigateur — jamais envoyée à nos serveurs.
         </div>
       </div>
     </div>
@@ -5890,11 +5902,11 @@ function showSurgGuide(id){
 }
 
 // ═══════════════════════════════════════════════════
-//    AI — Google Gemini 2.0 Flash GRATUIT
+//    AI — Google Gemini 2.5 Flash GRATUIT
 // ═══════════════════════════════════════════════════
 // API key stored in localStorage — set via Settings page (never hardcoded)
 var GEMINI_API_KEY = localStorage.getItem('vetpro-gemini-key') || '';
-var GEMINI_MODEL = 'gemini-2.0-flash';
+var GEMINI_MODEL = 'gemini-2.5-flash';
 let chatHist=[],aiLoading=false; // aiInited declared above
 const SYS=`Tu es un assistant vétérinaire expert — VétérinApp Pro v5.0, développé par Dr. Kherbache Wail (ENSV Algérie).
 Réponds TOUJOURS en français. Sois concis, clair et actionnable pour un vétérinaire praticien.
@@ -5929,7 +5941,7 @@ async function testGeminiKey(){
   if(!key){if(status){status.style.display="block";status.style.color="var(--danger)";status.textContent="Aucune clé à tester.";}return;}
   if(status){status.style.display="block";status.style.color="var(--muted)";status.textContent="⏳ Test en cours...";}
   try{
-    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:"Dis bonjour en 5 mots maximum."}]}],generationConfig:{maxOutputTokens:20}})});
+    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:"Dis bonjour en 5 mots maximum."}]}],generationConfig:{maxOutputTokens:20}})});
     if(res.ok){var data=await res.json();var txt=(data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||"";if(status){status.style.color="var(--sage)";status.textContent="✅ Clé valide ! Réponse: "+txt;}localStorage.setItem("vetpro-gemini-key",key);GEMINI_API_KEY=key;}
     else{var err=await res.json().catch(function(){return{};});if(status){status.style.color="var(--danger)";status.textContent="❌ Erreur "+res.status+": "+(err&&err.error&&err.error.message||"Clé invalide");}}
   }catch(e){if(status){status.style.color="var(--danger)";status.textContent="❌ Erreur réseau: "+e.message;}}
@@ -5939,7 +5951,7 @@ function loadGeminiKeyToSettings(){var inp=document.getElementById("settings-gem
 
 function initAI(){
   const msgs=document.getElementById('ai-msgs');if(!msgs)return;msgs.innerHTML='';
-  appendAIMsg('bot','Bonjour Dr. Kherbache Wail ! 👋\n\nJe suis votre assistant IA — <strong>Gemini 2.0 Flash via Google AI Studio, 100% gratuit</strong>.\n\n🔬 Diagnostics différentiels\n⚖️ Posologie & interactions médicamenteuses\n💊 40+ médicaments disponibles en Algérie\n🔪 Chirurgie · 👁 Ophtalmologie · 🦷 Dentisterie\n💧 Calcul perfusion · 💉 Anesthésie\n📚 Références VIN, WSAVA, BSAVA, IRIS\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement — © Dr. Kherbache Wail · ENSV Algérie</em>');
+  appendAIMsg('bot','Bonjour Dr. Kherbache Wail ! 👋\n\nJe suis votre assistant IA — <strong>Gemini 2.5 Flash via Google AI Studio, 100% gratuit</strong>.\n\n🔬 Diagnostics différentiels\n⚖️ Posologie & interactions médicamenteuses\n💊 40+ médicaments disponibles en Algérie\n🔪 Chirurgie · 👁 Ophtalmologie · 🦷 Dentisterie\n💧 Calcul perfusion · 💉 Anesthésie\n📚 Références VIN, WSAVA, BSAVA, IRIS\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement — © Dr. Kherbache Wail · ENSV Algérie</em>');
 }
 
 async function sendAI(){
@@ -13121,7 +13133,7 @@ function saveAdmission() {
       lang_label: 'Langue interface',
       dashboard_title: 'Tableau de bord',
       dashboard_welcome: 'Bonjour, {name} 👋',
-      dashboard_subtitle: 'Gestion clinique · IA Gemini 2.0 Flash · Hospitalisations · Médicaments',
+      dashboard_subtitle: 'Gestion clinique · IA Gemini 2.5 Flash · Hospitalisations · Médicaments',
       sb_dashboard: 'Tableau de bord',
       sb_cages: 'Cages & Hospit.',
       sb_cas: 'Cas cliniques',
@@ -13160,7 +13172,7 @@ function saveAdmission() {
       lang_label: 'Interface language',
       dashboard_title: 'Dashboard',
       dashboard_welcome: 'Welcome, {name} 👋',
-      dashboard_subtitle: 'Clinic management · Gemini 2.0 Flash AI · Hospitalizations · Medicines',
+      dashboard_subtitle: 'Clinic management · Gemini 2.5 Flash AI · Hospitalizations · Medicines',
       sb_dashboard: 'Dashboard',
       sb_cages: 'Cages & Hospit.',
       sb_cas: 'Clinical cases',
@@ -13199,7 +13211,7 @@ function saveAdmission() {
       lang_label: 'لغة الواجهة',
       dashboard_title: 'لوحة التحكم',
       dashboard_welcome: 'مرحبا، {name} 👋',
-      dashboard_subtitle: 'إدارة العيادة · ذكاء اصطناعي Gemini 2.0 Flash · الاستشفاء · الأدوية',
+      dashboard_subtitle: 'إدارة العيادة · ذكاء اصطناعي Gemini 2.5 Flash · الاستشفاء · الأدوية',
       sb_dashboard: 'لوحة التحكم',
       sb_cages: 'الأقفاص والاستشفاء',
       sb_cas: 'الحالات السريرية',
@@ -13788,25 +13800,93 @@ function saveAdmission() {
   // ────────────────────────────────────────────────────────────────────────
   // 8) MOBILE NAV (hamburger)
   // ────────────────────────────────────────────────────────────────────────
+  function closeSidebar(){
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar) sidebar.classList.remove('vp-open');
+    document.body.classList.remove('vp-sidebar-open');
+  }
+  function openSidebar(){
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar) sidebar.classList.add('vp-open');
+    document.body.classList.add('vp-sidebar-open');
+  }
+
+  function updateBottomBar(id){
+    var btabs = document.querySelectorAll('.vp-btab');
+    for (var i = 0; i < btabs.length; i++){
+      var t = btabs[i];
+      if (t.getAttribute('data-vp-nav') === id) t.classList.add('active');
+      else t.classList.remove('active');
+    }
+  }
+
   function injectMobileNav(){
-    if (document.getElementById('vp-mobile-toggle')) return;
-    const btn = document.createElement('button');
-    btn.id = 'vp-mobile-toggle';
-    btn.type = 'button';
-    btn.setAttribute('aria-label', 'Menu');
-    btn.textContent = '☰';
-    btn.onclick = function(){
-      const sidebar = document.querySelector('.sidebar');
-      if (sidebar) sidebar.classList.toggle('vp-open');
-    };
-    document.body.appendChild(btn);
-    // Close sidebar on item click on mobile
-    document.addEventListener('click', function(e){
-      if (window.innerWidth > 768) return;
-      const sidebar = document.querySelector('.sidebar');
-      if (!sidebar?.classList.contains('vp-open')) return;
-      if (e.target.closest('.sb-item')) sidebar.classList.remove('vp-open');
-    });
+    // Hamburger button
+    if (!document.getElementById('vp-mobile-toggle')){
+      var btn = document.createElement('button');
+      btn.id = 'vp-mobile-toggle';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Menu');
+      btn.textContent = '☰';
+      btn.addEventListener('click', function(e){
+        e.stopPropagation();
+        var sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('vp-open')) closeSidebar();
+        else openSidebar();
+      });
+      document.body.appendChild(btn);
+    }
+
+    // Backdrop click closes sidebar
+    var backdrop = document.getElementById('vp-sidebar-backdrop');
+    if (backdrop){
+      backdrop.addEventListener('click', function(){ closeSidebar(); });
+      backdrop.addEventListener('touchend', function(e){ e.preventDefault(); closeSidebar(); });
+    }
+
+    // Close sidebar when ANY sidebar item is tapped (use touchend for iOS reliability)
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar){
+      sidebar.addEventListener('click', function(e){
+        if (window.innerWidth > 768) return;
+        if (e.target.closest('.sb-item')){
+          setTimeout(function(){ closeSidebar(); }, 80);
+        }
+      });
+    }
+
+    // Bottom tab bar
+    var bar = document.getElementById('vp-bottom-bar');
+    if (bar){
+      bar.addEventListener('click', function(e){
+        var tab = e.target.closest('.vp-btab');
+        if (!tab) return;
+        var target = tab.getAttribute('data-vp-nav');
+        if (target === 'more'){
+          // "Plus" opens sidebar
+          openSidebar();
+          return;
+        }
+        if (typeof window.nav === 'function') window.nav(target);
+        updateBottomBar(target);
+      });
+    }
+
+    // Patch nav() to sync bottom bar highlights
+    if (typeof window.nav === 'function' && !window.nav.__vpBottomBarPatched){
+      var origNav = window.nav;
+      var patchedNav = function(id){
+        var r = origNav.apply(this, arguments);
+        updateBottomBar(id);
+        return r;
+      };
+      // Copy existing patches
+      for (var k in origNav) { if (origNav.hasOwnProperty(k)) patchedNav[k] = origNav[k]; }
+      patchedNav.__vpBottomBarPatched = true;
+      patchedNav.__vpPatched = origNav.__vpPatched || false;
+      window.nav = patchedNav;
+      try { nav = patchedNav; } catch(e){}
+    }
   }
 
   // ────────────────────────────────────────────────────────────────────────
@@ -14920,7 +15000,7 @@ function saveAdmission() {
               <div class="vp-ai-avatar">🤖</div>
               <div style="min-width:0">
                 <h4>Assistant IA Vétérinaire</h4>
-                <small>Gemini 2.0 Flash · Google AI</small>
+                <small>Gemini 2.5 Flash · Google AI</small>
               </div>
               <span class="vp-ai-live"><span class="vp-ai-live-dot"></span>En ligne</span>
             </div>
@@ -16142,6 +16222,50 @@ function saveAdmission() {
     transition: opacity .25s ease;
   }
   .vp-ai-debug.show { opacity: 1; }
+
+  /* ── MOBILE BOTTOM TAB BAR ─────────────────────────────────────────── */
+  #vp-bottom-bar{
+    display:none;position:fixed;bottom:0;left:0;right:0;z-index:190;
+    background:linear-gradient(170deg,#081a0f,#0d2318);
+    border-top:1px solid rgba(168,213,181,.12);
+    padding:4px 0 env(safe-area-inset-bottom,6px);
+    box-shadow:0 -4px 20px rgba(0,0,0,.3);
+  }
+  #vp-bottom-bar .vp-btab-row{
+    display:flex;justify-content:space-around;align-items:center;
+    max-width:500px;margin:0 auto;
+  }
+  .vp-btab{
+    display:flex;flex-direction:column;align-items:center;gap:2px;
+    padding:6px 4px 4px;border-radius:10px;border:none;background:none;
+    color:rgba(255,255,255,.4);font-size:9.5px;font-weight:600;
+    cursor:pointer;min-width:52px;
+    -webkit-tap-highlight-color:rgba(74,124,89,.3);
+    touch-action:manipulation;transition:color .15s;
+    font-family:'Outfit',system-ui,sans-serif;
+  }
+  .vp-btab-ico{font-size:20px;line-height:1}
+  .vp-btab.active{color:#A8D5B5}
+  .vp-btab:active{color:#fff}
+
+  /* Sidebar backdrop overlay on mobile */
+  #vp-sidebar-backdrop{
+    display:none;position:fixed;inset:0;z-index:140;
+    background:rgba(0,0,0,.45);
+    -webkit-tap-highlight-color:transparent;
+    touch-action:manipulation;
+  }
+
+  @media (max-width:768px){
+    #vp-bottom-bar{display:block}
+    /* Push content above bottom bar */
+    .content{padding-bottom:72px!important}
+    /* Hide hamburger top-left since we have bottom bar now */
+    #vp-mobile-toggle{top:12px;left:12px}
+    /* Show backdrop when sidebar is open */
+    .sidebar.vp-open ~ #vp-sidebar-backdrop,
+    body.vp-sidebar-open #vp-sidebar-backdrop{display:block}
+  }
 </style>
 
 <script id="vetpro-mobile-ui-v3-script">
@@ -17292,7 +17416,7 @@ function saveAdmission() {
                 <div class="vp-ai-bubble user">Parvovirose chien 15kg, traitement ?</div>
                 <div class="vp-ai-bubble">💊 Shotapen 1 mL/10kg IM · Ringer Lactate 90 mL/kg/24h · Métoclopramide…</div>
               </div>
-              <span class="vp-mock-pill">⚡ Gemini 2.0 Flash · Gratuit</span>
+              <span class="vp-mock-pill">⚡ Gemini 2.5 Flash · Gratuit</span>
             </div>
             <div class="vp-mockup-info">
               <h4>🧠 IA Vétérinaire gratuite</h4>
