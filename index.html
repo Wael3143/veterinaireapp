@@ -5944,7 +5944,10 @@ function initAI(){
   var name='';
   try{var el=document.querySelector('.tb-name-main');name=el?el.textContent.trim():'';}catch(e){}
   if(!name)try{name=(typeof getActiveDisplayName==='function')?getActiveDisplayName():'';}catch(e){}
-  var greeting=name?('Bonjour '+name.split(' ')[0]+' ! 👋'):'Bonjour ! 👋';
+  var h=new Date().getHours();
+  var timeWord=h<5?'Bonne nuit':h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';
+  var firstName=name?name.split(' ')[0]:'';
+  var greeting=firstName?(timeWord+' '+firstName+' ! 👋'):(timeWord+' ! 👋');
   appendAIMsg('bot',greeting+' Assistant IA VetPro prêt.\n\n🔬 Diagnostics · ⚖️ Posologie · 💊 Médicaments\n🔪 Chirurgie · 👁 Ophtalmo · 💧 Perfusion\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement</em>');
 }
 
@@ -12553,26 +12556,34 @@ function saveAdmission() {
     const user = window.__vetproCurrentSessionUser || null;
     const key = `vetpro-first-login-choice:${user?.id || user?.email || 'guest'}`;
     if (!user?.email || localStorage.getItem(key) === 'done' || document.getElementById('vetpro-first-login-ultra')) return;
+    var h = new Date().getHours();
+    var timeWord = h<5?'Bonne nuit':h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';
+    var displayName = '';
+    try { displayName = currentName(); } catch(e){}
+    if (!displayName) try { displayName = user.user_metadata?.full_name || user.email.split('@')[0]; } catch(e){}
     const overlay = document.createElement('div');
     overlay.id = 'vetpro-first-login-ultra';
     overlay.style.cssText = 'position:fixed;inset:0;z-index:10012;background:rgba(5,12,9,.62);backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:20px';
     overlay.innerHTML = `
-      <div style="width:min(760px,100%);background:#fff;border-radius:28px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.25)">
-        <div style="font-family:'DM Serif Display',serif;font-size:34px;color:var(--ink);margin-bottom:8px">Bienvenue ${currentName()}</div>
-        <p style="color:var(--muted);line-height:1.7;margin-bottom:18px">Choisissez comment démarrer votre espace privé.</p>
-        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
-          <button class="btn btn-ghost" id="vetpro-keep-demo-ultra" style="min-height:120px;justify-content:center">Garder les données démo</button>
-          <button class="btn btn-ghost" id="vetpro-start-zero-ultra" style="min-height:120px;justify-content:center">Commencer à zéro</button>
-          <button class="btn btn-p" id="vetpro-import-data-ultra" style="min-height:120px;justify-content:center">Importer mes données</button>
+      <div style="width:min(560px,100%);background:#fff;border-radius:28px;padding:32px;box-shadow:0 30px 90px rgba(0,0,0,.25);text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">🐾</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:28px;color:var(--ink);margin-bottom:6px">${timeWord}, ${displayName} !</div>
+        <p style="color:var(--muted);line-height:1.7;margin-bottom:24px">Bienvenue sur VetPro. Comment souhaitez-vous démarrer ?</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <button class="btn btn-ghost" id="vetpro-start-zero-ultra" style="min-height:110px;justify-content:center;flex-direction:column;gap:8px;font-size:14px">
+            <span style="font-size:28px">🆕</span>
+            Commencer à zéro
+            <span style="font-size:11px;color:var(--muted);font-weight:400">Espace vierge, prêt à remplir</span>
+          </button>
+          <button class="btn btn-p" id="vetpro-import-data-ultra" style="min-height:110px;justify-content:center;flex-direction:column;gap:8px;font-size:14px">
+            <span style="font-size:28px">📥</span>
+            Importer mes données
+            <span style="font-size:11px;opacity:.8;font-weight:400">Excel + ChatGPT → VetPro</span>
+          </button>
         </div>
       </div>
     `;
     document.body.appendChild(overlay);
-    overlay.querySelector('#vetpro-keep-demo-ultra').onclick = () => {
-      localStorage.setItem(key, 'done');
-      overlay.remove();
-      toast('Mode démo conservé');
-    };
     overlay.querySelector('#vetpro-start-zero-ultra').onclick = () => {
       const zeroDrugs = (window.DRUGS||[]).map(d => Object.assign({}, d, { s: 0 }));
       const zeroCages = (window.CAGES||[]).map(c => Object.assign({}, c, { statut:'libre', animal:null, motif:null, depuis:null, notes:null }));
@@ -12586,30 +12597,12 @@ function saveAdmission() {
       if (typeof renderVaccHistorique === 'function') renderVaccHistorique();
       localStorage.setItem(key, 'done');
       overlay.remove();
-      toast('Espace démarré à zéro');
+      toast('Espace démarré à zéro ✅');
     };
     overlay.querySelector('#vetpro-import-data-ultra').onclick = () => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'application/json';
-      input.onchange = async () => {
-        const file = input.files?.[0];
-        if (!file) return;
-        try {
-          const json = JSON.parse(await file.text());
-          if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(json, getDefaultState());
-          if (typeof persistAppState === 'function') persistAppState();
-          if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
-          if (typeof renderFinancesPage === 'function') renderFinancesPage();
-          if (typeof renderStatistics === 'function') renderStatistics();
-          localStorage.setItem(key, 'done');
-          overlay.remove();
-          toast('Import terminé');
-        } catch (_error) {
-          toast('Fichier JSON invalide');
-        }
-      };
-      input.click();
+      localStorage.setItem(key, 'done');
+      overlay.remove();
+      if (typeof openModal === 'function') openModal('modal-import');
     };
   }
 
@@ -13137,7 +13130,10 @@ function saveAdmission() {
     fr: {
       lang_label: 'Langue interface',
       dashboard_title: 'Tableau de bord',
-      dashboard_welcome: 'Bonjour, {name} 👋',
+      dashboard_welcome_morning: 'Bonjour, {name} 👋',
+      dashboard_welcome_afternoon: 'Bon après-midi, {name} 👋',
+      dashboard_welcome_evening: 'Bonsoir, {name} 👋',
+      dashboard_welcome_night: 'Bonne nuit, {name} 👋',
       dashboard_subtitle: 'Gestion clinique · IA intégrée · Hospitalisations · Médicaments',
       sb_dashboard: 'Tableau de bord',
       sb_cages: 'Cages & Hospit.',
@@ -13176,7 +13172,10 @@ function saveAdmission() {
     en: {
       lang_label: 'Interface language',
       dashboard_title: 'Dashboard',
-      dashboard_welcome: 'Welcome, {name} 👋',
+      dashboard_welcome_morning: 'Good morning, {name} 👋',
+      dashboard_welcome_afternoon: 'Good afternoon, {name} 👋',
+      dashboard_welcome_evening: 'Good evening, {name} 👋',
+      dashboard_welcome_night: 'Good night, {name} 👋',
       dashboard_subtitle: 'Clinic management · Built-in AI · Hospitalizations · Medicines',
       sb_dashboard: 'Dashboard',
       sb_cages: 'Cages & Hospit.',
@@ -13215,7 +13214,10 @@ function saveAdmission() {
     ar: {
       lang_label: 'لغة الواجهة',
       dashboard_title: 'لوحة التحكم',
-      dashboard_welcome: 'مرحبا، {name} 👋',
+      dashboard_welcome_morning: 'صباح الخير، {name} 👋',
+      dashboard_welcome_afternoon: 'مساء الخير، {name} 👋',
+      dashboard_welcome_evening: 'مساء الخير، {name} 👋',
+      dashboard_welcome_night: 'تصبح على خير، {name} 👋',
       dashboard_subtitle: 'إدارة العيادة · ذكاء اصطناعي مدمج · الاستشفاء · الأدوية',
       sb_dashboard: 'لوحة التحكم',
       sb_cages: 'الأقفاص والاستشفاء',
@@ -13341,15 +13343,23 @@ function saveAdmission() {
     return 'Dr.';
   }
 
+  function getTimeGreetingKey(){
+    var h = new Date().getHours();
+    if (h < 5) return 'dashboard_welcome_night';
+    if (h < 12) return 'dashboard_welcome_morning';
+    if (h < 18) return 'dashboard_welcome_afternoon';
+    return 'dashboard_welcome_evening';
+  }
+
   function refreshDashboardWelcome(){
-    const hero = document.querySelector('#page-dashboard .page-hero h2');
+    var hero = document.querySelector('#page-dashboard .page-hero h2');
     if (!hero) return;
-    const welcomed = sessionStorage.getItem('vetpro-welcomed-once') === '1';
-    const firstName = (getActiveDisplayName().split(' ')[0]) || 'Dr.';
+    var welcomed = sessionStorage.getItem('vetpro-welcomed-once') === '1';
+    var firstName = (getActiveDisplayName().split(' ')[0]) || 'Dr.';
     if (welcomed) {
       hero.textContent = t('dashboard_title');
     } else {
-      hero.textContent = t('dashboard_welcome', { name: firstName });
+      hero.textContent = t(getTimeGreetingKey(), { name: firstName });
     }
   }
   window.vpRefreshDashboardWelcome = refreshDashboardWelcome;
