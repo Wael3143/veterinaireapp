@@ -9197,11 +9197,22 @@ function saveAdmission() {
   }
 
   window.openAuthCard = function(mode){
-    const card = document.querySelector('#login-screen .login-card');
+    var card = document.querySelector('#login-screen .login-card');
     if (!card) return;
     card.style.display = 'block';
+    card.classList.add('vetpro-auth-visible');
     showAuthMode(mode || 'login');
-    card.scrollIntoView({ behavior:'smooth', block:'center' });
+    // Multi-strategy scroll for iOS reliability
+    try { card.scrollIntoView({ behavior:'smooth', block:'center' }); } catch(e) { card.scrollIntoView(true); }
+    // Fallback: scroll the login-screen container directly
+    setTimeout(function(){
+      var container = document.getElementById('login-screen');
+      if (!container) return;
+      var cRect = container.getBoundingClientRect();
+      var tRect = card.getBoundingClientRect();
+      var offset = tRect.top - cRect.top + container.scrollTop - 60;
+      try { container.scrollTo({ top: Math.max(0, offset), behavior:'smooth' }); } catch(e) { container.scrollTop = Math.max(0, offset); }
+    }, 100);
   };
 
   function rebuildSignupPanel(){
@@ -10069,12 +10080,12 @@ function saveAdmission() {
       nav.innerHTML = `
         <div style="font-family:'DM Serif Display',serif;font-size:24px;color:#fff">Vet<span style="color:#38d37c">Pro</span></div>
         <div class="landing-topnav-links">
-          <a href="#landing-functions">Fonctions</a>
-          <a href="#landing-pricing">Tarifs</a>
-          <a href="#landing-contact">Contacts</a>
-          <button type="button" onclick="openTermsFromLanding()">Conditions</button>
-          <button type="button" onclick="openAuthCard('login')">Sign in</button>
-          <button type="button" onclick="openAuthCard('signup')">Sign up</button>
+          <button type="button" data-vp-scroll="landing-functions">Fonctions</button>
+          <button type="button" data-vp-scroll="landing-pricing">Tarifs</button>
+          <button type="button" data-vp-scroll="landing-contact">Contacts</button>
+          <button type="button" data-vp-scroll="landing-conditions">Conditions</button>
+          <button type="button" data-vp-action="open-login">Sign in</button>
+          <button type="button" data-vp-action="open-signup">Sign up</button>
         </div>
       `;
       landing.prepend(nav);
