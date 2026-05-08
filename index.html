@@ -5940,8 +5940,12 @@ async function testGeminiKey(){
 function loadGeminiKeyToSettings(){var inp=document.getElementById("settings-gemini-key");var saved=localStorage.getItem("vetpro-gemini-key");if(inp&&saved)inp.value=saved;}
 
 function initAI(){
-  const msgs=document.getElementById('ai-msgs');if(!msgs)return;msgs.innerHTML='';
-  appendAIMsg('bot','Bonjour ! 👋 Assistant IA VetPro prêt.\n\n🔬 Diagnostics · ⚖️ Posologie · 💊 Médicaments\n🔪 Chirurgie · 👁 Ophtalmo · 💧 Perfusion\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement</em>');
+  var msgs=document.getElementById('ai-msgs');if(!msgs)return;msgs.innerHTML='';
+  var name='';
+  try{var el=document.querySelector('.tb-name-main');name=el?el.textContent.trim():'';}catch(e){}
+  if(!name)try{name=(typeof getActiveDisplayName==='function')?getActiveDisplayName():'';}catch(e){}
+  var greeting=name?('Bonjour '+name.split(' ')[0]+' ! 👋'):'Bonjour ! 👋';
+  appendAIMsg('bot',greeting+' Assistant IA VetPro prêt.\n\n🔬 Diagnostics · ⚖️ Posologie · 💊 Médicaments\n🔪 Chirurgie · 👁 Ophtalmo · 💧 Perfusion\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement</em>');
 }
 
 async function sendAI(){
@@ -13890,9 +13894,48 @@ function saveAdmission() {
     }
   }
 
-  // ────────────────────────────────────────────────────────────────────────
+  // 8b) iOS TOUCH FIX
+  function fixIOSTouch(){
+    if (window.__vpIOSTouchFixed) return;
+    window.__vpIOSTouchFixed = true;
+    var sidebar = document.querySelector('.sidebar');
+    if (sidebar){
+      sidebar.addEventListener('touchend', function(e){
+        var item = e.target.closest('.sb-item');
+        if (!item) return;
+        var oc = item.getAttribute('onclick') || '';
+        var m = oc.match(/nav\(['"]([^'"]+)['"]\)/);
+        if (m && typeof window.nav === 'function'){
+          e.preventDefault();
+          window.nav(m[1]);
+          closeSidebar();
+        }
+      }, {passive: false});
+    }
+    document.addEventListener('touchend', function(e){
+      var screen = document.getElementById('login-screen');
+      if (!screen || !screen.contains(e.target)) return;
+      var btn = e.target.closest('.landing-btn, .login-btn, [data-vp-action], [data-vp-scroll]');
+      if (!btn) return;
+      var action = btn.getAttribute('data-vp-action');
+      if (action){
+        e.preventDefault();
+        if (action === 'open-login' && typeof window.openAuthCard === 'function') window.openAuthCard('login');
+        if (action === 'open-signup' && typeof window.openAuthCard === 'function') window.openAuthCard('signup');
+        return;
+      }
+      var scrollTarget = btn.getAttribute('data-vp-scroll');
+      if (scrollTarget){
+        e.preventDefault();
+        if (typeof window.vpScrollLandingTo === 'function') window.vpScrollLandingTo(scrollTarget);
+        return;
+      }
+      var oc = btn.getAttribute('onclick');
+      if (oc){ e.preventDefault(); try { new Function(oc).call(btn); } catch(err){} }
+    }, {passive: false});
+  }
+
   // 9) WIRING — bootstrap + auth listener
-  // ────────────────────────────────────────────────────────────────────────
   function showToast(msg){
     if (typeof toast === 'function') return toast(msg);
     console.log('[VetPro]', msg);
@@ -13902,6 +13945,7 @@ function saveAdmission() {
     patchNav();
     patchDoLogout();
     injectMobileNav();
+    fixIOSTouch();
     // Initial language from localStorage (fast path before remote load)
     let lang = 'fr';
     try { lang = localStorage.getItem('vetpro-language') || 'fr'; } catch (e) {}
@@ -16223,6 +16267,13 @@ function saveAdmission() {
     transition: opacity .25s ease;
   }
   .vp-ai-debug.show { opacity: 1; }
+
+  /* ── iOS: make divs with onclick clickable ─────────────────────────── */
+  .sb-item { cursor: pointer; -webkit-tap-highlight-color: rgba(74,124,89,.3); }
+  #login-screen button, #login-screen .landing-btn, #login-screen .login-btn {
+    cursor: pointer; -webkit-tap-highlight-color: rgba(56,211,124,.3);
+    touch-action: manipulation;
+  }
 
   /* ── MOBILE BOTTOM TAB BAR ─────────────────────────────────────────── */
   #vp-bottom-bar{
