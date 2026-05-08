@@ -360,6 +360,7 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var
 .ai-live-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;animation:pulse2 2s infinite}
 @keyframes pulse2{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
 .ai-ctx{padding:12px 20px;border-bottom:1px solid rgba(255,255,255,.05);display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:600px){.ai-ctx{grid-template-columns:1fr 1fr;gap:6px}.ai-ctx select,.ai-ctx input{font-size:13px!important;padding:9px 10px!important}}
 .ai-ctx select,.ai-ctx input{
   background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);
   border-radius:9px;padding:6px 10px;color:#fff;
@@ -896,7 +897,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   <div class="sb-section">
     <div class="sb-label">Outils Cliniques</div>
-    <div class="sb-item" onclick="nav('ai')"><div class="sb-ico-wrap">🤖</div><span>Assistant IA</span><span class="sb-badge ai">FREE</span></div>
+    <div class="sb-item" onclick="nav('ai')"><div class="sb-ico-wrap">🤖</div><span>Assistant IA</span></div>
     <div class="sb-item" onclick="nav('maladies')"><div class="sb-ico-wrap">🦠</div><span>Maladies</span></div>
     <div class="sb-item" onclick="nav('ordonnances')"><div class="sb-ico-wrap">📝</div><span>Ordonnances</span></div>
     <div class="sb-item" onclick="nav('perfusion')"><div class="sb-ico-wrap">💧</div><span>Calc. Perfusion</span></div>
@@ -972,7 +973,7 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="page-hero">
     <div class="tag">🌿 Algérie 🇩🇿 · VétérinApp Pro v5.0</div>
     <h2>Bonjour, Dr. Kherbache Wail 👋</h2>
-    <p>Gestion clinique · IA Gemini 3.1 Flash Lite gratuite · Hospitalisations · Médicaments · Calculateurs</p>
+    <p>Gestion clinique · IA intégrée · Hospitalisations · Médicaments · Calculateurs</p>
   </div>
 
   <!-- STATS -->
@@ -1058,7 +1059,7 @@ window.addEventListener('DOMContentLoaded', () => {
           <div class="ai-avatar" style="width:40px;height:40px;font-size:18px">🤖</div>
           <div>
             <div style="color:#fff;font-weight:700;font-size:14px">IA Vétérinaire Gratuite</div>
-            <div style="color:rgba(255,255,255,.42);font-size:10.5px">Gemini 3.1 Flash Lite · Google AI · 24h/24</div>
+            <div style="color:rgba(255,255,255,.42);font-size:10.5px">Google AI · 24h/24</div>
           </div>
           <div class="ai-live">
             <div class="ai-live-dot"></div>
@@ -1198,8 +1199,8 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="ai-header">
       <div class="ai-avatar">🤖</div>
       <div>
-        <div class="ai-title">Assistant IA Vétérinaire — VétérinApp Pro v5.0</div>
-        <div class="ai-sub">Gemini 3.1 Flash Lite · Google AI · Gratuit · © Dr. Kherbache Wail · ENSV Algérie</div>
+        <div class="ai-title">Assistant IA Vétérinaire</div>
+        <div class="ai-sub">Google AI · © Dr. Kherbache Wail · ENSV Algérie</div>
       </div>
       <div class="ai-live">
         <div class="ai-live-dot"></div>
@@ -2215,7 +2216,7 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
         <div id="gemini-key-status" style="margin-top:8px;font-size:11.5px;display:none"></div>
         <div class="ibox ibox-b" style="margin-top:10px;font-size:11px">
-          💡 <strong>Gemini 3.1 Flash Lite</strong> est gratuit. Votre clé est stockée localement dans votre navigateur — jamais envoyée à nos serveurs.
+          💡 Votre clé API est stockée localement dans votre navigateur — jamais envoyée à nos serveurs.
         </div>
       </div>
     </div>
@@ -5908,21 +5909,10 @@ function showSurgGuide(id){
 var GEMINI_API_KEY = localStorage.getItem('vetpro-gemini-key') || '';
 var GEMINI_MODEL = 'gemini-3.1-flash-lite';
 let chatHist=[],aiLoading=false; // aiInited declared above
-const SYS=`Tu es un assistant vétérinaire expert — VétérinApp Pro v5.0, développé par Dr. Kherbache Wail (ENSV Algérie).
-Réponds TOUJOURS en français. Sois concis, clair et actionnable pour un vétérinaire praticien.
-
-DOMAINES :
-1. Orientations diagnostiques différentielles (pas de diagnostic définitif)
-2. Médicaments Algérie : Shotapen, Lavamox LA, Amoxicilline, Ganamic (Gentamicine), Sulfamide, Métronidazole, Orniprural, Imidocarbe 85mg/mL, Frontline (Chien/Chat), Vermuge (Fenbendazole), Ivermectine, Kétamine, Xylazine, Atropine, Diazépam, Freecardyl (Furosémide inj.), Furosémide, Benazépril, Dexaméthasone, Méloxicam, Prednisolone, Proton (Oméprazole), Maropitant, Métoclopramide, Ringer Lactate, NaCl 0.9%, Glucose 5%, Vit B1/B6/B12, Complexe B, Vit C, Néomycine collyre, Chloramphénicol collyre, Atropine 1% collyre, Dexaméthasone 0.1% collyre, Larmes artificielles
-3. Posologie détaillée : dose mg/kg, fréquence, durée, voie d'admin, CI et interactions
-4. Chirurgie : castration, OVH, entérotomie, othématome, prolapsus, abcès, extraction dentaire
-5. Ophtalmologie : conjonctivite, ulcère cornéen, glaucome, uvéite, KCS
-6. Dentisterie : gingivite, FCGS, FORL, parodontite
-7. Calculs : perfusion (déficit+entretien+pertes), anesthésie (prémédication+induction+analgésie)
-8. IRIS, WSAVA, VIN, BSAVA — citer les références
-
-FORMAT : Utilise emojis structurants (🔬 Diagnostic, 💊 Traitement, ⚖️ Posologie, 📋 Examens, ⚠️ Urgence, 📚 Référence).
-AVERTISSEMENT : Aide à la décision uniquement — © Dr. Kherbache Wail · ENSV Algérie`;
+const SYS=`Assistant vétérinaire expert. Réponds en français, concis et actionnable.
+Diagnostics différentiels, posologie (mg/kg, fréquence, durée, voie, CI), chirurgie, ophtalmo, perfusion, anesthésie.
+Médicaments dispo Algérie : Shotapen, Lavamox LA, Amoxicilline, Ganamic, Métronidazole, Imidocarbe, Kétamine, Xylazine, Atropine, Diazépam, Méloxicam, Prednisolone, Ringer Lactate, NaCl 0.9%.
+Format : emojis structurants (🔬💊⚖️📋⚠️). Réf IRIS/WSAVA si pertinent. Aide à la décision uniquement.`;
 
 function saveGeminiKey(){
   var inp=document.getElementById("settings-gemini-key");
@@ -5951,7 +5941,7 @@ function loadGeminiKeyToSettings(){var inp=document.getElementById("settings-gem
 
 function initAI(){
   const msgs=document.getElementById('ai-msgs');if(!msgs)return;msgs.innerHTML='';
-  appendAIMsg('bot','Bonjour Dr. Kherbache Wail ! 👋\n\nJe suis votre assistant IA — <strong>Gemini 3.1 Flash Lite via Google AI Studio, 100% gratuit</strong>.\n\n🔬 Diagnostics différentiels\n⚖️ Posologie & interactions médicamenteuses\n💊 40+ médicaments disponibles en Algérie\n🔪 Chirurgie · 👁 Ophtalmologie · 🦷 Dentisterie\n💧 Calcul perfusion · 💉 Anesthésie\n📚 Références VIN, WSAVA, BSAVA, IRIS\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement — © Dr. Kherbache Wail · ENSV Algérie</em>');
+  appendAIMsg('bot','Bonjour ! 👋 Assistant IA VetPro prêt.\n\n🔬 Diagnostics · ⚖️ Posologie · 💊 Médicaments\n🔪 Chirurgie · 👁 Ophtalmo · 💧 Perfusion\n\n<em style="color:rgba(255,255,255,.35);font-size:10.5px">⚕️ Aide à la décision uniquement</em>');
 }
 
 async function sendAI(){
@@ -5973,11 +5963,11 @@ try{
   if(race)ctxParts.push("Race: "+race);
   var ctx=ctxParts.join(", ");
   var sys=ctx?SYS+"\n\nCONTEXTE PATIENT : "+ctx:SYS;
-  var messages=[{role:"system",content:sys}].concat(chatHist.slice(-16));
+  var messages=[{role:"system",content:sys}].concat(chatHist.slice(-8));
   var rep="";
   var useEdge=(_sb && SUPA_URL !== "VOTRE_SUPABASE_URL");
   if(useEdge){
-    var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:2048,temperature:0.35,messages:messages}});
+    var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages}});
     var d=invRes.data;var e=invRes.error;
     removeTyping();
     if(e){appendAIMsg("bot","❌ Erreur: "+(e.message||"Erreur inconnue"));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
@@ -5986,9 +5976,9 @@ try{
   }else{
     GEMINI_API_KEY=localStorage.getItem("vetpro-gemini-key")||"";
     if(!GEMINI_API_KEY){removeTyping();appendAIMsg("bot","⚠️ <strong>Clé API Gemini non configurée.</strong><br><br>Allez dans <strong>Paramètres</strong> et entrez votre clé Google AI Studio.");aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
-    var geminiContents=chatHist.slice(-16).map(function(m){return{role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]};});
+    var geminiContents=chatHist.slice(-8).map(function(m){return{role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]};});
     var endpoint="https://generativelanguage.googleapis.com/v1beta/models/"+GEMINI_MODEL+":generateContent?key="+GEMINI_API_KEY;
-    var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:geminiContents,generationConfig:{temperature:0.35,maxOutputTokens:2048}})});
+    var res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({systemInstruction:{parts:[{text:sys}]},contents:geminiContents,generationConfig:{temperature:0.35,maxOutputTokens:1024}})});
     removeTyping();
     if(!res.ok){var errData=await res.json().catch(function(){return{};});appendAIMsg("bot","❌ Erreur Gemini ("+res.status+"): "+(errData&&errData.error&&errData.error.message||"Erreur inconnue"));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
     var data=await res.json();
@@ -13144,7 +13134,7 @@ function saveAdmission() {
       lang_label: 'Langue interface',
       dashboard_title: 'Tableau de bord',
       dashboard_welcome: 'Bonjour, {name} 👋',
-      dashboard_subtitle: 'Gestion clinique · IA Gemini 3.1 Flash Lite · Hospitalisations · Médicaments',
+      dashboard_subtitle: 'Gestion clinique · IA intégrée · Hospitalisations · Médicaments',
       sb_dashboard: 'Tableau de bord',
       sb_cages: 'Cages & Hospit.',
       sb_cas: 'Cas cliniques',
@@ -13183,7 +13173,7 @@ function saveAdmission() {
       lang_label: 'Interface language',
       dashboard_title: 'Dashboard',
       dashboard_welcome: 'Welcome, {name} 👋',
-      dashboard_subtitle: 'Clinic management · Gemini 3.1 Flash Lite AI · Hospitalizations · Medicines',
+      dashboard_subtitle: 'Clinic management · Built-in AI · Hospitalizations · Medicines',
       sb_dashboard: 'Dashboard',
       sb_cages: 'Cages & Hospit.',
       sb_cas: 'Clinical cases',
@@ -13222,7 +13212,7 @@ function saveAdmission() {
       lang_label: 'لغة الواجهة',
       dashboard_title: 'لوحة التحكم',
       dashboard_welcome: 'مرحبا، {name} 👋',
-      dashboard_subtitle: 'إدارة العيادة · ذكاء اصطناعي Gemini 3.1 Flash Lite · الاستشفاء · الأدوية',
+      dashboard_subtitle: 'إدارة العيادة · ذكاء اصطناعي مدمج · الاستشفاء · الأدوية',
       sb_dashboard: 'لوحة التحكم',
       sb_cages: 'الأقفاص والاستشفاء',
       sb_cas: 'الحالات السريرية',
@@ -15011,7 +15001,7 @@ function saveAdmission() {
               <div class="vp-ai-avatar">🤖</div>
               <div style="min-width:0">
                 <h4>Assistant IA Vétérinaire</h4>
-                <small>Gemini 3.1 Flash Lite · Google AI</small>
+                <small>Google AI</small>
               </div>
               <span class="vp-ai-live"><span class="vp-ai-live-dot"></span>En ligne</span>
             </div>
@@ -17427,7 +17417,7 @@ function saveAdmission() {
                 <div class="vp-ai-bubble user">Parvovirose chien 15kg, traitement ?</div>
                 <div class="vp-ai-bubble">💊 Shotapen 1 mL/10kg IM · Ringer Lactate 90 mL/kg/24h · Métoclopramide…</div>
               </div>
-              <span class="vp-mock-pill">⚡ Gemini 3.1 Flash Lite · Gratuit</span>
+              <span class="vp-mock-pill">⚡ IA Vétérinaire</span>
             </div>
             <div class="vp-mockup-info">
               <h4>🧠 IA Vétérinaire gratuite</h4>
