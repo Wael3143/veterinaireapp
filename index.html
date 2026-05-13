@@ -20453,9 +20453,9 @@ function saveAdmission() {
   .vp-fab-btn:hover{transform:scale(1.08);box-shadow:0 12px 32px rgba(26,74,46,.5)}
   .vp-fab-btn svg{width:24px;height:24px;transition:transform .25s}
   .vp-fab.open .vp-fab-btn svg{transform:rotate(45deg)}
-  .vp-fab-menu{display:flex;flex-direction:column;align-items:flex-end;gap:8px;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
-  .vp-fab.open .vp-fab-menu{opacity:1;transform:translateY(0);pointer-events:auto}
-  .vp-fab-item{display:flex;align-items:center;gap:8px;background:#fff;padding:8px 16px 8px 8px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer;font-size:13px;font-weight:600;color:#0b3826;white-space:nowrap;transition:transform .15s,box-shadow .15s;pointer-events:auto}
+  .vp-fab-menu{display:flex;flex-direction:column;align-items:flex-end;gap:8px;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none;visibility:hidden}
+  .vp-fab.open .vp-fab-menu{opacity:1;transform:translateY(0);pointer-events:auto;visibility:visible}
+  .vp-fab-item{display:flex;align-items:center;gap:8px;background:#fff;padding:8px 16px 8px 8px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer;font-size:13px;font-weight:600;color:#0b3826;white-space:nowrap;transition:transform .15s,box-shadow .15s}
   .vp-fab-item:hover{transform:translateX(-4px);box-shadow:0 6px 20px rgba(0,0,0,.16)}
   .vp-fab-item-icon{width:32px;height:32px;border-radius:8px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
   @media(max-width:768px){.vp-fab{bottom:80px;right:16px}}
