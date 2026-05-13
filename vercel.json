@@ -1,17 +1,7 @@
 {
   "version": 2,
-  "builds": [
-    { "src": "**/*", "use": "@vercel/static" }
-  ],
   "routes": [
-    { "src": "/landing.html", "dest": "/landing.html" },
-    { "src": "/demo.html", "dest": "/demo.html" },
-    { "src": "/terms.html", "dest": "/terms.html" },
-    { "src": "/privacy.html", "dest": "/privacy.html" },
-    { "src": "/sitemap.xml", "dest": "/sitemap.xml" },
-    { "src": "/robots.txt", "dest": "/robots.txt" },
-    { "src": "/vetpro-logo.jpg", "dest": "/vetpro-logo.jpg" },
-    { "src": "/vetpro-logo-mark.svg", "dest": "/vetpro-logo-mark.svg" },
+    { "handle": "filesystem" },
     { "src": "/(.*)", "dest": "/index.html" }
   ],
   "headers": [
