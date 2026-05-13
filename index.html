@@ -3,7 +3,33 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>VétérinApp Pro v5 — Dr. Kherbache Wail</title>
+<title>VetPro - Logiciel de gestion veterinaire intelligent</title>
+<meta name="description" content="VetPro : logiciel tout-en-un de gestion de clinique veterinaire. Patients, rendez-vous, stocks, ordonnances, IA diagnostique. Securise et simple.">
+<meta name="keywords" content="veterinaire, logiciel veterinaire, gestion clinique, VetPro, Algerie, cabinet veterinaire">
+<meta name="author" content="VetPro">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://vetpro.vercel.app/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="VetPro - Logiciel de gestion veterinaire intelligent">
+<meta property="og:description" content="Gerez votre clinique veterinaire avec VetPro : patients, rendez-vous, stocks, ordonnances et IA diagnostique.">
+<meta property="og:url" content="https://vetpro.vercel.app/">
+<meta property="og:image" content="https://vetpro.vercel.app/vetpro-logo.jpg">
+<meta property="og:locale" content="fr_DZ">
+<meta property="og:site_name" content="VetPro">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VetPro - Logiciel de gestion veterinaire">
+<meta name="twitter:description" content="Tout-en-un pour gerer votre clinique veterinaire.">
+<meta name="twitter:image" content="https://vetpro.vercel.app/vetpro-logo.jpg">
+
+<!-- JSON-LD -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"VetPro","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Logiciel de gestion de clinique veterinaire tout-en-un avec IA diagnostique","url":"https://vetpro.vercel.app","author":{"@type":"Organization","name":"VetPro"}}
+</script>
+
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
   /* ── LOGIN SCREEN ── */
@@ -9263,7 +9289,7 @@ function saveAdmission() {
       </div>
       <label style="display:flex;gap:10px;align-items:flex-start;margin-bottom:14px;color:rgba(255,255,255,.7);font-size:12px;line-height:1.5">
         <input type="checkbox" id="signup-terms" style="margin-top:3px"/>
-        <span>J'accepte les conditions VetPro et la vérification manuelle du compte par l'administrateur.</span>
+        <span>J'accepte les <a href="terms.html" target="_blank" style="color:#49f48a;text-decoration:underline">Conditions d'utilisation</a> et la <a href="privacy.html" target="_blank" style="color:#49f48a;text-decoration:underline">Politique de confidentialité</a> VetPro, ainsi que la vérification manuelle du compte.</span>
       </label>
       <button class="login-btn" onclick="doSignup()">Créer un compte</button>
       <button class="login-btn" style="margin-top:10px;background:linear-gradient(135deg,#ffffff,#e9f2eb);color:#0b2e1f" onclick="doGoogleAuth()">Continuer avec Google</button>
@@ -9668,7 +9694,13 @@ function saveAdmission() {
 <script>
 (function(){
   const ADMIN_EMAIL = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
-  const OWNER_NAME = 'Kherbache Wail';
+  const OWNER_NAME = (function(){
+    try {
+      if (typeof window.vpGetCurrentName === 'function') { const n = window.vpGetCurrentName(); if (n) return n; }
+      if (typeof window.getSettings === 'function') { const s = window.getSettings(); const fn = (s.vetFirstName||'').trim(); const ln = (s.vetLastName||'').trim(); if (fn||ln) return (fn+' '+ln).trim(); }
+    } catch(e){}
+    return localStorage.getItem('vetpro-owner-name') || 'VetPro Admin';
+  })();
   const CONTACT_EMAIL = localStorage.getItem('vetpro-contact-email') || 'w.kherbache@etud.ensv.dz';
   const CONTACT_PHONE = '+213781236686';
   const INSTAGRAM_URL = 'https://www.instagram.com/vetpro.dz/';
@@ -10550,6 +10582,9 @@ function saveAdmission() {
   }
 
   window.doSignup = async function(){
+    /* Ensure enhanced signup panel is present */
+    if (typeof rebuildSignupPanel === 'function') rebuildSignupPanel();
+
     const firstName = document.getElementById('signup-first-name')?.value?.trim();
     const lastName = document.getElementById('signup-last-name')?.value?.trim();
     const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
@@ -10560,8 +10595,15 @@ function saveAdmission() {
     const accepted = document.getElementById('signup-terms')?.checked;
 
     if (!firstName || !lastName || !email || !password) { showLoginError('Veuillez remplir les informations principales.'); return; }
+    if (password.length < 6) { showLoginError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
     if (password !== confirm) { showLoginError('Les mots de passe ne correspondent pas.'); return; }
     if (!accepted) { showLoginError('Vous devez accepter les conditions VetPro.'); return; }
+
+    /* Loading state on signup button */
+    const signupBtns = document.querySelectorAll('#auth-signup-panel .login-btn');
+    const mainBtn = signupBtns[0];
+    const originalBtnText = mainBtn?.textContent;
+    if (mainBtn) { mainBtn.disabled = true; mainBtn.innerHTML = '<span class="login-spinner"></span>Création...'; }
 
     const payload = {
       email,
@@ -10590,6 +10632,10 @@ function saveAdmission() {
           }
         });
         if (error) throw error;
+        /* Supabase may return user with identities=[] if email already exists */
+        if (data?.user && (!data.user.identities || data.user.identities.length === 0)) {
+          throw new Error('Un compte avec cet email existe déjà.');
+        }
         payload.user_id = data?.user?.id || null;
       }
       await upsertApprovalRequest(payload);
@@ -10601,10 +10647,16 @@ function saveAdmission() {
       showAuthMode('login');
       const loginEmail = document.getElementById('login-email');
       if (loginEmail) loginEmail.value = email;
-      toast('Inscription enregistree. Le compte attend approbation.');
-      refreshApprovalsPageV2();
+      toast('✅ Inscription enregistrée ! Connectez-vous avec vos identifiants.');
+      if (typeof setLoginFeedback === 'function') setLoginFeedback('Compte créé avec succès. Connectez-vous.', 'info');
+      if (typeof refreshApprovalsPageV2 === 'function') refreshApprovalsPageV2();
     } catch (err) {
-      showLoginError(err.message || 'Inscription impossible');
+      console.error('[VetPro signup]', err);
+      const msg = err.message || 'Inscription impossible';
+      showLoginError(msg);
+      if (typeof setLoginFeedback === 'function') setLoginFeedback(msg, 'error');
+    } finally {
+      if (mainBtn) { mainBtn.disabled = false; mainBtn.textContent = originalBtnText || 'Créer un compte'; }
     }
   };
 
@@ -10653,10 +10705,11 @@ function saveAdmission() {
   function improveBrandingAndSettings(){
     document.querySelectorAll('.sb-footer-name, .tb-name-main').forEach(el => el.textContent = OWNER_NAME);
     const settingsInputs = document.querySelectorAll('#page-settings input');
-    if (settingsInputs[0]) settingsInputs[0].value = 'Wail';
-    if (settingsInputs[1]) settingsInputs[1].value = 'Kherbache';
-    if (settingsInputs[4]) settingsInputs[4].value = CONTACT_EMAIL;
-    if (settingsInputs[5]) settingsInputs[5].value = CONTACT_PHONE;
+    /* Don't overwrite settings if user has already configured them */
+    if (settingsInputs[0] && !settingsInputs[0].value) settingsInputs[0].value = OWNER_NAME.split(' ')[0] || '';
+    if (settingsInputs[1] && !settingsInputs[1].value) settingsInputs[1].value = OWNER_NAME.split(' ').slice(1).join(' ') || '';
+    if (settingsInputs[4] && !settingsInputs[4].value) settingsInputs[4].value = CONTACT_EMAIL;
+    if (settingsInputs[5] && !settingsInputs[5].value) settingsInputs[5].value = CONTACT_PHONE;
     const footer = document.querySelector('#page-settings textarea');
     if (footer) footer.value = '© 2026 VetPro. Tous droits réservés';
     const supportHero = document.querySelector('#page-support .page-hero p');
@@ -11212,11 +11265,42 @@ function saveAdmission() {
   }
 
   async function recoverGoogleHashIfNeeded(){
-    if (!_sb || !window.location.hash || !window.location.hash.includes('access_token=')) return false;
+    if (!_sb) return false;
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+
+    /* ── PKCE flow: Supabase v2 redirects back with ?code= ── */
+    if (window.location.search.includes('code=')) {
+      setLoginFeedback('Connexion Google en cours...', 'info');
+      try {
+        /* Supabase auto-exchanges the code during createClient().
+           Wait up to 6 s for the session to appear. */
+        for (let i = 0; i < 24; i++) {
+          const { data: { session } } = await _sb.auth.getSession();
+          if (session) {
+            window.history.replaceState({}, document.title, cleanUrl);
+            return true;
+          }
+          await new Promise(r => setTimeout(r, 250));
+        }
+        /* If still no session, try exchangeCodeForSession manually */
+        const code = new URLSearchParams(window.location.search).get('code');
+        if (code) {
+          try { await _sb.auth.exchangeCodeForSession(code); } catch (_) {}
+          const { data: { session } } = await _sb.auth.getSession();
+          if (session) { window.history.replaceState({}, document.title, cleanUrl); return true; }
+        }
+      } catch (error) {
+        setLoginFeedback(error?.message || 'Impossible de finaliser la connexion Google.', 'error');
+      }
+      window.history.replaceState({}, document.title, cleanUrl);
+      return false;
+    }
+
+    /* ── Implicit flow: older setups return #access_token= ── */
+    if (!window.location.hash || !window.location.hash.includes('access_token=')) return false;
     const params = new URLSearchParams(window.location.hash.slice(1));
     const access_token = params.get('access_token');
     const refresh_token = params.get('refresh_token');
-    const cleanUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
     if (!access_token || !refresh_token) {
       window.history.replaceState({}, document.title, cleanUrl);
       return false;
@@ -11304,7 +11388,8 @@ function saveAdmission() {
   }
 
   function showGoogleAccountHint(){
-    if (!window.location.hash || !window.location.hash.includes('access_token=')) return;
+    if (!window.location.hash?.includes('access_token=') && !window.location.search?.includes('code=')) return;
+    if (window.location.search?.includes('code=')) return; /* PKCE – no JWT to decode here */
     try {
       const token = new URLSearchParams(window.location.hash.slice(1)).get('access_token');
       if (!token) return;

@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Allow: /landing.html
+Allow: /demo.html
+Allow: /terms.html
+Allow: /privacy.html
+Disallow: /supabase-setup.sql
+Disallow: /supabase-fix.sql
+Disallow: /__serve_temp__.js
+
+Sitemap: https://vetpro.vercel.app/sitemap.xml

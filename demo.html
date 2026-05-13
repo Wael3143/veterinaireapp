@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetPro Demo - Decouvrez le logiciel veterinaire</title>
+<meta name="description" content="Testez VetPro en mode demo : explorez toutes les fonctionnalites avec des donnees fictives, sans inscription.">
+<meta name="robots" content="index, follow">
+<style>
+:root{--forest:#0b3826;--mint:#49f48a;--lime:#31cf71;--bg:#f7faf8;--card:#fff;--text:#1a2e23;--text2:#5a7268;--border:#e0ece4}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+/* HEADER */
+.demo-header{background:var(--forest);color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.demo-header-left{display:flex;align-items:center;gap:12px}
+.demo-header svg{width:32px;height:32px}
+.demo-header h1{font-size:1.1rem;font-weight:700}
+.demo-badge{background:rgba(73,244,138,.15);color:var(--mint);padding:4px 12px;border-radius:20px;font-size:.75rem;font-weight:700;border:1px solid rgba(73,244,138,.3)}
+.demo-header-right{display:flex;gap:10px;align-items:center}
+.demo-btn{padding:8px 18px;border-radius:8px;font-weight:600;font-size:.85rem;text-decoration:none;border:none;cursor:pointer;transition:all .2s}
+.demo-btn-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.3)}
+.demo-btn-outline:hover{border-color:var(--mint);color:var(--mint)}
+.demo-btn-primary{background:var(--mint);color:var(--forest)}
+.demo-btn-primary:hover{background:#5eff9e}
+
+/* TOUR BANNER */
+.demo-tour{background:linear-gradient(135deg,#145a38,var(--forest));color:#fff;padding:20px 24px;text-align:center}
+.demo-tour p{font-size:.95rem;opacity:.85;margin-bottom:12px}
+.demo-tour-steps{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.demo-tour-step{background:rgba(255,255,255,.1);padding:8px 16px;border-radius:8px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;border:1px solid rgba(255,255,255,.1)}
+.demo-tour-step:hover,.demo-tour-step.active{background:var(--mint);color:var(--forest);border-color:var(--mint)}
+.demo-tour-step span{margin-right:6px}
+
+/* LAYOUT */
+.demo-layout{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 120px)}
+@media(max-width:768px){.demo-layout{grid-template-columns:1fr}}
+
+/* SIDEBAR */
+.demo-sidebar{background:var(--forest);color:#fff;padding:20px 0;overflow-y:auto}
+@media(max-width:768px){.demo-sidebar{display:none}.demo-sidebar.open{display:block;position:fixed;top:56px;left:0;bottom:0;width:260px;z-index:99}}
+.demo-nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;color:rgba(255,255,255,.7);font-size:.9rem;cursor:pointer;transition:all .15s;border-left:3px solid transparent}
+.demo-nav-item:hover{background:rgba(255,255,255,.05);color:#fff}
+.demo-nav-item.active{background:rgba(73,244,138,.1);color:var(--mint);border-left-color:var(--mint);font-weight:600}
+.demo-nav-item span{font-size:1.1rem}
+
+/* MAIN */
+.demo-main{padding:24px;overflow-y:auto}
+.demo-page{display:none}
+.demo-page.active{display:block}
+
+/* DASHBOARD */
+.demo-greeting{font-size:1.4rem;font-weight:700;color:var(--forest);margin-bottom:20px}
+.demo-kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.demo-kpi{background:var(--card);border-radius:14px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.demo-kpi-label{font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.demo-kpi-value{font-size:1.8rem;font-weight:800;color:var(--forest)}
+.demo-kpi-sub{font-size:.75rem;color:var(--lime);margin-top:4px}
+
+/* TABLES */
+.demo-table-wrap{background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.04);margin-bottom:24px}
+.demo-table-title{padding:16px 20px;font-weight:700;font-size:1rem;color:var(--forest);border-bottom:1px solid var(--border)}
+.demo-table{width:100%;border-collapse:collapse}
+.demo-table th{background:var(--bg);text-align:left;padding:10px 16px;font-size:.8rem;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600}
+.demo-table td{padding:12px 16px;border-bottom:1px solid var(--border);font-size:.9rem}
+.demo-table tr:last-child td{border-bottom:none}
+.demo-status{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
+.demo-status.green{background:#e8f9ef;color:#1a8a4a}
+.demo-status.yellow{background:#fff8e5;color:#b8860b}
+.demo-status.red{background:#fde8e8;color:#c0392b}
+.demo-status.blue{background:#e8f0fd;color:#2563eb}
+
+/* CAGE CARDS */
+.demo-cages{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:24px}
+.demo-cage{background:var(--card);border-radius:12px;padding:16px;border-left:4px solid var(--lime);box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.demo-cage.occupied{border-left-color:#e74c3c}
+.demo-cage-name{font-weight:700;font-size:.95rem;margin-bottom:6px}
+.demo-cage-info{font-size:.82rem;color:var(--text2)}
+
+/* STOCK */
+.demo-stock-bar{height:8px;background:#e8ece9;border-radius:4px;overflow:hidden;margin-top:6px}
+.demo-stock-fill{height:100%;border-radius:4px;transition:width .3s}
+
+/* SECTION TITLE */
+.demo-section-title{font-size:1.1rem;font-weight:700;color:var(--forest);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* AI PANEL */
+.demo-ai{background:var(--card);border-radius:14px;padding:24px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.demo-ai-input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:10px;font-size:.95rem;outline:none;transition:border-color .2s;font-family:inherit}
+.demo-ai-input:focus{border-color:var(--lime)}
+.demo-ai-response{margin-top:16px;padding:16px;background:var(--bg);border-radius:10px;font-size:.9rem;line-height:1.7;color:var(--text2);display:none}
+.demo-ai-btn{margin-top:12px;background:var(--forest);color:var(--mint);border:none;padding:10px 20px;border-radius:8px;font-weight:600;cursor:pointer;font-size:.9rem}
+.demo-ai-btn:hover{background:#145a38}
+
+/* MOBILE TOGGLE */
+.demo-mobile-toggle{display:none;background:none;border:none;color:#fff;font-size:1.4rem;cursor:pointer}
+@media(max-width:768px){.demo-mobile-toggle{display:block}}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="demo-header">
+<div class="demo-header-left">
+  <button class="demo-mobile-toggle" onclick="document.querySelector('.demo-sidebar').classList.toggle('open')">&#9776;</button>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none"><defs><linearGradient id="bg1" x1="78" y1="54" x2="438" y2="460" gradientUnits="userSpaceOnUse"><stop stop-color="#0b3826"/><stop offset="1" stop-color="#062114"/></linearGradient><linearGradient id="mt1" x1="145" y1="122" x2="366" y2="388" gradientUnits="userSpaceOnUse"><stop stop-color="#49f48a"/><stop offset="1" stop-color="#31cf71"/></linearGradient></defs><rect x="20" y="20" width="472" height="472" rx="112" fill="url(#bg1)"/><rect x="214" y="104" width="84" height="304" rx="42" fill="url(#mt1)"/><rect x="104" y="214" width="304" height="84" rx="42" fill="url(#mt1)"/><circle cx="126" cy="126" r="36" fill="#33bc6b"/><circle cx="386" cy="126" r="36" fill="#33bc6b"/><circle cx="126" cy="386" r="36" fill="#33bc6b"/><circle cx="386" cy="386" r="36" fill="#33bc6b"/></svg>
+  <h1>VetPro</h1>
+  <span class="demo-badge">MODE DEMO</span>
+</div>
+<div class="demo-header-right">
+  <a href="landing.html" class="demo-btn demo-btn-outline">Retour</a>
+  <a href="index.html" class="demo-btn demo-btn-primary">S'inscrire</a>
+</div>
+</header>
+
+<!-- GUIDED TOUR -->
+<div class="demo-tour" id="demo-tour">
+<p>Explorez VetPro avec des donnees fictives. Cliquez sur une section pour decouvrir :</p>
+<div class="demo-tour-steps">
+  <div class="demo-tour-step active" onclick="showDemoPage('dashboard')"><span>1</span> Tableau de bord</div>
+  <div class="demo-tour-step" onclick="showDemoPage('patients')"><span>2</span> Patients</div>
+  <div class="demo-tour-step" onclick="showDemoPage('hospi')"><span>3</span> Hospitalisation</div>
+  <div class="demo-tour-step" onclick="showDemoPage('stocks')"><span>4</span> Stocks</div>
+  <div class="demo-tour-step" onclick="showDemoPage('ai')"><span>5</span> Assistant IA</div>
+</div>
+</div>
+
+<div class="demo-layout">
+
+<!-- SIDEBAR -->
+<nav class="demo-sidebar">
+  <div class="demo-nav-item active" onclick="showDemoPage('dashboard')"><span>📊</span> Tableau de bord</div>
+  <div class="demo-nav-item" onclick="showDemoPage('patients')"><span>🐾</span> Patients</div>
+  <div class="demo-nav-item" onclick="showDemoPage('agenda')"><span>📅</span> Agenda</div>
+  <div class="demo-nav-item" onclick="showDemoPage('hospi')"><span>🏥</span> Hospitalisation</div>
+  <div class="demo-nav-item" onclick="showDemoPage('stocks')"><span>💊</span> Stocks</div>
+  <div class="demo-nav-item" onclick="showDemoPage('ordonnances')"><span>📋</span> Ordonnances</div>
+  <div class="demo-nav-item" onclick="showDemoPage('vaccins')"><span>💉</span> Vaccins</div>
+  <div class="demo-nav-item" onclick="showDemoPage('ai')"><span>🤖</span> Assistant IA</div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="demo-main">
+
+<!-- DASHBOARD -->
+<div class="demo-page active" id="demo-dashboard">
+  <div class="demo-greeting">Bonjour, Dr. Demo 👋</div>
+  <div class="demo-kpi-grid">
+    <div class="demo-kpi"><div class="demo-kpi-label">Recettes ce mois</div><div class="demo-kpi-value">47 500 DA</div><div class="demo-kpi-sub">+12% vs mois dernier</div></div>
+    <div class="demo-kpi"><div class="demo-kpi-label">Cas ce mois</div><div class="demo-kpi-value">23</div><div class="demo-kpi-sub">8 cette semaine</div></div>
+    <div class="demo-kpi"><div class="demo-kpi-label">Animaux hospitalises</div><div class="demo-kpi-value">3</div><div class="demo-kpi-sub">2 cages libres</div></div>
+    <div class="demo-kpi"><div class="demo-kpi-label">Alertes stock</div><div class="demo-kpi-value">2</div><div class="demo-kpi-sub">Amoxicilline, Ivermectine</div></div>
+  </div>
+  <div class="demo-table-wrap">
+    <div class="demo-table-title">Rendez-vous aujourd'hui</div>
+    <table class="demo-table">
+      <thead><tr><th>Heure</th><th>Patient</th><th>Proprietaire</th><th>Motif</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>09:00</td><td>Rex (Berger Allemand)</td><td>M. Boudjema</td><td>Vaccination annuelle</td><td><span class="demo-status green">Confirme</span></td></tr>
+        <tr><td>10:30</td><td>Mimi (Chat Siamois)</td><td>Mme. Hadj</td><td>Consultation dermatologique</td><td><span class="demo-status yellow">En attente</span></td></tr>
+        <tr><td>14:00</td><td>Sultan (Pur-sang)</td><td>M. Ferhat</td><td>Suivi post-operatoire</td><td><span class="demo-status blue">Planifie</span></td></tr>
+        <tr><td>16:00</td><td>Nala (Caniche)</td><td>Mme. Slimani</td><td>Sterilisation</td><td><span class="demo-status blue">Planifie</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PATIENTS -->
+<div class="demo-page" id="demo-patients">
+  <div class="demo-section-title">🐾 Patients enregistres</div>
+  <div class="demo-table-wrap">
+    <table class="demo-table">
+      <thead><tr><th>Nom</th><th>Espece</th><th>Race</th><th>Age</th><th>Proprietaire</th><th>Dernier RDV</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Rex</strong></td><td>Chien</td><td>Berger Allemand</td><td>4 ans</td><td>M. Boudjema</td><td>10/05/2026</td></tr>
+        <tr><td><strong>Mimi</strong></td><td>Chat</td><td>Siamois</td><td>2 ans</td><td>Mme. Hadj</td><td>08/05/2026</td></tr>
+        <tr><td><strong>Sultan</strong></td><td>Cheval</td><td>Pur-sang Arabe</td><td>6 ans</td><td>M. Ferhat</td><td>05/05/2026</td></tr>
+        <tr><td><strong>Nala</strong></td><td>Chien</td><td>Caniche</td><td>1 an</td><td>Mme. Slimani</td><td>01/05/2026</td></tr>
+        <tr><td><strong>Oscar</strong></td><td>Chat</td><td>Persan</td><td>5 ans</td><td>M. Amrani</td><td>28/04/2026</td></tr>
+        <tr><td><strong>Bella</strong></td><td>Chien</td><td>Golden Retriever</td><td>3 ans</td><td>Mme. Cherif</td><td>25/04/2026</td></tr>
+        <tr><td><strong>Rocky</strong></td><td>Chien</td><td>Rottweiler</td><td>7 ans</td><td>M. Benmoussa</td><td>20/04/2026</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- AGENDA -->
+<div class="demo-page" id="demo-agenda">
+  <div class="demo-section-title">📅 Agenda de la semaine</div>
+  <div class="demo-table-wrap">
+    <table class="demo-table">
+      <thead><tr><th>Date</th><th>Heure</th><th>Patient</th><th>Type</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>Lun 12/05</td><td>09:00</td><td>Rex</td><td>Vaccination</td><td><span class="demo-status green">Termine</span></td></tr>
+        <tr><td>Lun 12/05</td><td>11:00</td><td>Oscar</td><td>Detartrage</td><td><span class="demo-status green">Termine</span></td></tr>
+        <tr><td>Mar 13/05</td><td>09:00</td><td>Rex</td><td>Vaccination</td><td><span class="demo-status green">Confirme</span></td></tr>
+        <tr><td>Mar 13/05</td><td>10:30</td><td>Mimi</td><td>Dermatologie</td><td><span class="demo-status yellow">En attente</span></td></tr>
+        <tr><td>Mar 13/05</td><td>14:00</td><td>Sultan</td><td>Post-op</td><td><span class="demo-status blue">Planifie</span></td></tr>
+        <tr><td>Mer 14/05</td><td>09:30</td><td>Bella</td><td>Bilan sanguin</td><td><span class="demo-status blue">Planifie</span></td></tr>
+        <tr><td>Jeu 15/05</td><td>10:00</td><td>Rocky</td><td>Echographie</td><td><span class="demo-status blue">Planifie</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- HOSPITALISATION -->
+<div class="demo-page" id="demo-hospi">
+  <div class="demo-section-title">🏥 Cages d'hospitalisation</div>
+  <div class="demo-cages">
+    <div class="demo-cage occupied">
+      <div class="demo-cage-name">Cage 1 - Occupee</div>
+      <div class="demo-cage-info"><strong>Sultan</strong> (Cheval)<br>Motif : Post-chirurgie colique<br>Depuis : 10/05/2026<br>Notes : Recuperation normale, alimentation progressive</div>
+    </div>
+    <div class="demo-cage occupied">
+      <div class="demo-cage-name">Cage 2 - Occupee</div>
+      <div class="demo-cage-info"><strong>Mimi</strong> (Chat)<br>Motif : Observation dermatite severe<br>Depuis : 12/05/2026<br>Notes : Traitement topique en cours</div>
+    </div>
+    <div class="demo-cage occupied">
+      <div class="demo-cage-name">Cage 3 - Occupee</div>
+      <div class="demo-cage-info"><strong>Rocky</strong> (Chien)<br>Motif : Surveillance post-operatoire<br>Depuis : 11/05/2026<br>Notes : Retrait des points prevu demain</div>
+    </div>
+    <div class="demo-cage">
+      <div class="demo-cage-name">Cage 4 - Libre</div>
+      <div class="demo-cage-info">Disponible pour hospitalisation</div>
+    </div>
+    <div class="demo-cage">
+      <div class="demo-cage-name">Cage 5 - Libre</div>
+      <div class="demo-cage-info">Disponible pour hospitalisation</div>
+    </div>
+  </div>
+</div>
+
+<!-- STOCKS -->
+<div class="demo-page" id="demo-stocks">
+  <div class="demo-section-title">💊 Gestion des stocks</div>
+  <div class="demo-table-wrap">
+    <table class="demo-table">
+      <thead><tr><th>Medicament</th><th>Stock</th><th>Seuil min.</th><th>Statut</th><th>Niveau</th></tr></thead>
+      <tbody id="demo-stock-body">
+        <tr><td>Amoxicilline 500mg</td><td>3</td><td>10</td><td><span class="demo-status red">Rupture imminente</span></td><td><div class="demo-stock-bar"><div class="demo-stock-fill" style="width:15%;background:#e74c3c"></div></div></td></tr>
+        <tr><td>Ivermectine 1%</td><td>5</td><td>8</td><td><span class="demo-status red">Stock bas</span></td><td><div class="demo-stock-bar"><div class="demo-stock-fill" style="width:30%;background:#f39c12"></div></div></td></tr>
+        <tr><td>Meloxicam 5mg</td><td>25</td><td>10</td><td><span class="demo-status green">OK</span></td><td><div class="demo-stock-bar"><div class="demo-stock-fill" style="width:80%;background:var(--lime)"></div></div></td></tr>
+        <tr><td>Ceftriaxone 1g</td><td>18</td><td>5</td><td><span class="demo-status green">OK</span></td><td><div class="demo-stock-bar"><div class="demo-stock-fill" style="width:90%;background:var(--lime)"></div></div></td></tr>
+        <tr><td>Ketamine 50mg/mL</td><td>12</td><td>5</td><td><span class="demo-status green">OK</span></td><td><div class="demo-stock-bar"><div class="demo-stock-fill" style="width:70%;background:var(--lime)"></div></div></td></tr>
+        <tr><td>Vaccin antirabique</td><td>30</td><td>10</td><td><span class="demo-status green">OK</span></td><td><div class="demo-stock-bar"><div class="demo-stock-fill" style="width:95%;background:var(--lime)"></div></div></td></tr>
+        <tr><td>Dexamethasone 4mg</td><td>8</td><td>5</td><td><span class="demo-status yellow">Surveiller</span></td><td><div class="demo-stock-bar"><div class="demo-stock-fill" style="width:45%;background:#f39c12"></div></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ORDONNANCES -->
+<div class="demo-page" id="demo-ordonnances">
+  <div class="demo-section-title">📋 Ordonnances recentes</div>
+  <div class="demo-table-wrap">
+    <table class="demo-table">
+      <thead><tr><th>Date</th><th>Patient</th><th>Diagnostic</th><th>Traitement</th><th>Duree</th></tr></thead>
+      <tbody>
+        <tr><td>12/05/2026</td><td>Mimi</td><td>Dermatite allergique</td><td>Prednisolone 5mg + Shampoing Malaseb</td><td>14 jours</td></tr>
+        <tr><td>10/05/2026</td><td>Sultan</td><td>Colique chirurgicale</td><td>Flunixine meglumine + Amoxicilline</td><td>10 jours</td></tr>
+        <tr><td>08/05/2026</td><td>Rex</td><td>Otite externe</td><td>Surolan auriculaire + Cefalexine</td><td>7 jours</td></tr>
+        <tr><td>05/05/2026</td><td>Bella</td><td>Gastro-enterite</td><td>Metoclopramide + Smecta + Diete</td><td>5 jours</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- VACCINS -->
+<div class="demo-page" id="demo-vaccins">
+  <div class="demo-section-title">💉 Suivi vaccinal</div>
+  <div class="demo-table-wrap">
+    <table class="demo-table">
+      <thead><tr><th>Patient</th><th>Vaccin</th><th>Date</th><th>Prochain rappel</th><th>Statut</th></tr></thead>
+      <tbody>
+        <tr><td>Rex</td><td>DHPP + Rage</td><td>13/05/2026</td><td>13/05/2027</td><td><span class="demo-status green">A jour</span></td></tr>
+        <tr><td>Mimi</td><td>Typhus + Leucose</td><td>15/03/2026</td><td>15/03/2027</td><td><span class="demo-status green">A jour</span></td></tr>
+        <tr><td>Nala</td><td>DHPP</td><td>10/01/2026</td><td>10/07/2026</td><td><span class="demo-status yellow">Rappel dans 2 mois</span></td></tr>
+        <tr><td>Oscar</td><td>Typhus</td><td>20/11/2025</td><td>20/05/2026</td><td><span class="demo-status red">Rappel en retard</span></td></tr>
+        <tr><td>Bella</td><td>DHPP + Rage</td><td>05/09/2025</td><td>05/09/2026</td><td><span class="demo-status green">A jour</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- AI ASSISTANT -->
+<div class="demo-page" id="demo-ai">
+  <div class="demo-section-title">🤖 Assistant IA veterinaire</div>
+  <div class="demo-ai">
+    <p style="color:var(--text2);font-size:.9rem;margin-bottom:16px">Decrivez les symptomes de votre patient et l'IA vous proposera des pistes diagnostiques.</p>
+    <input type="text" class="demo-ai-input" id="demo-ai-input" placeholder="Ex: Chat de 3 ans, vomissements, anorexie depuis 2 jours, lethargie...">
+    <button class="demo-ai-btn" onclick="demoAIRespond()">Analyser les symptomes</button>
+    <div class="demo-ai-response" id="demo-ai-response"></div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+function showDemoPage(page) {
+  document.querySelectorAll('.demo-page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.demo-nav-item').forEach(function(n){ n.classList.remove('active'); });
+  document.querySelectorAll('.demo-tour-step').forEach(function(s){ s.classList.remove('active'); });
+
+  var el = document.getElementById('demo-' + page);
+  if (el) el.classList.add('active');
+
+  var navItems = document.querySelectorAll('.demo-nav-item');
+  var pageMap = ['dashboard','patients','agenda','hospi','stocks','ordonnances','vaccins','ai'];
+  var idx = pageMap.indexOf(page);
+  if (idx >= 0 && navItems[idx]) navItems[idx].classList.add('active');
+
+  var tourMap = ['dashboard','patients','hospi','stocks','ai'];
+  var tourIdx = tourMap.indexOf(page);
+  var tourSteps = document.querySelectorAll('.demo-tour-step');
+  if (tourIdx >= 0 && tourSteps[tourIdx]) tourSteps[tourIdx].classList.add('active');
+
+  // Close mobile sidebar
+  document.querySelector('.demo-sidebar').classList.remove('open');
+}
+
+var demoResponses = [
+  {
+    title: 'Analyse des symptomes',
+    diag: '<strong>Diagnostics differentiels :</strong><br>1. Gastro-enterite aigue (probabilite elevee)<br>2. Corps etranger gastro-intestinal<br>3. Pancreatite aigue<br>4. Insuffisance renale (si chat age)',
+    reco: '<strong>Examens recommandes :</strong><br>- Bilan sanguin complet (NFS + biochimie)<br>- Echographie abdominale<br>- Radiographie si suspicion de corps etranger',
+    treat: '<strong>Traitement initial suggere :</strong><br>- Fluidotherapie IV (NaCl 0.9%)<br>- Anti-emetique : Maropitant 1mg/kg SC SID<br>- Protecteur gastrique : Omeprazole 1mg/kg PO BID<br>- Diete hydrique 12-24h puis alimentation progressive'
+  },
+  {
+    title: 'Evaluation clinique',
+    diag: '<strong>Hypotheses diagnostiques :</strong><br>1. Infection virale (parvovirus, coronavirus)<br>2. Intoxication alimentaire<br>3. Maladie hepatique<br>4. Obstruction intestinale partielle',
+    reco: '<strong>Plan diagnostique :</strong><br>- Test SNAP parvo/corona<br>- Enzymes hepatiques (ALT, ALP, bilirubine)<br>- Analyse urinaire<br>- Temperature rectale',
+    treat: '<strong>Approche therapeutique :</strong><br>- Rehydratation orale ou IV selon degre de deshydratation<br>- Antiemetique si vomissements persistants<br>- Antibiotique a large spectre si fievre<br>- Suivi a 24-48h'
+  }
+];
+
+function demoAIRespond() {
+  var input = document.getElementById('demo-ai-input').value.trim();
+  if (!input) { alert('Veuillez decrire les symptomes du patient.'); return; }
+  var response = demoResponses[Math.floor(Math.random() * demoResponses.length)];
+  var el = document.getElementById('demo-ai-response');
+  el.style.display = 'block';
+  el.innerHTML = '<h4 style="color:var(--forest);margin-bottom:12px">' + response.title + '</h4>' +
+    '<p>' + response.diag + '</p><br>' +
+    '<p>' + response.reco + '</p><br>' +
+    '<p>' + response.treat + '</p>' +
+    '<p style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);font-size:.8rem;color:var(--text2)"><em>Rappel : ces suggestions sont a titre indicatif. Le jugement clinique du veterinaire reste primordial.</em></p>';
+}
+</script>
+</body>
+</html>

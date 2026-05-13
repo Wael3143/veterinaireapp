@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VetPro - Logiciel de gestion veterinaire intelligent | Algerie</title>
+<meta name="description" content="VetPro : le logiciel de gestion de clinique veterinaire tout-en-un. Patients, rendez-vous, stocks, ordonnances, IA diagnostique. Concu pour les veterinaires algeriens.">
+<meta name="keywords" content="veterinaire, logiciel veterinaire, gestion clinique, VetPro, Algerie, cabinet veterinaire, gestion animaux, ordonnances veterinaires">
+<meta name="author" content="VetPro">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://vetpro.vercel.app/landing.html">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="VetPro - Logiciel de gestion veterinaire intelligent">
+<meta property="og:description" content="Gerez votre clinique veterinaire avec VetPro : patients, rendez-vous, stocks, ordonnances et IA diagnostique. Tout-en-un, simple et securise.">
+<meta property="og:url" content="https://vetpro.vercel.app/landing.html">
+<meta property="og:image" content="https://vetpro.vercel.app/vetpro-logo.jpg">
+<meta property="og:locale" content="fr_DZ">
+<meta property="og:site_name" content="VetPro">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="VetPro - Logiciel de gestion veterinaire intelligent">
+<meta name="twitter:description" content="Gerez votre clinique veterinaire avec VetPro. Tout-en-un, simple et securise.">
+<meta name="twitter:image" content="https://vetpro.vercel.app/vetpro-logo.jpg">
+
+<!-- JSON-LD -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "VetPro",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "description": "Logiciel de gestion de clinique veterinaire tout-en-un avec IA diagnostique",
+  "url": "https://vetpro.vercel.app",
+  "author": {"@type": "Organization", "name": "VetPro"},
+  "offers": [
+    {"@type": "Offer", "name": "Gratuit", "price": "0", "priceCurrency": "DZD"},
+    {"@type": "Offer", "name": "Pro", "price": "2500", "priceCurrency": "DZD"},
+    {"@type": "Offer", "name": "Clinique", "price": "5000", "priceCurrency": "DZD"}
+  ]
+}
+</script>
+
+<style>
+:root{--forest:#0b3826;--forest2:#0d4a30;--mint:#49f48a;--mint-soft:#e8f9ef;--lime:#31cf71;--white:#fff;--gray:#f7faf8;--text:#1a2e23;--text2:#5a7268}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',sans-serif;color:var(--text);line-height:1.6;overflow-x:hidden}
+
+/* NAV */
+.lp-nav{position:fixed;top:0;left:0;right:0;z-index:100;background:rgba(11,56,38,.95);backdrop-filter:blur(12px);padding:12px 0;transition:box-shadow .3s}
+.lp-nav.scrolled{box-shadow:0 2px 20px rgba(0,0,0,.2)}
+.lp-nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between}
+.lp-logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--white)}
+.lp-logo svg{width:36px;height:36px}
+.lp-logo span{font-size:1.2rem;font-weight:800;letter-spacing:-.5px}
+.lp-nav-links{display:flex;gap:28px;align-items:center}
+.lp-nav-links a{color:rgba(255,255,255,.8);text-decoration:none;font-size:.9rem;font-weight:500;transition:color .2s}
+.lp-nav-links a:hover{color:var(--mint)}
+.lp-nav-cta{background:var(--mint);color:var(--forest);padding:8px 20px;border-radius:8px;font-weight:700;font-size:.9rem;text-decoration:none;transition:transform .2s,box-shadow .2s}
+.lp-nav-cta:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(73,244,138,.3)}
+.lp-burger{display:none;background:none;border:none;color:var(--white);font-size:1.5rem;cursor:pointer}
+
+/* HERO */
+.lp-hero{background:linear-gradient(135deg,#0b3826 0%,#062114 60%,#0d4a30 100%);color:var(--white);padding:140px 24px 80px;text-align:center;position:relative;overflow:hidden}
+.lp-hero::before{content:'';position:absolute;top:-50%;right:-20%;width:600px;height:600px;background:radial-gradient(circle,rgba(73,244,138,.08) 0%,transparent 70%);pointer-events:none}
+.lp-hero::after{content:'';position:absolute;bottom:-30%;left:-10%;width:500px;height:500px;background:radial-gradient(circle,rgba(49,207,113,.06) 0%,transparent 70%);pointer-events:none}
+.lp-hero-inner{max-width:800px;margin:0 auto;position:relative;z-index:1}
+.lp-hero-badge{display:inline-block;background:rgba(73,244,138,.15);color:var(--mint);padding:6px 18px;border-radius:50px;font-size:.85rem;font-weight:600;margin-bottom:24px;border:1px solid rgba(73,244,138,.2)}
+.lp-hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:800;line-height:1.15;margin-bottom:20px;letter-spacing:-.5px}
+.lp-hero h1 em{font-style:normal;color:var(--mint)}
+.lp-hero p{font-size:1.15rem;color:rgba(255,255,255,.75);max-width:600px;margin:0 auto 32px;line-height:1.7}
+.lp-hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.lp-btn-primary{background:var(--mint);color:var(--forest);padding:14px 32px;border-radius:12px;font-weight:700;font-size:1rem;text-decoration:none;transition:all .2s;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.lp-btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(73,244,138,.25)}
+.lp-btn-secondary{background:transparent;color:var(--white);padding:14px 32px;border-radius:12px;font-weight:600;font-size:1rem;text-decoration:none;border:2px solid rgba(255,255,255,.25);transition:all .2s;display:inline-flex;align-items:center;gap:8px}
+.lp-btn-secondary:hover{border-color:var(--mint);color:var(--mint)}
+.lp-hero-stats{display:flex;justify-content:center;gap:40px;margin-top:48px;flex-wrap:wrap}
+.lp-stat{text-align:center}
+.lp-stat-num{font-size:1.8rem;font-weight:800;color:var(--mint)}
+.lp-stat-label{font-size:.8rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px}
+
+/* FEATURES */
+.lp-features{padding:80px 24px;background:var(--white)}
+.lp-section-inner{max-width:1100px;margin:0 auto}
+.lp-section-header{text-align:center;margin-bottom:56px}
+.lp-section-tag{display:inline-block;background:var(--mint-soft);color:var(--forest);padding:6px 16px;border-radius:50px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.lp-section-header h2{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;color:var(--forest);letter-spacing:-.3px}
+.lp-section-header p{color:var(--text2);font-size:1.05rem;max-width:600px;margin:12px auto 0}
+.lp-features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.lp-feature{background:var(--gray);border-radius:16px;padding:28px;transition:transform .2s,box-shadow .2s}
+.lp-feature:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(11,56,38,.08)}
+.lp-feature-icon{width:48px;height:48px;background:linear-gradient(135deg,var(--forest),var(--forest2));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-bottom:16px}
+.lp-feature h3{font-size:1.1rem;font-weight:700;color:var(--forest);margin-bottom:8px}
+.lp-feature p{color:var(--text2);font-size:.9rem;line-height:1.6}
+
+/* HOW IT WORKS */
+.lp-how{padding:80px 24px;background:var(--gray)}
+.lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:32px;margin-top:8px}
+.lp-step{text-align:center;position:relative}
+.lp-step-num{width:52px;height:52px;background:var(--forest);color:var(--mint);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:800;margin:0 auto 16px}
+.lp-step h3{font-size:1.05rem;font-weight:700;color:var(--forest);margin-bottom:8px}
+.lp-step p{color:var(--text2);font-size:.88rem}
+
+/* PRICING */
+.lp-pricing{padding:80px 24px;background:var(--white)}
+.lp-pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px;max-width:960px;margin:0 auto}
+.lp-price-card{background:var(--gray);border-radius:20px;padding:32px 28px;text-align:center;position:relative;transition:transform .2s}
+.lp-price-card.popular{background:var(--forest);color:var(--white);transform:scale(1.02)}
+.lp-price-card.popular .lp-price-name{color:var(--mint)}
+.lp-price-card.popular .lp-price-amount{color:var(--white)}
+.lp-price-card.popular .lp-price-feature{color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.1)}
+.lp-price-card.popular .lp-price-cta{background:var(--mint);color:var(--forest)}
+.lp-price-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--mint);color:var(--forest);padding:4px 16px;border-radius:20px;font-size:.75rem;font-weight:700;text-transform:uppercase}
+.lp-price-name{font-size:1.1rem;font-weight:700;color:var(--forest);margin-bottom:8px}
+.lp-price-amount{font-size:2.5rem;font-weight:800;color:var(--forest);margin-bottom:4px}
+.lp-price-amount span{font-size:.9rem;font-weight:500;opacity:.6}
+.lp-price-period{font-size:.85rem;color:var(--text2);margin-bottom:20px}
+.lp-price-card.popular .lp-price-period{color:rgba(255,255,255,.6)}
+.lp-price-features{list-style:none;text-align:left;margin-bottom:24px}
+.lp-price-feature{padding:10px 0;border-bottom:1px solid #e8ece9;font-size:.9rem;color:var(--text2);display:flex;align-items:center;gap:8px}
+.lp-price-feature::before{content:'✓';color:var(--lime);font-weight:700;font-size:.8rem}
+.lp-price-cta{display:block;width:100%;padding:12px;border-radius:10px;font-weight:700;font-size:.95rem;text-decoration:none;text-align:center;transition:all .2s;border:2px solid var(--forest);color:var(--forest);background:transparent}
+.lp-price-cta:hover{background:var(--forest);color:var(--white)}
+
+/* TESTIMONIALS */
+.lp-testimonials{padding:80px 24px;background:var(--gray)}
+.lp-test-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px}
+.lp-test-card{background:var(--white);border-radius:16px;padding:28px;box-shadow:0 2px 12px rgba(0,0,0,.04)}
+.lp-test-stars{color:#f4b740;font-size:1rem;margin-bottom:12px}
+.lp-test-text{color:var(--text2);font-size:.92rem;line-height:1.7;margin-bottom:16px;font-style:italic}
+.lp-test-author{display:flex;align-items:center;gap:12px}
+.lp-test-avatar{width:40px;height:40px;border-radius:50%;background:var(--forest);color:var(--mint);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem}
+.lp-test-name{font-weight:700;font-size:.9rem;color:var(--forest)}
+.lp-test-role{font-size:.8rem;color:var(--text2)}
+
+/* FAQ */
+.lp-faq{padding:80px 24px;background:var(--white)}
+.lp-faq-list{max-width:700px;margin:0 auto}
+.lp-faq-item{border-bottom:1px solid #e8ece9;padding:20px 0}
+.lp-faq-q{font-weight:700;font-size:1rem;color:var(--forest);cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.lp-faq-q::after{content:'+';font-size:1.3rem;color:var(--lime);transition:transform .2s;flex-shrink:0}
+.lp-faq-item.open .lp-faq-q::after{transform:rotate(45deg)}
+.lp-faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease;color:var(--text2);font-size:.92rem;line-height:1.7}
+.lp-faq-item.open .lp-faq-a{max-height:300px;padding-top:12px}
+
+/* CTA */
+.lp-cta-section{padding:80px 24px;background:linear-gradient(135deg,var(--forest),#062114);color:var(--white);text-align:center}
+.lp-cta-section h2{font-size:clamp(1.6rem,3vw,2.2rem);font-weight:800;margin-bottom:12px}
+.lp-cta-section p{color:rgba(255,255,255,.7);margin-bottom:28px;max-width:500px;margin-left:auto;margin-right:auto}
+
+/* FOOTER */
+.lp-footer{background:#051a10;color:rgba(255,255,255,.5);padding:40px 24px;text-align:center;font-size:.85rem}
+.lp-footer a{color:var(--mint);text-decoration:none}
+.lp-footer-links{display:flex;justify-content:center;gap:24px;margin-bottom:16px;flex-wrap:wrap}
+
+/* MOBILE */
+@media(max-width:768px){
+  .lp-nav-links{display:none}
+  .lp-burger{display:block}
+  .lp-nav-links.open{display:flex;position:absolute;top:100%;left:0;right:0;background:var(--forest);flex-direction:column;padding:20px 24px;gap:16px;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+  .lp-hero{padding:120px 20px 60px}
+  .lp-hero h1{font-size:1.8rem}
+  .lp-hero-stats{gap:20px}
+  .lp-price-card.popular{transform:none}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="lp-nav" id="lp-nav">
+<div class="lp-nav-inner">
+  <a href="#" class="lp-logo">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none"><defs><linearGradient id="bg1" x1="78" y1="54" x2="438" y2="460" gradientUnits="userSpaceOnUse"><stop stop-color="#0b3826"/><stop offset="1" stop-color="#062114"/></linearGradient><linearGradient id="mt1" x1="145" y1="122" x2="366" y2="388" gradientUnits="userSpaceOnUse"><stop stop-color="#49f48a"/><stop offset="1" stop-color="#31cf71"/></linearGradient></defs><rect x="20" y="20" width="472" height="472" rx="112" fill="url(#bg1)"/><rect x="214" y="104" width="84" height="304" rx="42" fill="url(#mt1)"/><rect x="104" y="214" width="304" height="84" rx="42" fill="url(#mt1)"/><circle cx="126" cy="126" r="36" fill="#33bc6b"/><circle cx="386" cy="126" r="36" fill="#33bc6b"/><circle cx="126" cy="386" r="36" fill="#33bc6b"/><circle cx="386" cy="386" r="36" fill="#33bc6b"/></svg>
+    <span>VetPro</span>
+  </a>
+  <div class="lp-nav-links" id="lp-nav-links">
+    <a href="#features">Fonctionnalites</a>
+    <a href="#pricing">Tarifs</a>
+    <a href="#faq">FAQ</a>
+    <a href="demo.html">Demo</a>
+    <a href="index.html" class="lp-nav-cta">Connexion</a>
+  </div>
+  <button class="lp-burger" onclick="document.getElementById('lp-nav-links').classList.toggle('open')" aria-label="Menu">&#9776;</button>
+</div>
+</nav>
+
+<!-- HERO -->
+<section class="lp-hero">
+<div class="lp-hero-inner">
+  <div class="lp-hero-badge">Nouveau : Assistant IA diagnostique integre</div>
+  <h1>Gerez votre clinique veterinaire avec <em>intelligence</em></h1>
+  <p>VetPro reunit patients, rendez-vous, stocks, ordonnances et IA diagnostique dans une seule plateforme simple et securisee. Concu pour les veterinaires algeriens.</p>
+  <div class="lp-hero-btns">
+    <a href="index.html" class="lp-btn-primary">Commencer gratuitement</a>
+    <a href="demo.html" class="lp-btn-secondary">Voir la demo</a>
+  </div>
+  <div class="lp-hero-stats">
+    <div class="lp-stat"><div class="lp-stat-num">15+</div><div class="lp-stat-label">Fonctionnalites</div></div>
+    <div class="lp-stat"><div class="lp-stat-num">100%</div><div class="lp-stat-label">Securise</div></div>
+    <div class="lp-stat"><div class="lp-stat-num">0 DA</div><div class="lp-stat-label">Pour demarrer</div></div>
+  </div>
+</div>
+</section>
+
+<!-- FEATURES -->
+<section class="lp-features" id="features">
+<div class="lp-section-inner">
+  <div class="lp-section-header">
+    <div class="lp-section-tag">Fonctionnalites</div>
+    <h2>Tout ce dont votre clinique a besoin</h2>
+    <p>Une plateforme complete qui remplace vos cahiers, tableurs et fichiers papier.</p>
+  </div>
+  <div class="lp-features-grid">
+    <div class="lp-feature">
+      <div class="lp-feature-icon">🐾</div>
+      <h3>Gestion des patients</h3>
+      <p>Fiches detaillees par animal : espece, race, poids, historique medical complet, alertes automatiques.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">📅</div>
+      <h3>Agenda intelligent</h3>
+      <p>Planifiez vos rendez-vous, consultations et suivis avec un calendrier interactif et des rappels.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">💊</div>
+      <h3>Gestion des stocks</h3>
+      <p>Suivi en temps reel des medicaments, alertes de rupture, seuils minimaux personnalisables.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">📋</div>
+      <h3>Ordonnances</h3>
+      <p>Generez des ordonnances professionnelles en quelques clics avec posologie et duree de traitement.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">🏥</div>
+      <h3>Hospitalisation</h3>
+      <p>Gerez vos cages, suivez les animaux hospitalises avec notes de suivi et statuts en temps reel.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">💉</div>
+      <h3>Suivi vaccinal</h3>
+      <p>Calendrier vaccinal automatise avec rappels pour les proprietaires et historique complet.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">🤖</div>
+      <h3>Assistant IA</h3>
+      <p>Aide au diagnostic par intelligence artificielle : suggestions de pathologies, traitements recommandes.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">📊</div>
+      <h3>Tableau de bord</h3>
+      <p>Visualisez vos statistiques : recettes, cas traites, taux d'occupation, activite mensuelle.</p>
+    </div>
+    <div class="lp-feature">
+      <div class="lp-feature-icon">🔒</div>
+      <h3>Securite maximale</h3>
+      <p>Chiffrement SSL, authentification securisee, approbation manuelle des comptes, donnees protegees.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="lp-how">
+<div class="lp-section-inner">
+  <div class="lp-section-header">
+    <div class="lp-section-tag">Comment ca marche</div>
+    <h2>Pret en 3 etapes</h2>
+  </div>
+  <div class="lp-steps">
+    <div class="lp-step">
+      <div class="lp-step-num">1</div>
+      <h3>Creez votre compte</h3>
+      <p>Inscrivez-vous avec votre email professionnel ou votre compte Google en quelques secondes.</p>
+    </div>
+    <div class="lp-step">
+      <div class="lp-step-num">2</div>
+      <h3>Configurez votre clinique</h3>
+      <p>Personnalisez vos parametres : nom, coordonnees, cages, stocks de medicaments.</p>
+    </div>
+    <div class="lp-step">
+      <div class="lp-step-num">3</div>
+      <h3>Gerez tout depuis un seul ecran</h3>
+      <p>Patients, rendez-vous, ordonnances, stocks — tout est accessible depuis votre tableau de bord.</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- PRICING -->
+<section class="lp-pricing" id="pricing">
+<div class="lp-section-inner">
+  <div class="lp-section-header">
+    <div class="lp-section-tag">Tarifs</div>
+    <h2>Des plans adaptes a votre pratique</h2>
+    <p>Commencez gratuitement et evoluez selon vos besoins.</p>
+  </div>
+  <div class="lp-pricing-grid">
+    <div class="lp-price-card">
+      <div class="lp-price-name">Gratuit</div>
+      <div class="lp-price-amount">0 <span>DA</span></div>
+      <div class="lp-price-period">Pour toujours</div>
+      <ul class="lp-price-features">
+        <li class="lp-price-feature">Jusqu'a 50 patients</li>
+        <li class="lp-price-feature">Agenda basique</li>
+        <li class="lp-price-feature">Gestion des stocks</li>
+        <li class="lp-price-feature">Ordonnances</li>
+        <li class="lp-price-feature">1 utilisateur</li>
+      </ul>
+      <a href="index.html" class="lp-price-cta">Commencer</a>
+    </div>
+    <div class="lp-price-card popular">
+      <div class="lp-price-badge">Populaire</div>
+      <div class="lp-price-name">Pro</div>
+      <div class="lp-price-amount">2 500 <span>DA/mois</span></div>
+      <div class="lp-price-period">Ideal pour un cabinet</div>
+      <ul class="lp-price-features">
+        <li class="lp-price-feature">Patients illimites</li>
+        <li class="lp-price-feature">Agenda avance + rappels</li>
+        <li class="lp-price-feature">Assistant IA diagnostique</li>
+        <li class="lp-price-feature">Suivi vaccinal complet</li>
+        <li class="lp-price-feature">Hospitalisation + cages</li>
+        <li class="lp-price-feature">3 utilisateurs</li>
+      </ul>
+      <a href="index.html" class="lp-price-cta">Essayer Pro</a>
+    </div>
+    <div class="lp-price-card">
+      <div class="lp-price-name">Clinique</div>
+      <div class="lp-price-amount">5 000 <span>DA/mois</span></div>
+      <div class="lp-price-period">Pour les grandes structures</div>
+      <ul class="lp-price-features">
+        <li class="lp-price-feature">Tout dans Pro</li>
+        <li class="lp-price-feature">Utilisateurs illimites</li>
+        <li class="lp-price-feature">Multi-clinique</li>
+        <li class="lp-price-feature">Statistiques avancees</li>
+        <li class="lp-price-feature">Export de donnees</li>
+        <li class="lp-price-feature">Support prioritaire</li>
+      </ul>
+      <a href="index.html" class="lp-price-cta">Contacter</a>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="lp-testimonials">
+<div class="lp-section-inner">
+  <div class="lp-section-header">
+    <div class="lp-section-tag">Temoignages</div>
+    <h2>Ils utilisent VetPro</h2>
+  </div>
+  <div class="lp-test-grid">
+    <div class="lp-test-card">
+      <div class="lp-test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <div class="lp-test-text">VetPro a transforme la gestion de mon cabinet. Je gagne au moins 2 heures par jour sur l'administratif.</div>
+      <div class="lp-test-author">
+        <div class="lp-test-avatar">AK</div>
+        <div><div class="lp-test-name">Dr. A. Khelifi</div><div class="lp-test-role">Veterinaire - Alger</div></div>
+      </div>
+    </div>
+    <div class="lp-test-card">
+      <div class="lp-test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <div class="lp-test-text">L'assistant IA est incroyable pour les cas complexes. C'est comme avoir un collegue toujours disponible.</div>
+      <div class="lp-test-author">
+        <div class="lp-test-avatar">SB</div>
+        <div><div class="lp-test-name">Dr. S. Benali</div><div class="lp-test-role">Veterinaire - Oran</div></div>
+      </div>
+    </div>
+    <div class="lp-test-card">
+      <div class="lp-test-stars">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+      <div class="lp-test-text">Interface claire et moderne. Mes stagiaires l'ont adopte en moins d'une journee.</div>
+      <div class="lp-test-author">
+        <div class="lp-test-avatar">ML</div>
+        <div><div class="lp-test-name">Dr. M. Lahlou</div><div class="lp-test-role">Veterinaire - Constantine</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- FAQ -->
+<section class="lp-faq" id="faq">
+<div class="lp-section-inner">
+  <div class="lp-section-header">
+    <div class="lp-section-tag">FAQ</div>
+    <h2>Questions frequentes</h2>
+  </div>
+  <div class="lp-faq-list">
+    <div class="lp-faq-item">
+      <div class="lp-faq-q" onclick="this.parentElement.classList.toggle('open')">VetPro fonctionne-t-il sur mobile ?</div>
+      <div class="lp-faq-a">Oui, VetPro est entierement responsive et fonctionne sur tous les appareils : smartphone, tablette et ordinateur. Aucune installation requise.</div>
+    </div>
+    <div class="lp-faq-item">
+      <div class="lp-faq-q" onclick="this.parentElement.classList.toggle('open')">Mes donnees sont-elles en securite ?</div>
+      <div class="lp-faq-a">Absolument. Toutes les donnees sont chiffrees en transit (SSL/TLS) et au repos. Les mots de passe sont haches avec bcrypt. Nous ne vendons jamais vos donnees. Consultez notre politique de confidentialite pour plus de details.</div>
+    </div>
+    <div class="lp-faq-item">
+      <div class="lp-faq-q" onclick="this.parentElement.classList.toggle('open')">Puis-je essayer VetPro avant de m'inscrire ?</div>
+      <div class="lp-faq-a">Oui ! Notre mode demo vous permet d'explorer toutes les fonctionnalites avec des donnees fictives, sans creer de compte.</div>
+    </div>
+    <div class="lp-faq-item">
+      <div class="lp-faq-q" onclick="this.parentElement.classList.toggle('open')">Comment fonctionne l'assistant IA ?</div>
+      <div class="lp-faq-a">L'assistant IA analyse les symptomes que vous decrivez et propose des diagnostics differentiels et des pistes de traitement. Il est la pour vous assister, pas pour remplacer votre jugement clinique.</div>
+    </div>
+    <div class="lp-faq-item">
+      <div class="lp-faq-q" onclick="this.parentElement.classList.toggle('open')">VetPro fonctionne-t-il hors ligne ?</div>
+      <div class="lp-faq-a">VetPro stocke les donnees localement, ce qui permet de continuer a travailler meme sans connexion internet. La synchronisation reprend automatiquement lorsque la connexion est retablie.</div>
+    </div>
+    <div class="lp-faq-item">
+      <div class="lp-faq-q" onclick="this.parentElement.classList.toggle('open')">Combien coute VetPro ?</div>
+      <div class="lp-faq-a">VetPro propose un plan gratuit pour demarrer avec jusqu'a 50 patients. Les plans Pro et Clinique offrent des fonctionnalites supplementaires a partir de 2 500 DA/mois.</div>
+    </div>
+    <div class="lp-faq-item">
+      <div class="lp-faq-q" onclick="this.parentElement.classList.toggle('open')">Puis-je exporter mes donnees ?</div>
+      <div class="lp-faq-a">Oui, VetPro offre une fonction d'export complete qui vous permet de telecharger toutes vos donnees au format JSON a tout moment.</div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- CTA -->
+<section class="lp-cta-section">
+<h2>Pret a moderniser votre clinique ?</h2>
+<p>Rejoignez les veterinaires qui ont choisi VetPro pour simplifier leur quotidien.</p>
+<div class="lp-hero-btns">
+  <a href="index.html" class="lp-btn-primary">Commencer gratuitement</a>
+  <a href="demo.html" class="lp-btn-secondary">Explorer la demo</a>
+</div>
+</section>
+
+<!-- FOOTER -->
+<footer class="lp-footer">
+<div class="lp-footer-links">
+  <a href="terms.html">Conditions d'utilisation</a>
+  <a href="privacy.html">Confidentialite</a>
+  <a href="https://www.instagram.com/vetpro.dz/" target="_blank" rel="noopener">Instagram</a>
+  <a href="index.html">Connexion</a>
+</div>
+<p>&copy; 2026 VetPro. Tous droits reserves. Concu en Algerie.</p>
+</footer>
+
+<script>
+// Sticky nav shadow
+window.addEventListener('scroll', function(){
+  document.getElementById('lp-nav').classList.toggle('scrolled', window.scrollY > 20);
+});
+// Close mobile menu on link click
+document.querySelectorAll('.lp-nav-links a').forEach(function(a){
+  a.addEventListener('click', function(){ document.getElementById('lp-nav-links').classList.remove('open'); });
+});
+</script>
+</body>
+</html>
