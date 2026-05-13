@@ -127,7 +127,8 @@
   --r:14px;--r2:20px;--r3:50px;
 }
 html{scroll-behavior:smooth}
-body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;min-height:100vh;margin:0;overflow:hidden}
+body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow:hidden;margin:0;height:100%}
+html{height:100%;overflow:hidden}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--mint);border-radius:4px}
@@ -230,7 +231,7 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var
 .sb-footer-sub{color:rgba(255,255,255,.3);font-size:9px;margin-top:1px}
 
 /* ── MAIN ── */
-.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.main{flex:1;position:relative;overflow:hidden;min-height:0}
 
 /* ── TOPBAR ── */
 .topbar{
@@ -252,7 +253,7 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var
 .tb-name-sub{font-size:9.5px;color:var(--muted)}
 
 /* ── CONTENT ── */
-.content{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--cream);-webkit-overflow-scrolling:touch;min-height:0;touch-action:pan-y}
+.content{position:absolute;top:58px;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;background:var(--cream);-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
 .page{display:none;padding:22px 24px;animation:fadeIn .25s ease;min-height:0}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -470,7 +471,7 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var
 @media print{
   .sidebar,.topbar{display:none}
   .main{overflow:visible}
-  .content{overflow:visible;height:auto}
+  .content{overflow:visible;height:auto;position:static}
   .page{display:block !important;padding:0}
 }
 
@@ -898,9 +899,15 @@ window.addEventListener('DOMContentLoaded', () => {
 
 <div id="toast"></div>
 <script>
-/* Fix mobile 100vh immediately — set .shell height to actual viewport */
+/* Fix mobile 100vh — set exact pixel height on shell/html/body */
 (function(){
-  function f(){var s=document.querySelector('.shell');if(s)s.style.height=window.innerHeight+'px'}
+  function f(){
+    var h=window.innerHeight+'px';
+    document.documentElement.style.height=h;
+    document.body.style.height=h;
+    var s=document.querySelector('.shell');
+    if(s)s.style.height=h;
+  }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',f);else f();
   window.addEventListener('resize',f);
   window.addEventListener('orientationchange',function(){setTimeout(f,200)});
@@ -16477,9 +16484,8 @@ function saveAdmission() {
 
   @media (max-width:768px){
     #vp-bottom-bar{display:block}
-    /* Mobile scroll fix */
-    .main{min-height:0!important;overflow:hidden!important}
-    .content{padding-bottom:72px!important;-webkit-overflow-scrolling:touch!important;overflow-y:scroll!important;min-height:0!important}
+    /* Mobile scroll fix: absolute positioning bypasses flex scroll issues */
+    .content{bottom:56px!important;-webkit-overflow-scrolling:touch!important;overflow-y:scroll!important;overscroll-behavior-y:contain!important}
     /* Hide hamburger top-left since we have bottom bar now */
     #vp-mobile-toggle{top:12px;left:12px}
     /* Show backdrop when sidebar is open */
@@ -16513,14 +16519,7 @@ function saveAdmission() {
 (function(){
   'use strict';
 
-  /* ── Fix mobile viewport height (100vh includes address bar on iOS/Android) ── */
-  function fixShellHeight(){
-    var shell = document.querySelector('.shell');
-    if(shell) shell.style.height = window.innerHeight + 'px';
-  }
-  fixShellHeight();
-  window.addEventListener('resize', fixShellHeight);
-  window.addEventListener('orientationchange', function(){ setTimeout(fixShellHeight, 200); });
+  /* ── viewport height fix is in the inline script above .shell ── */
 
   if (window.__vetproMobileUIV3) return;
   window.__vetproMobileUIV3 = true;
