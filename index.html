@@ -95,7 +95,7 @@
     display:inline-block;vertical-align:middle;margin-right:6px;
   }
   #logout-btn{
-    display:none;position:fixed;bottom:20px;left:20px;z-index:9999;
+    display:none;position:fixed;bottom:90px;right:24px;z-index:55;
     background:var(--ink);color:#fff;border:1px solid rgba(255,255,255,.1);
     border-radius:12px;padding:12px 18px;cursor:pointer;
     font-size:13px;font-family:'Outfit',sans-serif;font-weight:600;
@@ -108,7 +108,7 @@
   #logout-btn:hover,#logout-btn:active{background:var(--danger);border-color:var(--danger)}
   @media (max-width:768px){
     #logout-btn{
-      bottom:74px;right:16px;padding:10px 16px;font-size:12px;
+      bottom:74px;left:16px;right:auto;padding:10px 16px;font-size:12px;
       min-height:40px;border-radius:12px;
       box-shadow:0 6px 20px rgba(0,0,0,.4);
       z-index:120;
@@ -127,13 +127,15 @@
   --r:14px;--r2:20px;--r3:50px;
 }
 html{scroll-behavior:smooth}
-body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;min-height:100vh}
+body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow-x:hidden;min-height:100vh;margin:0}
+@media(max-width:768px){body{overflow:hidden!important;position:fixed;width:100%;height:100%}}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--mint);border-radius:4px}
 
 /* ── LAYOUT ── */
 .shell{display:flex;height:100vh;height:100dvh;overflow:hidden}
+@media(max-width:768px){.shell{position:fixed;top:0;left:0;right:0;bottom:0;height:auto!important}}
 
 /* ── SIDEBAR ── */
 .sidebar{
@@ -252,7 +254,7 @@ body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var
 .tb-name-sub{font-size:9.5px;color:var(--muted)}
 
 /* ── CONTENT ── */
-.content{flex:1;overflow-y:auto;background:var(--cream);-webkit-overflow-scrolling:touch;min-height:0}
+.content{flex:1;overflow-y:auto;overflow-x:hidden;background:var(--cream);-webkit-overflow-scrolling:touch;min-height:0;touch-action:pan-y}
 .page{display:none;padding:22px 24px;animation:fadeIn .25s ease;min-height:0}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -13184,7 +13186,7 @@ function saveAdmission() {
     #login-screen .landing-shell{grid-template-columns:1fr!important;gap:18px}
 
     /* Logout button bottom-right repositioned to avoid hamburger */
-    #logout-btn{bottom:74px!important;right:auto!important;left:14px!important;font-size:11px!important;padding:7px 12px!important}
+    #logout-btn{bottom:74px!important;left:14px!important;right:auto!important;font-size:11px!important;padding:7px 12px!important}
   }
 
   /* Very small phones */
@@ -14136,7 +14138,7 @@ function saveAdmission() {
 
 <style id="vetpro-uiux-polish-style">
   /* ─── No horizontal overflow, ever ─────────────────────────────────────── */
-  html, body { max-width: 100vw; overflow-x: hidden; }
+  html, body { max-width: 100vw; overflow-x: hidden; margin: 0; }
   *, *::before, *::after { box-sizing: border-box; }
 
   /* Common containers shouldn't push the layout wider than the viewport */
@@ -16468,11 +16470,10 @@ function saveAdmission() {
 
   @media (max-width:768px){
     #vp-bottom-bar{display:block}
-    /* Fix mobile scroll: force shell to use real viewport height */
-    .shell{height:100vh;height:100dvh;height:calc(var(--vp-vh,1vh) * 100)}
-    .main{min-height:0!important;overflow:hidden!important}
+    /* Mobile scroll fix: .shell is position:fixed so it matches real viewport */
+    .main{min-height:0!important;overflow:hidden!important;flex:1!important}
     /* Push content above bottom bar + ensure touch scroll works */
-    .content{padding-bottom:72px!important;-webkit-overflow-scrolling:touch!important;overflow-y:auto!important;overflow-y:scroll!important;min-height:0!important}
+    .content{padding-bottom:72px!important;-webkit-overflow-scrolling:touch!important;overflow-y:scroll!important;min-height:0!important;flex:1!important}
     /* Hide hamburger top-left since we have bottom bar now */
     #vp-mobile-toggle{top:12px;left:12px}
     /* Show backdrop when sidebar is open */
