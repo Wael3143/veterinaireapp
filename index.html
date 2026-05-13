@@ -19965,5 +19965,1186 @@ function saveAdmission() {
 })();
 </script>
 
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 01: COMMAND PALETTE ⌘K
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+
+  /* ── CSS ── */
+  const style = document.createElement('style');
+  style.textContent = `
+  .cmdk-overlay{position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);display:none;align-items:flex-start;justify-content:center;padding-top:15vh;animation:cmdkFadeIn .15s ease}
+  .cmdk-overlay.open{display:flex}
+  @keyframes cmdkFadeIn{from{opacity:0}to{opacity:1}}
+  .cmdk-box{width:100%;max-width:600px;background:#fff;border-radius:16px;box-shadow:0 24px 64px rgba(0,0,0,.25);overflow:hidden;animation:cmdkSlideIn .15s ease;max-height:70vh;display:flex;flex-direction:column}
+  @keyframes cmdkSlideIn{from{opacity:0;transform:scale(.96) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+  .cmdk-input-wrap{padding:16px;border-bottom:1px solid #e8ece9;display:flex;align-items:center;gap:10px}
+  .cmdk-input-wrap svg{width:20px;height:20px;opacity:.4;flex-shrink:0}
+  .cmdk-input{flex:1;border:none;outline:none;font-size:17px;font-family:inherit;color:#1a2e23;background:transparent}
+  .cmdk-input::placeholder{color:#a0b4a8}
+  .cmdk-results{overflow-y:auto;flex:1;padding:8px}
+  .cmdk-group-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#7a9488;padding:10px 12px 4px;user-select:none}
+  .cmdk-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .1s;font-size:14px;color:#1a2e23}
+  .cmdk-item:hover,.cmdk-item.sel{background:#e8f5ee}
+  .cmdk-item-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;background:#f0f5f2;flex-shrink:0}
+  .cmdk-item-text{flex:1;min-width:0}
+  .cmdk-item-title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cmdk-item-sub{font-size:12px;color:#7a9488;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cmdk-item-badge{font-size:11px;padding:2px 8px;border-radius:6px;background:#e8f5ee;color:#0b3826;font-weight:600;flex-shrink:0}
+  .cmdk-footer{padding:8px 16px;border-top:1px solid #e8ece9;display:flex;gap:16px;font-size:11px;color:#a0b4a8}
+  .cmdk-footer kbd{background:#f0f5f2;padding:1px 5px;border-radius:4px;font-family:inherit;font-size:10px;border:1px solid #dce5df}
+  .cmdk-empty{text-align:center;padding:32px 16px;color:#a0b4a8;font-size:14px}
+  .topbar-search{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:var(--surface2,#f0f5f2);cursor:pointer;font-size:12px;color:var(--muted,#7a9488);border:1px solid transparent;transition:all .15s}
+  .topbar-search:hover{border-color:#cddad2;color:var(--ink,#1a2e23)}
+  .topbar-search kbd{font-size:10px;background:#e4ede7;padding:1px 5px;border-radius:3px;font-family:inherit}
+  @media(max-width:600px){.cmdk-box{max-width:100%;border-radius:12px 12px 0 0;max-height:85vh;margin-top:auto;position:fixed;bottom:0;left:0;right:0}.cmdk-overlay{align-items:flex-end;padding-top:0}.topbar-search span,.topbar-search kbd{display:none}.topbar-search{padding:6px 8px}}
+  `;
+  document.head.appendChild(style);
+
+  /* ── Normalize for fuzzy ── */
+  function norm(s){return(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,'')}
+  function fuzzy(query,text){
+    const q=norm(query),t=norm(text);
+    let qi=0;
+    for(let ti=0;ti<t.length&&qi<q.length;ti++){if(t[ti]===q[qi])qi++;}
+    return qi===q.length;
+  }
+
+  /* ── Recents ── */
+  const RECENT_KEY='vetpro_recent_views';
+  function getRecents(){try{return JSON.parse(localStorage.getItem(RECENT_KEY)||'[]').slice(0,10)}catch(e){return[]}}
+  function pushRecent(item){
+    const list=getRecents().filter(r=>r.id!==item.id);
+    list.unshift(item);
+    try{localStorage.setItem(RECENT_KEY,JSON.stringify(list.slice(0,10)))}catch(e){}
+  }
+  window.__cmdkPushRecent=pushRecent;
+
+  /* ── Build search index ── */
+  function buildIndex(){
+    const items=[];
+    /* Patients */
+    const patients=window.PATIENTS||[];
+    patients.forEach((p,i)=>{
+      const name=p.name||p.nom||p.animal||'';
+      const owner=p.owner||p.proprietaire||p.owner_name||'';
+      const species=p.species||p.espece||'';
+      const breed=p.breed||p.race||'';
+      items.push({id:'patient-'+i,type:'patient',icon:'🐾',title:name,sub:[species,breed,owner].filter(Boolean).join(' · '),search:name+' '+species+' '+breed+' '+owner,action:function(){if(typeof window.nav==='function')window.nav('patients');pushRecent({id:'patient-'+i,icon:'🐾',title:name,sub:species})}});
+    });
+    /* Clients */
+    const clients=window.CLIENTS||[];
+    clients.forEach((c,i)=>{
+      const name=c.name||c.nom||'';
+      const phone=c.phone||c.tel||'';
+      const email=c.email||'';
+      items.push({id:'client-'+i,type:'client',icon:'👤',title:name,sub:[phone,email].filter(Boolean).join(' · '),search:name+' '+phone+' '+email,action:function(){if(typeof window.nav==='function')window.nav('clients');pushRecent({id:'client-'+i,icon:'👤',title:name,sub:phone})}});
+    });
+    /* Cas / Historique */
+    const cases=window.HISTORIQUE_DATA||[];
+    cases.forEach((c,i)=>{
+      const animal=c.animal||c.patient_name||'';
+      const diag=c.diagnostic||c.motif||'';
+      const date=c.date||'';
+      items.push({id:'cas-'+i,type:'cas',icon:'📁',title:animal+' — '+(diag||'Consultation'),sub:date,search:animal+' '+diag+' '+date,action:function(){if(typeof window.nav==='function')window.nav('cas');pushRecent({id:'cas-'+i,icon:'📁',title:animal,sub:diag})}});
+    });
+    /* Ordonnances */
+    const ordos=window.ORDOS||[];
+    ordos.forEach((o,i)=>{
+      const animal=o.animal||'';
+      const diag=o.diagnostic||'';
+      items.push({id:'ordo-'+i,type:'ordonnance',icon:'📋',title:(o.num||'Ordonnance')+' — '+animal,sub:diag,search:animal+' '+diag+' '+(o.num||''),action:function(){if(typeof window.nav==='function')window.nav('cas');pushRecent({id:'ordo-'+i,icon:'📋',title:o.num||'Ordonnance',sub:animal})}});
+    });
+    /* Quick actions */
+    const actions=[
+      {id:'act-newcase',icon:'➕',title:'Nouveau cas',sub:'Créer un cas clinique',action:function(){if(typeof window.nav==='function')window.nav('cas')}},
+      {id:'act-newpatient',icon:'🐾',title:'Nouveau patient',sub:'Enregistrer un animal',action:function(){if(typeof window.nav==='function')window.nav('patients')}},
+      {id:'act-ai',icon:'🤖',title:'Demander à l\'IA',sub:'Assistant vétérinaire intelligent',action:function(){if(typeof window.nav==='function')window.nav('ai')}},
+      {id:'act-stats',icon:'📊',title:'Statistiques',sub:'Voir les statistiques',action:function(){if(typeof window.nav==='function')window.nav('statistics')}},
+      {id:'act-meds',icon:'💊',title:'Stocks médicaments',sub:'Gérer la pharmacie',action:function(){if(typeof window.nav==='function')window.nav('meds')}},
+      {id:'act-rdv',icon:'📅',title:'Agenda / Rendez-vous',sub:'Planifier un rendez-vous',action:function(){if(typeof window.nav==='function')window.nav('appointments')}},
+      {id:'act-vaccins',icon:'💉',title:'Vaccinations',sub:'Suivi vaccinal',action:function(){if(typeof window.nav==='function')window.nav('vaccines')}},
+      {id:'act-hospi',icon:'🏥',title:'Hospitalisation',sub:'Gestion des cages',action:function(){if(typeof window.nav==='function')window.nav('hospitalisation')}},
+      {id:'act-settings',icon:'⚙️',title:'Paramètres',sub:'Configuration clinique',action:function(){if(typeof window.nav==='function')window.nav('settings')}},
+    ];
+    actions.forEach(a=>{a.type='action';a.search=a.title+' '+a.sub;items.push(a)});
+    return items;
+  }
+
+  let cachedIndex=null;
+  function getIndex(){if(!cachedIndex)cachedIndex=buildIndex();return cachedIndex}
+  /* Invalidate on data change */
+  setInterval(function(){cachedIndex=null},30000);
+
+  /* ── DOM ── */
+  const overlay=document.createElement('div');
+  overlay.className='cmdk-overlay';
+  overlay.innerHTML=`
+    <div class="cmdk-box">
+      <div class="cmdk-input-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input class="cmdk-input" placeholder="Rechercher patient, cas, action..." autocomplete="off" spellcheck="false">
+      </div>
+      <div class="cmdk-results"></div>
+      <div class="cmdk-footer">
+        <span><kbd>↑↓</kbd> Naviguer</span>
+        <span><kbd>↵</kbd> Ouvrir</span>
+        <span><kbd>Esc</kbd> Fermer</span>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  const input=overlay.querySelector('.cmdk-input');
+  const results=overlay.querySelector('.cmdk-results');
+  let selIdx=-1;
+  let debounceTimer=null;
+  let visibleItems=[];
+
+  function openCmdK(){
+    cachedIndex=null;
+    overlay.classList.add('open');
+    input.value='';
+    selIdx=-1;
+    renderResults('');
+    setTimeout(()=>input.focus(),50);
+  }
+  function closeCmdK(){overlay.classList.remove('open');input.blur()}
+  window.openCmdK=openCmdK;
+  window.closeCmdK=closeCmdK;
+
+  function renderResults(query){
+    const q=query.trim();
+    const idx=getIndex();
+    let grouped={};
+    visibleItems=[];
+
+    if(!q){
+      /* Show recents + actions */
+      const recents=getRecents();
+      if(recents.length){
+        grouped['Récents']=recents.map(r=>({id:r.id,icon:r.icon,title:r.title,sub:r.sub||'',action:function(){
+          const found=idx.find(it=>it.id===r.id);
+          if(found&&found.action)found.action();
+          else if(typeof window.nav==='function')window.nav('dashboard');
+        }}));
+      }
+      grouped['Actions rapides']=idx.filter(i=>i.type==='action').slice(0,6);
+    } else {
+      const matches=idx.filter(i=>fuzzy(q,i.search)).slice(0,50);
+      const typeLabels={patient:'Patients',client:'Clients',cas:'Cas cliniques',ordonnance:'Ordonnances',action:'Actions'};
+      matches.forEach(m=>{
+        const label=typeLabels[m.type]||'Résultats';
+        if(!grouped[label])grouped[label]=[];
+        if(grouped[label].length<5)grouped[label].push(m);
+      });
+    }
+
+    let html='';
+    let itemCount=0;
+    for(const[label,items]of Object.entries(grouped)){
+      html+=`<div class="cmdk-group-label">${label}</div>`;
+      items.forEach(item=>{
+        html+=`<div class="cmdk-item" data-idx="${itemCount}"><div class="cmdk-item-icon">${item.icon||'📄'}</div><div class="cmdk-item-text"><div class="cmdk-item-title">${esc(item.title)}</div>${item.sub?'<div class="cmdk-item-sub">'+esc(item.sub)+'</div>':''}</div></div>`;
+        visibleItems.push(item);
+        itemCount++;
+      });
+    }
+    if(!itemCount)html='<div class="cmdk-empty">Aucun résultat pour "'+esc(q)+'"</div>';
+    results.innerHTML=html;
+    selIdx=-1;
+    updateSel();
+  }
+
+  function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  function updateSel(){
+    results.querySelectorAll('.cmdk-item').forEach((el,i)=>{
+      el.classList.toggle('sel',i===selIdx);
+      if(i===selIdx)el.scrollIntoView({block:'nearest'});
+    });
+  }
+
+  function execSel(){
+    if(selIdx>=0&&selIdx<visibleItems.length){
+      const item=visibleItems[selIdx];
+      closeCmdK();
+      if(item.action)item.action();
+    }
+  }
+
+  /* ── Events ── */
+  input.addEventListener('input',function(){
+    clearTimeout(debounceTimer);
+    debounceTimer=setTimeout(()=>renderResults(input.value),80);
+  });
+
+  overlay.addEventListener('click',function(e){
+    if(e.target===overlay)closeCmdK();
+    const item=e.target.closest('.cmdk-item');
+    if(item){selIdx=parseInt(item.dataset.idx)||0;execSel()}
+  });
+
+  overlay.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'){e.preventDefault();selIdx=Math.min(selIdx+1,visibleItems.length-1);updateSel()}
+    else if(e.key==='ArrowUp'){e.preventDefault();selIdx=Math.max(selIdx-1,0);updateSel()}
+    else if(e.key==='Enter'){e.preventDefault();execSel()}
+    else if(e.key==='Escape'){e.preventDefault();closeCmdK()}
+  });
+
+  document.addEventListener('keydown',function(e){
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openCmdK()}
+    if(e.key==='Escape'&&overlay.classList.contains('open')){e.preventDefault();closeCmdK()}
+  });
+
+  /* ── Topbar search button ── */
+  function injectSearchButton(){
+    const topbarRight=document.querySelector('.topbar-right');
+    if(!topbarRight||topbarRight.querySelector('.topbar-search'))return;
+    const btn=document.createElement('div');
+    btn.className='topbar-search';
+    btn.setAttribute('role','button');
+    btn.setAttribute('tabindex','0');
+    btn.innerHTML='🔍 <span>Rechercher...</span> <kbd>'+(navigator.platform.includes('Mac')?'⌘':'Ctrl')+'K</kbd>';
+    btn.addEventListener('click',openCmdK);
+    topbarRight.insertBefore(btn,topbarRight.firstChild);
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectSearchButton);
+  else injectSearchButton();
+  /* Retry in case topbar is built later */
+  let sAttempts=0;
+  const sTimer=setInterval(()=>{injectSearchButton();if(document.querySelector('.topbar-search')||++sAttempts>30)clearInterval(sTimer)},500);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 02: PATIENT DRAWER
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  const style=document.createElement('style');
+  style.textContent=`
+  .pdrawer-back{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:none;animation:pdFadeIn .2s ease}
+  .pdrawer-back.open{display:block}
+  @keyframes pdFadeIn{from{opacity:0}to{opacity:1}}
+  .pdrawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100%;background:#fff;z-index:151;transform:translateX(100%);transition:transform .25s cubic-bezier(.32,.72,.32,1);box-shadow:-8px 0 32px rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden}
+  .pdrawer.open{transform:translateX(0)}
+  .pdrawer-head{padding:20px;display:flex;align-items:flex-start;gap:14px;border-bottom:1px solid #e8ece9}
+  .pdrawer-avatar{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#0b3826,#0d4a30);color:#49f48a;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+  .pdrawer-info{flex:1;min-width:0}
+  .pdrawer-name{font-size:18px;font-weight:700;color:#0b3826;margin-bottom:2px}
+  .pdrawer-meta{font-size:13px;color:#7a9488}
+  .pdrawer-close{width:32px;height:32px;border-radius:8px;border:none;background:#f0f5f2;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
+  .pdrawer-close:hover{background:#dce5df}
+  .pdrawer-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#e8ece9;border-bottom:1px solid #e8ece9}
+  .pdrawer-cell{background:#fff;padding:12px 16px}
+  .pdrawer-cell-label{font-size:11px;color:#a0b4a8;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .pdrawer-cell-value{font-size:14px;font-weight:600;color:#1a2e23}
+  .pdrawer-tabs{display:flex;border-bottom:1px solid #e8ece9}
+  .pdrawer-tab{flex:1;padding:10px;text-align:center;font-size:13px;font-weight:600;color:#7a9488;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s}
+  .pdrawer-tab.active{color:#0b3826;border-bottom-color:#49f48a}
+  .pdrawer-body{flex:1;overflow-y:auto;padding:16px}
+  .pdrawer-timeline{position:relative;padding-left:28px}
+  .pdrawer-tl-item{position:relative;padding-bottom:20px;padding-left:8px}
+  .pdrawer-tl-item::before{content:'';position:absolute;left:-20px;top:6px;width:12px;height:12px;border-radius:50%;background:#49f48a;border:2px solid #fff;box-shadow:0 0 0 2px #e8ece9;z-index:1}
+  .pdrawer-tl-item::after{content:'';position:absolute;left:-15px;top:20px;bottom:0;width:2px;background:#e8ece9}
+  .pdrawer-tl-item:last-child::after{display:none}
+  .pdrawer-tl-item.vacc::before{background:#f4b740}
+  .pdrawer-tl-item.exam::before{background:#3b82f6}
+  .pdrawer-tl-title{font-weight:600;font-size:13.5px;color:#1a2e23}
+  .pdrawer-tl-sub{font-size:12px;color:#7a9488;margin-top:2px}
+  .pdrawer-tl-date{font-size:11px;color:#a0b4a8;margin-top:3px}
+  .pdrawer-cta{padding:16px;border-top:1px solid #e8ece9}
+  .pdrawer-cta button{width:100%;padding:12px;border:none;border-radius:10px;background:linear-gradient(135deg,#0b3826,#0d4a30);color:#49f48a;font-size:14px;font-weight:700;cursor:pointer;transition:transform .15s}
+  .pdrawer-cta button:hover{transform:translateY(-1px)}
+  .pdrawer-vacc-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f0f5f2}
+  .pdrawer-vacc-name{font-weight:600;font-size:13px}
+  .pdrawer-vacc-status{font-size:12px;padding:3px 8px;border-radius:6px;font-weight:600}
+  .pdrawer-vacc-ok{background:#e8f9ef;color:#1a8a4a}
+  .pdrawer-vacc-warn{background:#fff8e5;color:#b8860b}
+  .pdrawer-vacc-late{background:#fde8e8;color:#c0392b}
+  @media(max-width:600px){.pdrawer{width:100%}}
+  `;
+  document.head.appendChild(style);
+
+  /* ── DOM ── */
+  const backdrop=document.createElement('div');
+  backdrop.className='pdrawer-back';
+  const drawer=document.createElement('div');
+  drawer.className='pdrawer';
+  document.body.appendChild(backdrop);
+  document.body.appendChild(drawer);
+
+  let currentPatient=null;
+  let currentTab='historique';
+  let touchStartX=0;
+
+  function openDrawer(patientIdx){
+    const patients=window.PATIENTS||[];
+    const p=patients[patientIdx];
+    if(!p)return;
+    currentPatient={...p,_idx:patientIdx};
+    currentTab='historique';
+    renderDrawer();
+    backdrop.classList.add('open');
+    drawer.classList.add('open');
+    window.location.hash='patient/'+patientIdx;
+    if(window.__cmdkPushRecent)window.__cmdkPushRecent({id:'patient-'+patientIdx,icon:'🐾',title:p.name||p.nom||p.animal||'Patient',sub:p.espece||p.species||''});
+  }
+
+  function closeDrawer(){
+    backdrop.classList.remove('open');
+    drawer.classList.remove('open');
+    if(window.location.hash.startsWith('#patient/'))history.replaceState(null,'',window.location.pathname+window.location.search);
+  }
+
+  window.openPatientDrawer=openDrawer;
+  window.closePatientDrawer=closeDrawer;
+
+  function getAnimalEmoji(species){
+    const s=(species||'').toLowerCase();
+    if(s.includes('chien')||s.includes('dog'))return'🐕';
+    if(s.includes('chat')||s.includes('cat'))return'🐈';
+    if(s.includes('cheval')||s.includes('horse'))return'🐴';
+    if(s.includes('oiseau')||s.includes('bird'))return'🐦';
+    if(s.includes('lapin')||s.includes('rabbit'))return'🐇';
+    if(s.includes('bovin')||s.includes('vache'))return'🐄';
+    if(s.includes('ovin')||s.includes('mouton'))return'🐑';
+    return'🐾';
+  }
+
+  function renderDrawer(){
+    const p=currentPatient;
+    if(!p)return;
+    const name=p.name||p.nom||p.animal||'Patient';
+    const species=p.species||p.espece||'';
+    const breed=p.breed||p.race||'';
+    const age=p.age||'';
+    const weight=p.weight||p.poids||'';
+    const sex=p.sex||p.sexe||'';
+    const owner=p.owner||p.proprietaire||p.owner_name||'';
+    const phone=p.phone||p.tel||'';
+    const emoji=getAnimalEmoji(species);
+
+    drawer.innerHTML=`
+      <div class="pdrawer-head">
+        <div class="pdrawer-avatar">${emoji}</div>
+        <div class="pdrawer-info">
+          <div class="pdrawer-name">${esc(name)}</div>
+          <div class="pdrawer-meta">${[species,breed,sex,age,weight?weight+'kg':''].filter(Boolean).join(' · ')}</div>
+        </div>
+        <button class="pdrawer-close" onclick="closePatientDrawer()" aria-label="Fermer">✕</button>
+      </div>
+      <div class="pdrawer-grid">
+        <div class="pdrawer-cell"><div class="pdrawer-cell-label">Propriétaire</div><div class="pdrawer-cell-value">${esc(owner)||'—'}</div></div>
+        <div class="pdrawer-cell"><div class="pdrawer-cell-label">Téléphone</div><div class="pdrawer-cell-value">${esc(phone)||'—'}</div></div>
+        <div class="pdrawer-cell"><div class="pdrawer-cell-label">Cas actifs</div><div class="pdrawer-cell-value">${countCases(name)}</div></div>
+        <div class="pdrawer-cell"><div class="pdrawer-cell-label">Dernière visite</div><div class="pdrawer-cell-value">${lastVisit(name)}</div></div>
+      </div>
+      <div class="pdrawer-tabs">
+        <div class="pdrawer-tab ${currentTab==='historique'?'active':''}" data-tab="historique">Historique</div>
+        <div class="pdrawer-tab ${currentTab==='vaccinations'?'active':''}" data-tab="vaccinations">Vaccinations</div>
+      </div>
+      <div class="pdrawer-body" id="pdrawer-tab-content"></div>
+      <div class="pdrawer-cta"><button onclick="closePatientDrawer();if(typeof window.nav==='function')window.nav('cas')">+ Nouveau cas</button></div>
+    `;
+    renderTabContent();
+
+    drawer.querySelectorAll('.pdrawer-tab').forEach(t=>{
+      t.addEventListener('click',function(){currentTab=this.dataset.tab;drawer.querySelectorAll('.pdrawer-tab').forEach(x=>x.classList.remove('active'));this.classList.add('active');renderTabContent()});
+    });
+  }
+
+  function renderTabContent(){
+    const container=document.getElementById('pdrawer-tab-content');
+    if(!container||!currentPatient)return;
+    if(currentTab==='historique')renderTimeline(container);
+    else renderVaccinations(container);
+  }
+
+  function renderTimeline(container){
+    const name=currentPatient.name||currentPatient.nom||currentPatient.animal||'';
+    const cases=(window.HISTORIQUE_DATA||[]).filter(c=>(c.animal||'').includes(name)||(c.patient_name||'')==name);
+    if(!cases.length){container.innerHTML='<div style="text-align:center;padding:32px;color:#a0b4a8">Aucun historique</div>';return}
+    let html='<div class="pdrawer-timeline">';
+    cases.slice(0,15).forEach(c=>{
+      const type=((c.diagnostic||'').toLowerCase().includes('vaccin'))?'vacc':((c.diagnostic||'').toLowerCase().includes('radio')||(c.diagnostic||'').toLowerCase().includes('echo'))?'exam':'';
+      html+=`<div class="pdrawer-tl-item ${type}"><div class="pdrawer-tl-title">${esc(c.diagnostic||c.motif||'Consultation')}</div><div class="pdrawer-tl-sub">${esc(c.animal||'')} ${c.espece?'· '+c.espece:''}</div><div class="pdrawer-tl-date">${esc(c.date||'')}</div></div>`;
+    });
+    html+='</div>';
+    container.innerHTML=html;
+  }
+
+  function renderVaccinations(container){
+    const vaccHist=window.VACC_HISTORY||[];
+    const reminders=window.VACCINE_REMINDERS||[];
+    const name=currentPatient.name||currentPatient.nom||currentPatient.animal||'';
+    const relevant=vaccHist.filter(v=>(v.animal||v.patient||'').includes(name));
+    if(!relevant.length&&!reminders.filter(r=>(r.animal||r.patient||'').includes(name)).length){
+      container.innerHTML='<div style="text-align:center;padding:32px;color:#a0b4a8">Aucune vaccination enregistrée</div>';return;
+    }
+    let html='';
+    relevant.forEach(v=>{
+      html+=`<div class="pdrawer-vacc-item"><div><div class="pdrawer-vacc-name">${esc(v.vaccine||v.vaccin||'Vaccin')}</div><div style="font-size:11px;color:#a0b4a8">${esc(v.date||'')}</div></div><span class="pdrawer-vacc-status pdrawer-vacc-ok">✓ Fait</span></div>`;
+    });
+    reminders.filter(r=>(r.animal||r.patient||'').includes(name)).forEach(r=>{
+      html+=`<div class="pdrawer-vacc-item"><div><div class="pdrawer-vacc-name">${esc(r.vaccine||r.vaccin||'Rappel')}</div><div style="font-size:11px;color:#a0b4a8">Prévu : ${esc(r.date||r.next_date||'')}</div></div><span class="pdrawer-vacc-status pdrawer-vacc-warn">⚠️ Rappel</span></div>`;
+    });
+    container.innerHTML=html;
+  }
+
+  function countCases(name){return(window.HISTORIQUE_DATA||[]).filter(c=>(c.animal||'').includes(name)).length}
+  function lastVisit(name){const cases=(window.HISTORIQUE_DATA||[]).filter(c=>(c.animal||'').includes(name));return cases.length?cases[0].date||'—':'—'}
+  function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+  /* ── Events ── */
+  backdrop.addEventListener('click',closeDrawer);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&drawer.classList.contains('open'))closeDrawer()});
+
+  /* Swipe right to close on mobile */
+  drawer.addEventListener('touchstart',function(e){touchStartX=e.touches[0].clientX},{passive:true});
+  drawer.addEventListener('touchend',function(e){const diff=e.changedTouches[0].clientX-touchStartX;if(diff>80)closeDrawer()},{passive:true});
+
+  /* Hash deeplink */
+  function checkHash(){
+    if(window.location.hash.startsWith('#patient/')){
+      const idx=parseInt(window.location.hash.replace('#patient/',''));
+      if(!isNaN(idx))setTimeout(()=>openDrawer(idx),500);
+    }
+  }
+  window.addEventListener('hashchange',checkHash);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',checkHash);
+  else setTimeout(checkHash,1000);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 03: FLOATING ACTION BUTTON
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  const style=document.createElement('style');
+  style.textContent=`
+  .vp-fab{position:fixed;bottom:24px;right:24px;z-index:60;display:flex;flex-direction:column-reverse;align-items:flex-end;gap:10px;pointer-events:none}
+  .vp-fab-btn{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#0b3826,#145a38);border:none;cursor:pointer;box-shadow:0 8px 24px rgba(26,74,46,.4);display:flex;align-items:center;justify-content:center;pointer-events:auto;transition:transform .2s,box-shadow .2s;position:relative}
+  .vp-fab-btn:hover{transform:scale(1.08);box-shadow:0 12px 32px rgba(26,74,46,.5)}
+  .vp-fab-btn svg{width:24px;height:24px;transition:transform .25s}
+  .vp-fab.open .vp-fab-btn svg{transform:rotate(45deg)}
+  .vp-fab-menu{display:flex;flex-direction:column;align-items:flex-end;gap:8px;opacity:0;transform:translateY(8px);transition:all .2s;pointer-events:none}
+  .vp-fab.open .vp-fab-menu{opacity:1;transform:translateY(0);pointer-events:auto}
+  .vp-fab-item{display:flex;align-items:center;gap:8px;background:#fff;padding:8px 16px 8px 8px;border-radius:12px;box-shadow:0 4px 16px rgba(0,0,0,.12);cursor:pointer;font-size:13px;font-weight:600;color:#0b3826;white-space:nowrap;transition:transform .15s,box-shadow .15s;pointer-events:auto}
+  .vp-fab-item:hover{transform:translateX(-4px);box-shadow:0 6px 20px rgba(0,0,0,.16)}
+  .vp-fab-item-icon{width:32px;height:32px;border-radius:8px;background:#e8f5ee;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  @media(max-width:768px){.vp-fab{bottom:80px;right:16px}}
+  `;
+  document.head.appendChild(style);
+
+  const fab=document.createElement('div');
+  fab.className='vp-fab';
+  fab.innerHTML=`
+    <button class="vp-fab-btn" aria-label="Actions rapides">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#49f48a" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <div class="vp-fab-menu">
+      <div class="vp-fab-item" data-action="cas"><div class="vp-fab-item-icon">📁</div>Nouveau cas</div>
+      <div class="vp-fab-item" data-action="patients"><div class="vp-fab-item-icon">🐾</div>Nouveau patient</div>
+      <div class="vp-fab-item" data-action="appointments"><div class="vp-fab-item-icon">📅</div>Nouveau RDV</div>
+      <div class="vp-fab-item" data-action="cas"><div class="vp-fab-item-icon">💊</div>Nouvelle ordonnance</div>
+    </div>`;
+  document.body.appendChild(fab);
+
+  const btn=fab.querySelector('.vp-fab-btn');
+  btn.addEventListener('click',function(e){e.stopPropagation();fab.classList.toggle('open')});
+  fab.querySelectorAll('.vp-fab-item').forEach(function(item){
+    item.addEventListener('click',function(){
+      fab.classList.remove('open');
+      const action=this.dataset.action;
+      if(typeof window.nav==='function')window.nav(action);
+    });
+  });
+  document.addEventListener('click',function(e){if(!fab.contains(e.target))fab.classList.remove('open')});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')fab.classList.remove('open')});
+
+  /* Hide during login screen */
+  new MutationObserver(function(){
+    const login=document.getElementById('login-screen');
+    fab.style.display=login&&!login.classList.contains('hidden')?'none':'';
+  }).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 04: NOTIFICATION CENTER
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  const style=document.createElement('style');
+  style.textContent=`
+  .notif-bell{position:relative;width:36px;height:36px;border-radius:10px;background:var(--surface2,#f0f5f2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:background .15s;border:none}
+  .notif-bell:hover{background:#dce5df}
+  .notif-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:8px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff}
+  .notif-badge:empty{display:none}
+  .notif-drop{position:absolute;top:48px;right:0;width:340px;max-height:420px;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.15);display:none;flex-direction:column;overflow:hidden;z-index:200;animation:notifSlide .15s ease}
+  .notif-drop.open{display:flex}
+  @keyframes notifSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+  .notif-drop-header{padding:12px 16px;border-bottom:1px solid #e8ece9;display:flex;justify-content:space-between;align-items:center}
+  .notif-drop-title{font-weight:700;font-size:14px;color:#0b3826}
+  .notif-drop-mark{font-size:12px;color:#49f48a;cursor:pointer;font-weight:600;background:none;border:none}
+  .notif-drop-mark:hover{text-decoration:underline}
+  .notif-list{overflow-y:auto;flex:1}
+  .notif-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f7f6;cursor:pointer;transition:background .1s}
+  .notif-item:hover{background:#f7faf8}
+  .notif-item.unread{background:#f0faf4}
+  .notif-item-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+  .notif-item-icon.red{background:#fde8e8}
+  .notif-item-icon.yellow{background:#fff8e5}
+  .notif-item-icon.blue{background:#e8f0fd}
+  .notif-item-icon.green{background:#e8f9ef}
+  .notif-item-text{flex:1;min-width:0}
+  .notif-item-title{font-size:12.5px;font-weight:600;color:#1a2e23}
+  .notif-item-body{font-size:11.5px;color:#7a9488;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .notif-item-time{font-size:10px;color:#a0b4a8;margin-top:3px}
+  .notif-empty{text-align:center;padding:32px;color:#a0b4a8;font-size:13px}
+  @media(max-width:600px){.notif-drop{position:fixed;top:56px;left:0;right:0;width:100%;max-height:70vh;border-radius:0 0 14px 14px}}
+  `;
+  document.head.appendChild(style);
+
+  const READ_KEY='vetpro_notifications_read';
+  function getRead(){try{return JSON.parse(localStorage.getItem(READ_KEY)||'[]')}catch(e){return[]}}
+  function markRead(id){const r=getRead();if(!r.includes(id)){r.push(id);localStorage.setItem(READ_KEY,JSON.stringify(r))}updateBadge()}
+  function markAllRead(){const notifs=buildNotifications();localStorage.setItem(READ_KEY,JSON.stringify(notifs.map(n=>n.id)));updateBadge();renderDrop()}
+
+  function buildNotifications(){
+    const notifs=[];
+    const read=getRead();
+    /* Stock alerts */
+    const drugs=window.DRUGS||[];
+    drugs.forEach(function(d,i){
+      if(d.s!==undefined&&d.smin!==undefined&&d.s<=d.smin){
+        const level=d.s<=0?'critical':'low';
+        notifs.push({id:'stock-'+i,icon:'💊',iconClass:level==='critical'?'red':'yellow',title:d.s<=0?'Rupture de stock':'Stock bas',body:(d.n||d.name||'Médicament')+' — '+d.s+' restants (seuil: '+d.smin+')',nav:'meds',read:read.includes('stock-'+i)});
+      }
+    });
+    /* Vaccine reminders */
+    const reminders=window.VACCINE_REMINDERS||[];
+    reminders.forEach(function(r,i){
+      notifs.push({id:'vacc-'+i,icon:'💉',iconClass:'blue',title:'Rappel vaccinal',body:(r.animal||r.patient||'Patient')+' — '+(r.vaccine||r.vaccin||'Vaccin'),nav:'vaccines',read:read.includes('vacc-'+i)});
+    });
+    /* Today appointments */
+    const appts=window.APPOINTMENTS||[];
+    const today=new Date().toLocaleDateString('fr-FR');
+    appts.forEach(function(a,i){
+      if((a.date||'')==today||(a.jour||'')==today){
+        notifs.push({id:'rdv-'+i,icon:'📅',iconClass:'green',title:'RDV aujourd\'hui',body:(a.animal||a.patient||'Patient')+' — '+(a.heure||a.time||'')+' '+(a.motif||a.reason||''),nav:'appointments',read:read.includes('rdv-'+i)});
+      }
+    });
+    /* Hospitalized > 7 days */
+    const cages=window.CAGES||[];
+    cages.forEach(function(c,i){
+      if(c.statut==='occupe'||c.statut==='occupée'){
+        if(c.depuis){
+          const d=new Date(c.depuis);
+          const days=Math.floor((Date.now()-d.getTime())/(86400000));
+          if(days>7){
+            notifs.push({id:'cage-'+i,icon:'🏥',iconClass:'yellow',title:'Séjour prolongé ('+days+'j)',body:(c.animal||'Animal')+' — Cage '+(i+1),nav:'hospitalisation',read:read.includes('cage-'+i)});
+          }
+        }
+      }
+    });
+    return notifs;
+  }
+
+  function updateBadge(){
+    const badge=document.querySelector('.notif-badge');
+    if(!badge)return;
+    const notifs=buildNotifications();
+    const unread=notifs.filter(n=>!n.read).length;
+    badge.textContent=unread>9?'9+':unread>0?unread:'';
+  }
+
+  function renderDrop(){
+    const list=document.querySelector('.notif-list');
+    if(!list)return;
+    const notifs=buildNotifications();
+    if(!notifs.length){list.innerHTML='<div class="notif-empty">Aucune notification</div>';return}
+    list.innerHTML=notifs.map(n=>`
+      <div class="notif-item ${n.read?'':'unread'}" data-id="${n.id}" data-nav="${n.nav||''}">
+        <div class="notif-item-icon ${n.iconClass||''}">${n.icon}</div>
+        <div class="notif-item-text">
+          <div class="notif-item-title">${n.title}</div>
+          <div class="notif-item-body">${n.body}</div>
+        </div>
+      </div>`).join('');
+  }
+
+  function injectBell(){
+    const topbarRight=document.querySelector('.topbar-right');
+    if(!topbarRight||topbarRight.querySelector('.notif-bell'))return;
+    const wrap=document.createElement('div');
+    wrap.style.cssText='position:relative';
+    wrap.innerHTML=`
+      <button class="notif-bell" aria-label="Notifications">🔔<span class="notif-badge"></span></button>
+      <div class="notif-drop">
+        <div class="notif-drop-header">
+          <div class="notif-drop-title">Notifications</div>
+          <button class="notif-drop-mark">Tout marquer lu</button>
+        </div>
+        <div class="notif-list"></div>
+      </div>`;
+
+    const bell=wrap.querySelector('.notif-bell');
+    const drop=wrap.querySelector('.notif-drop');
+    bell.addEventListener('click',function(e){e.stopPropagation();drop.classList.toggle('open');if(drop.classList.contains('open'))renderDrop()});
+    wrap.querySelector('.notif-drop-mark').addEventListener('click',function(e){e.stopPropagation();markAllRead()});
+    wrap.querySelector('.notif-list').addEventListener('click',function(e){
+      const item=e.target.closest('.notif-item');
+      if(item){markRead(item.dataset.id);drop.classList.remove('open');if(item.dataset.nav&&typeof window.nav==='function')window.nav(item.dataset.nav)}
+    });
+    document.addEventListener('click',function(e){if(!wrap.contains(e.target))drop.classList.remove('open')});
+
+    const searchBtn=topbarRight.querySelector('.topbar-search');
+    if(searchBtn)topbarRight.insertBefore(wrap,searchBtn.nextSibling);
+    else topbarRight.insertBefore(wrap,topbarRight.firstChild);
+    updateBadge();
+  }
+
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectBell);
+  else injectBell();
+  let bAttempts=0;
+  const bTimer=setInterval(()=>{injectBell();if(document.querySelector('.notif-bell')||++bAttempts>30)clearInterval(bTimer)},500);
+  /* Auto refresh */
+  setInterval(updateBadge,60000);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 05: ONBOARDING WIZARD
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  const OB_KEY='vetpro_onboarding_completed';
+  const CHECKLIST_KEY='vetpro_onboarding_checklist';
+
+  const style=document.createElement('style');
+  style.textContent=`
+  .ob-overlay{position:fixed;inset:0;z-index:800;background:linear-gradient(135deg,#060E14,#0F3D2A,#0B1829);display:flex;align-items:center;justify-content:center;font-family:'Outfit',system-ui,sans-serif;color:#fff}
+  .ob-card{width:100%;max-width:520px;padding:40px;text-align:center;animation:cmdkSlideIn .3s ease}
+  .ob-step-indicator{display:flex;justify-content:center;gap:8px;margin-bottom:32px}
+  .ob-dot{width:32px;height:4px;border-radius:2px;background:rgba(255,255,255,.2);transition:all .3s}
+  .ob-dot.active{background:#49f48a;width:48px}
+  .ob-dot.done{background:rgba(73,244,138,.5)}
+  .ob-icon{font-size:64px;margin-bottom:16px}
+  .ob-title{font-size:24px;font-weight:800;margin-bottom:8px}
+  .ob-desc{font-size:15px;color:rgba(255,255,255,.65);margin-bottom:28px;line-height:1.6}
+  .ob-input{width:100%;padding:14px 16px;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);border-radius:10px;color:#fff;font-size:15px;font-family:inherit;outline:none;margin-bottom:14px;transition:border-color .2s}
+  .ob-input:focus{border-color:#49f48a}
+  .ob-input::placeholder{color:rgba(255,255,255,.3)}
+  .ob-select{appearance:none;width:100%;padding:14px 16px;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);border-radius:10px;color:#fff;font-size:15px;font-family:inherit;outline:none;margin-bottom:14px}
+  .ob-select option{background:#0b3826;color:#fff}
+  .ob-options{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;justify-content:center}
+  .ob-option{flex:1;min-width:140px;padding:20px 16px;border:2px solid rgba(255,255,255,.12);border-radius:14px;cursor:pointer;text-align:center;transition:all .2s}
+  .ob-option:hover,.ob-option.selected{border-color:#49f48a;background:rgba(73,244,138,.08)}
+  .ob-option-icon{font-size:28px;margin-bottom:6px}
+  .ob-option-label{font-size:13px;font-weight:600}
+  .ob-btn{padding:14px 40px;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;margin:4px}
+  .ob-btn-primary{background:#49f48a;color:#0b3826}
+  .ob-btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(73,244,138,.3)}
+  .ob-btn-ghost{background:transparent;color:rgba(255,255,255,.5);font-size:13px}
+  .ob-btn-ghost:hover{color:#fff}
+  .ob-features{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;text-align:center}
+  .ob-feat{padding:16px 8px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+  .ob-feat-icon{font-size:28px;margin-bottom:6px}
+  .ob-feat-label{font-size:12px;font-weight:600;color:rgba(255,255,255,.7)}
+  .ob-checklist{position:fixed;bottom:90px;right:24px;width:280px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:70;overflow:hidden;display:none}
+  .ob-checklist.visible{display:block}
+  .ob-cl-header{padding:12px 16px;background:#0b3826;color:#49f48a;font-weight:700;font-size:13px;display:flex;justify-content:space-between;cursor:pointer}
+  .ob-cl-body{padding:12px 16px}
+  .ob-cl-item{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:13px;color:#1a2e23;border-bottom:1px solid #f0f5f2}
+  .ob-cl-item:last-child{border-bottom:none}
+  .ob-cl-check{width:18px;height:18px;border-radius:50%;border:2px solid #cddad2;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0;transition:all .2s}
+  .ob-cl-item.done .ob-cl-check{background:#49f48a;border-color:#49f48a;color:#0b3826}
+  .ob-cl-item.done{color:#a0b4a8;text-decoration:line-through}
+  @media(max-width:600px){.ob-card{padding:24px 20px}.ob-features{grid-template-columns:repeat(2,1fr)}.ob-checklist{left:16px;right:16px;width:auto;bottom:80px}}
+  `;
+  document.head.appendChild(style);
+
+  const WILAYAS=['Adrar','Chlef','Laghouat','Oum El Bouaghi','Batna','Béjaïa','Biskra','Béchar','Blida','Bouira','Tamanrasset','Tébessa','Tlemcen','Tiaret','Tizi Ouzou','Alger','Djelfa','Jijel','Sétif','Saïda','Skikda','Sidi Bel Abbès','Annaba','Guelma','Constantine','Médéa','Mostaganem','M\'sila','Mascara','Ouargla','Oran','El Bayadh','Illizi','Bordj Bou Arréridj','Boumerdès','El Tarf','Tindouf','Tissemsilt','El Oued','Khenchela','Souk Ahras','Tipaza','Mila','Aïn Defla','Naâma','Aïn Témouchent','Ghardaïa','Relizane'];
+
+  let currentStep=0;
+  let obData={clinicName:'',wilaya:'',specialty:'',phone:'',startMode:'empty'};
+
+  function isFirstLogin(){return!localStorage.getItem(OB_KEY)}
+
+  function launchOnboarding(){
+    if(!isFirstLogin())return;
+    currentStep=0;
+    const overlay=document.createElement('div');
+    overlay.className='ob-overlay';
+    overlay.id='ob-overlay';
+    document.body.appendChild(overlay);
+    renderStep();
+  }
+
+  function renderStep(){
+    const overlay=document.getElementById('ob-overlay');
+    if(!overlay)return;
+    const dots=Array.from({length:4},(_,i)=>`<div class="ob-dot ${i===currentStep?'active':i<currentStep?'done':''}"></div>`).join('');
+
+    if(currentStep===0){
+      const name=(typeof window.vpGetCurrentName==='function'?window.vpGetCurrentName():'')||'Docteur';
+      overlay.innerHTML=`<div class="ob-card">
+        <div class="ob-step-indicator">${dots}</div>
+        <div class="ob-icon">🏥</div>
+        <div class="ob-title">Bienvenue, Dr. ${name} !</div>
+        <div class="ob-desc">Configurez votre clinique en quelques secondes.</div>
+        <input class="ob-input" id="ob-clinic" placeholder="Nom de la clinique" value="${obData.clinicName}">
+        <select class="ob-select" id="ob-wilaya"><option value="">Choisir la wilaya</option>${WILAYAS.map(w=>`<option ${obData.wilaya===w?'selected':''}>${w}</option>`).join('')}</select>
+        <input class="ob-input" id="ob-phone" placeholder="Téléphone clinique" value="${obData.phone}">
+        <div><button class="ob-btn ob-btn-primary" onclick="window.__obNext()">Continuer</button></div>
+        <div><button class="ob-btn ob-btn-ghost" onclick="window.__obSkip()">Passer l'assistant</button></div>
+      </div>`;
+    } else if(currentStep===1){
+      overlay.innerHTML=`<div class="ob-card">
+        <div class="ob-step-indicator">${dots}</div>
+        <div class="ob-icon">🚀</div>
+        <div class="ob-title">Comment voulez-vous démarrer ?</div>
+        <div class="ob-desc">Choisissez votre point de départ.</div>
+        <div class="ob-options">
+          <div class="ob-option ${obData.startMode==='empty'?'selected':''}" onclick="this.parentElement.querySelectorAll('.ob-option').forEach(o=>o.classList.remove('selected'));this.classList.add('selected');window.__obSetMode('empty')"><div class="ob-option-icon">🎯</div><div class="ob-option-label">Démarrer vide</div></div>
+          <div class="ob-option ${obData.startMode==='demo'?'selected':''}" onclick="this.parentElement.querySelectorAll('.ob-option').forEach(o=>o.classList.remove('selected'));this.classList.add('selected');window.__obSetMode('demo')"><div class="ob-option-icon">📊</div><div class="ob-option-label">Données démo</div></div>
+        </div>
+        <div><button class="ob-btn ob-btn-primary" onclick="window.__obNext()">Continuer</button></div>
+        <div><button class="ob-btn ob-btn-ghost" onclick="window.__obBack()">Retour</button></div>
+      </div>`;
+    } else if(currentStep===2){
+      overlay.innerHTML=`<div class="ob-card">
+        <div class="ob-step-indicator">${dots}</div>
+        <div class="ob-title">Découvrez VetPro</div>
+        <div class="ob-desc">Tout ce dont votre clinique a besoin, en un seul endroit.</div>
+        <div class="ob-features">
+          <div class="ob-feat"><div class="ob-feat-icon">📁</div><div class="ob-feat-label">Cas cliniques</div></div>
+          <div class="ob-feat"><div class="ob-feat-icon">🤖</div><div class="ob-feat-label">Assistant IA</div></div>
+          <div class="ob-feat"><div class="ob-feat-icon">💉</div><div class="ob-feat-label">Vaccinations</div></div>
+          <div class="ob-feat"><div class="ob-feat-icon">🏥</div><div class="ob-feat-label">Hospitalisation</div></div>
+          <div class="ob-feat"><div class="ob-feat-icon">📊</div><div class="ob-feat-label">Statistiques</div></div>
+          <div class="ob-feat"><div class="ob-feat-icon">🔒</div><div class="ob-feat-label">Sécurité</div></div>
+        </div>
+        <div><button class="ob-btn ob-btn-primary" onclick="window.__obNext()">Continuer</button></div>
+      </div>`;
+    } else if(currentStep===3){
+      overlay.innerHTML=`<div class="ob-card">
+        <div class="ob-step-indicator">${dots}</div>
+        <div class="ob-icon">✅</div>
+        <div class="ob-title">Vous êtes prêt !</div>
+        <div class="ob-desc">Complétez ces étapes pour tirer le meilleur de VetPro.</div>
+        <div style="text-align:left;background:rgba(255,255,255,.06);border-radius:14px;padding:16px;margin-bottom:24px">
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.08)">☐ Ajouter infos clinique</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.08)">☐ Créer mon premier client</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.08)">☐ Enregistrer un patient</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px;border-bottom:1px solid rgba(255,255,255,.08)">☐ Compléter une consultation</div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0;font-size:14px">☐ Tester l'Assistant IA</div>
+        </div>
+        <div><button class="ob-btn ob-btn-primary" onclick="window.__obFinish()">Commencer !</button></div>
+      </div>`;
+    }
+  }
+
+  window.__obSetMode=function(mode){obData.startMode=mode};
+  window.__obNext=function(){
+    if(currentStep===0){
+      obData.clinicName=document.getElementById('ob-clinic')?.value||'';
+      obData.wilaya=document.getElementById('ob-wilaya')?.value||'';
+      obData.phone=document.getElementById('ob-phone')?.value||'';
+    }
+    currentStep=Math.min(currentStep+1,3);
+    renderStep();
+  };
+  window.__obBack=function(){currentStep=Math.max(currentStep-1,0);renderStep()};
+  window.__obSkip=function(){
+    localStorage.setItem(OB_KEY,'true');
+    const overlay=document.getElementById('ob-overlay');
+    if(overlay)overlay.remove();
+  };
+  window.__obFinish=function(){
+    localStorage.setItem(OB_KEY,'true');
+    localStorage.setItem(CHECKLIST_KEY,JSON.stringify({clinic:!!obData.clinicName,client:false,patient:false,consultation:false,ai:false}));
+    if(obData.clinicName&&typeof window.saveSettings==='function'){
+      try{const s=window.getSettings();s.clinicName=obData.clinicName;s.clinicPhone=obData.phone;window.saveSettings(s)}catch(e){}
+    }
+    if(obData.startMode==='demo')seedDemoData();
+    const overlay=document.getElementById('ob-overlay');
+    if(overlay)overlay.remove();
+    showChecklist();
+  };
+
+  function seedDemoData(){
+    const patients=window.PATIENTS;
+    if(!Array.isArray(patients))return;
+    if(patients.some(p=>(p.name||'').startsWith('[Exemple]')))return;
+    patients.push(
+      {name:'[Exemple] Rex',espece:'Chien',race:'Berger Allemand',age:'4 ans',poids:'28 kg',proprietaire:'M. Boudjema',tel:'+213555123456'},
+      {name:'[Exemple] Mimi',espece:'Chat',race:'Siamois',age:'2 ans',poids:'4.5 kg',proprietaire:'Mme. Hadj',tel:'+213555654321'},
+      {name:'[Exemple] Sultan',espece:'Cheval',race:'Pur-sang',age:'6 ans',poids:'480 kg',proprietaire:'M. Ferhat',tel:'+213555111222'}
+    );
+  }
+
+  /* ── Checklist widget ── */
+  function showChecklist(){
+    const data=getChecklistData();
+    if(!data||Object.values(data).every(v=>v))return;
+    let cl=document.getElementById('ob-checklist-widget');
+    if(!cl){
+      cl=document.createElement('div');
+      cl.className='ob-checklist visible';
+      cl.id='ob-checklist-widget';
+      document.body.appendChild(cl);
+    }
+    const items=[
+      {key:'clinic',label:'Ajouter infos clinique'},
+      {key:'client',label:'Créer un client'},
+      {key:'patient',label:'Enregistrer un patient'},
+      {key:'consultation',label:'Compléter une consultation'},
+      {key:'ai',label:'Tester l\'Assistant IA'}
+    ];
+    const done=items.filter(i=>data[i.key]).length;
+    cl.innerHTML=`
+      <div class="ob-cl-header"><span>Démarrage ${done}/5</span><span>✕</span></div>
+      <div class="ob-cl-body">${items.map(i=>`<div class="ob-cl-item ${data[i.key]?'done':''}"><div class="ob-cl-check">${data[i.key]?'✓':''}</div>${i.label}</div>`).join('')}</div>`;
+    cl.querySelector('.ob-cl-header').addEventListener('click',function(){cl.remove()});
+    if(done>=5)setTimeout(()=>cl.remove(),2000);
+  }
+
+  function getChecklistData(){try{return JSON.parse(localStorage.getItem(CHECKLIST_KEY))}catch(e){return null}}
+  function updateChecklist(key){
+    const data=getChecklistData();
+    if(!data)return;
+    data[key]=true;
+    localStorage.setItem(CHECKLIST_KEY,JSON.stringify(data));
+    showChecklist();
+  }
+  window.__obUpdateChecklist=updateChecklist;
+
+  /* Launch on auth */
+  function tryLaunch(){
+    const login=document.getElementById('login-screen');
+    if(login&&!login.classList.contains('hidden'))return;
+    if(isFirstLogin())launchOnboarding();
+    else{const data=getChecklistData();if(data&&!Object.values(data).every(v=>v))showChecklist()}
+  }
+  setTimeout(tryLaunch,2000);
+  /* Also listen for SIGNED_IN */
+  if(window._sb?.auth?.onAuthStateChange){
+    window._sb.auth.onAuthStateChange(function(event){
+      if(event==='SIGNED_IN')setTimeout(tryLaunch,1500);
+    });
+  }
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 06: TOAST UNDO + SOFT DELETE
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  const style=document.createElement('style');
+  style.textContent=`
+  .toast-stack{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:300;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;max-width:420px;width:calc(100% - 32px)}
+  .toast-item{padding:12px 16px;border-radius:12px;color:#fff;font-size:13.5px;font-weight:500;display:flex;align-items:center;gap:10px;pointer-events:auto;animation:toastIn .2s ease;box-shadow:0 8px 24px rgba(0,0,0,.2);min-height:44px}
+  @keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .toast-item.removing{animation:toastOut .15s ease forwards}
+  @keyframes toastOut{to{opacity:0;transform:translateY(-8px) scale(.95)}}
+  .toast-item.default{background:#1a2e23}
+  .toast-item.success{background:linear-gradient(135deg,#0b3826,#145a38)}
+  .toast-item.error{background:linear-gradient(135deg,#922b21,#c0392b)}
+  .toast-item.undo{background:#1a2e23}
+  .toast-text{flex:1}
+  .toast-action{background:rgba(73,244,138,.2);color:#49f48a;border:none;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s}
+  .toast-action:hover{background:rgba(73,244,138,.35)}
+  .toast-close{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:16px;padding:0 4px}
+  @media(max-width:480px){.toast-stack{left:16px;right:16px;transform:none;width:auto}}
+  `;
+  document.head.appendChild(style);
+
+  /* Stack container */
+  let stack=document.querySelector('.toast-stack');
+  if(!stack){stack=document.createElement('div');stack.className='toast-stack';document.body.appendChild(stack)}
+
+  const MAX_TOASTS=3;
+
+  function showToast(text, opts){
+    opts=opts||{};
+    const type=opts.type||'default';
+    const duration=opts.duration||(type==='undo'?6000:type==='error'?8000:4000);
+
+    /* Enforce max */
+    while(stack.children.length>=MAX_TOASTS){
+      const oldest=stack.firstElementChild;
+      if(oldest)oldest.remove();
+    }
+
+    const el=document.createElement('div');
+    el.className='toast-item '+type;
+    let html='<span class="toast-text">'+text+'</span>';
+    if(opts.action){
+      html+='<button class="toast-action">'+opts.action.label+'</button>';
+    }
+    html+='<button class="toast-close">✕</button>';
+    el.innerHTML=html;
+
+    const dismiss=function(){
+      el.classList.add('removing');
+      setTimeout(()=>el.remove(),150);
+    };
+
+    el.querySelector('.toast-close').addEventListener('click',dismiss);
+    if(opts.action){
+      el.querySelector('.toast-action').addEventListener('click',function(){
+        if(opts.action.onClick)opts.action.onClick();
+        dismiss();
+      });
+    }
+
+    stack.appendChild(el);
+    if(duration>0)setTimeout(dismiss,duration);
+    return{dismiss:dismiss};
+  }
+
+  /* Convenience methods */
+  showToast.success=function(text){return showToast(text,{type:'success'})};
+  showToast.error=function(text){return showToast(text,{type:'error'})};
+  showToast.undo=function(text,onUndo){return showToast(text,{type:'undo',action:{label:'↶ Annuler',onClick:onUndo}})};
+
+  /* Expose globally — coexist with existing toast() */
+  window.vpToast=showToast;
+
+  /* ESC closes most recent */
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'&&stack.lastElementChild){
+      const last=stack.lastElementChild;
+      last.classList.add('removing');
+      setTimeout(()=>last.remove(),150);
+    }
+  });
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 07: EMPTY STATES
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  const style=document.createElement('style');
+  style.textContent=`
+  .vp-empty{text-align:center;padding:60px 30px;background:var(--surface,#f7faf8);border-radius:18px;border:2px dashed var(--brd,#dce5df);margin:20px 0}
+  .vp-empty-icon{font-size:64px;opacity:.5;margin-bottom:12px}
+  .vp-empty-title{font-size:18px;font-weight:700;color:var(--ink,#1a2e23);margin-bottom:8px}
+  .vp-empty-desc{font-size:14px;color:var(--muted,#7a9488);margin-bottom:20px;line-height:1.6}
+  .vp-empty-cta{display:inline-block;padding:10px 24px;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;border:none;text-decoration:none;margin:4px}
+  .vp-empty-cta.primary{background:var(--forest,#0b3826);color:#49f48a}
+  .vp-empty-cta.primary:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(11,56,38,.2)}
+  .vp-empty-cta.secondary{background:transparent;color:var(--forest,#0b3826);border:1.5px solid var(--brd,#dce5df)}
+  .vp-empty-cta.secondary:hover{border-color:var(--forest,#0b3826)}
+  .vp-skeleton{background:linear-gradient(90deg,#f0f5f2 25%,#e4ede7 50%,#f0f5f2 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px}
+  @keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+  .vp-skeleton-card{height:80px;border-radius:12px;margin-bottom:12px}
+  .vp-skeleton-text{height:14px;width:60%;margin-bottom:10px}
+  .vp-offline-bar{position:fixed;top:0;left:0;right:0;z-index:9999;background:#f39c12;color:#fff;text-align:center;padding:8px;font-size:13px;font-weight:600;transform:translateY(-100%);transition:transform .3s}
+  .vp-offline-bar.show{transform:translateY(0)}
+  `;
+  document.head.appendChild(style);
+
+  window.renderEmpty=function(container,opts){
+    if(!container)return;
+    container.innerHTML=`
+      <div class="vp-empty">
+        <div class="vp-empty-icon">${opts.icon||'📂'}</div>
+        <div class="vp-empty-title">${opts.title||'Rien ici'}</div>
+        <div class="vp-empty-desc">${opts.description||''}</div>
+        ${opts.primaryCta?`<button class="vp-empty-cta primary" id="vp-empty-primary">${opts.primaryCta.label}</button>`:''}
+        ${opts.secondaryCta?`<button class="vp-empty-cta secondary" id="vp-empty-secondary">${opts.secondaryCta.label}</button>`:''}
+      </div>`;
+    if(opts.primaryCta?.onClick){container.querySelector('#vp-empty-primary')?.addEventListener('click',opts.primaryCta.onClick)}
+    if(opts.secondaryCta?.onClick){container.querySelector('#vp-empty-secondary')?.addEventListener('click',opts.secondaryCta.onClick)}
+  };
+
+  window.renderSkeletons=function(container,count){
+    if(!container)return;
+    let html='';
+    for(let i=0;i<(count||3);i++)html+='<div class="vp-skeleton vp-skeleton-card"></div>';
+    container.innerHTML=html;
+  };
+
+  /* Offline indicator */
+  const offlineBar=document.createElement('div');
+  offlineBar.className='vp-offline-bar';
+  offlineBar.textContent='🌐 Hors ligne — vos modifications seront synchronisées';
+  document.body.appendChild(offlineBar);
+  function updateOnline(){offlineBar.classList.toggle('show',!navigator.onLine)}
+  window.addEventListener('online',updateOnline);
+  window.addEventListener('offline',updateOnline);
+  updateOnline();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     FEATURE 08: AI PATIENT CONTEXT
+═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+  const style=document.createElement('style');
+  style.textContent=`
+  .ai-ctx-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface,#f7faf8);border-radius:10px;margin-bottom:12px;flex-wrap:wrap}
+  .ai-ctx-select{flex:1;min-width:160px;padding:8px 10px;border:1.5px solid var(--brd,#dce5df);border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink,#1a2e23);outline:none}
+  .ai-ctx-select:focus{border-color:#49f48a}
+  .ai-ctx-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:#e8f5ee;border-radius:8px;font-size:12px;font-weight:600;color:#0b3826}
+  .ai-ctx-chip button{background:none;border:none;cursor:pointer;color:#7a9488;font-size:14px;padding:0 2px}
+  .ai-ctx-chip button:hover{color:#c0392b}
+  .ai-templates{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .ai-tpl-btn{padding:6px 12px;border-radius:8px;border:1.5px solid var(--brd,#dce5df);background:#fff;font-size:12px;cursor:pointer;transition:all .15s;color:var(--ink,#1a2e23);font-family:inherit}
+  .ai-tpl-btn:hover{border-color:#49f48a;background:#e8f5ee}
+  .ai-disclaimer{font-size:11px;color:#a0b4a8;text-align:center;padding:8px;border-top:1px solid #e8ece9;margin-top:8px}
+  `;
+  document.head.appendChild(style);
+
+  let selectedPatient=null;
+
+  function getPatientContext(p){
+    if(!p)return null;
+    const name=p.name||p.nom||p.animal||'';
+    const cases=(window.HISTORIQUE_DATA||[]).filter(c=>(c.animal||'').includes(name));
+    const vaccs=(window.VACC_HISTORY||[]).filter(v=>(v.animal||v.patient||'').includes(name));
+    return{
+      name:name,
+      species:p.species||p.espece||'',
+      breed:p.breed||p.race||'',
+      weight:p.weight||p.poids||'',
+      age:p.age||'',
+      sex:p.sex||p.sexe||'',
+      history:cases.slice(0,5).map(c=>c.diagnostic||c.motif||'Consultation'),
+      allergies:p.allergies||'aucune connue',
+      vaccinations:vaccs.map(v=>({name:v.vaccine||v.vaccin||'',up_to_date:true}))
+    };
+  }
+
+  function injectAIContext(){
+    const aiPage=document.getElementById('page-ai');
+    if(!aiPage||aiPage.querySelector('.ai-ctx-bar'))return;
+
+    /* Find the chat input area */
+    const chatForm=aiPage.querySelector('form')||aiPage.querySelector('textarea')?.parentElement||aiPage.querySelector('[class*="chat"]');
+    const insertTarget=chatForm||aiPage.querySelector('.page-hero')?.nextElementSibling||aiPage.firstElementChild;
+    if(!insertTarget)return;
+
+    /* Context bar */
+    const ctxBar=document.createElement('div');
+    ctxBar.className='ai-ctx-bar';
+    const patients=window.PATIENTS||[];
+    let optionsHtml='<option value="">Patient : Aucun</option>';
+    patients.forEach((p,i)=>{
+      const name=p.name||p.nom||p.animal||'';
+      const species=p.species||p.espece||'';
+      optionsHtml+=`<option value="${i}">${name} (${species})</option>`;
+    });
+    ctxBar.innerHTML=`<select class="ai-ctx-select" id="ai-patient-select">${optionsHtml}</select><div id="ai-patient-chip"></div>`;
+    insertTarget.parentNode.insertBefore(ctxBar,insertTarget);
+
+    const select=ctxBar.querySelector('#ai-patient-select');
+    const chipContainer=ctxBar.querySelector('#ai-patient-chip');
+
+    select.addEventListener('change',function(){
+      const idx=parseInt(this.value);
+      if(isNaN(idx)){selectedPatient=null;chipContainer.innerHTML='';return}
+      const p=patients[idx];
+      selectedPatient=p;
+      const ctx=getPatientContext(p);
+      chipContainer.innerHTML=`<div class="ai-ctx-chip">
+        ${getAnimalEmoji(ctx.species)} ${ctx.name} · ${ctx.species} ${ctx.breed?'('+ctx.breed+')':''} · ${ctx.weight?ctx.weight+'kg':''} · ${ctx.age}
+        <button onclick="document.getElementById('ai-patient-select').value='';this.parentElement.parentElement.innerHTML='';window.__aiSelectedPatient=null">✕</button>
+      </div>`;
+      window.__aiSelectedPatient=ctx;
+    });
+
+    /* Templates */
+    const tplBar=document.createElement('div');
+    tplBar.className='ai-templates';
+    const templates=[
+      {icon:'💊',label:'Calculer dosage',prompt:'Calculer le dosage de [médicament] pour ce patient'},
+      {icon:'🔍',label:'Diagnostic diff.',prompt:'Diagnostic différentiel pour les symptômes suivants : '},
+      {icon:'📋',label:'Plan traitement',prompt:'Plan de traitement pour '},
+      {icon:'🚨',label:'Urgence',prompt:'Protocole d\'urgence pour '},
+      {icon:'📊',label:'Examens',prompt:'Examens complémentaires recommandés pour '},
+    ];
+    templates.forEach(t=>{
+      const btn=document.createElement('button');
+      btn.className='ai-tpl-btn';
+      btn.textContent=t.icon+' '+t.label;
+      btn.addEventListener('click',function(){
+        const textarea=aiPage.querySelector('textarea')||aiPage.querySelector('input[type="text"]');
+        if(textarea){textarea.value=t.prompt;textarea.focus();textarea.dispatchEvent(new Event('input',{bubbles:true}))}
+      });
+      tplBar.appendChild(btn);
+    });
+    ctxBar.parentNode.insertBefore(tplBar,ctxBar.nextSibling);
+
+    /* Disclaimer */
+    const disclaimer=document.createElement('div');
+    disclaimer.className='ai-disclaimer';
+    disclaimer.textContent='⚠️ Les réponses IA sont indicatives. La décision clinique reste celle du vétérinaire.';
+    /* Append at bottom of AI page */
+    aiPage.appendChild(disclaimer);
+  }
+
+  function getAnimalEmoji(species){
+    const s=(species||'').toLowerCase();
+    if(s.includes('chien'))return'🐕';if(s.includes('chat'))return'🐈';if(s.includes('cheval'))return'🐴';
+    return'🐾';
+  }
+
+  /* Intercept AI requests to inject context */
+  const origFetch=window.fetch;
+  window.fetch=function(){
+    const args=arguments;
+    if(args[1]?.body&&typeof args[1].body==='string'&&window.__aiSelectedPatient){
+      try{
+        const body=JSON.parse(args[1].body);
+        if(body.messages||body.prompt){
+          body.patient_context=window.__aiSelectedPatient;
+          args[1].body=JSON.stringify(body);
+        }
+      }catch(e){}
+    }
+    return origFetch.apply(this,args);
+  };
+
+  /* Inject on nav to AI page */
+  function tryInject(){injectAIContext()}
+  if(typeof window.nav==='function'&&!window.__aiCtxPatched){
+    const origNav=window.nav;
+    window.__aiCtxPatched=true;
+    window.nav=function(id){
+      const r=origNav.apply(this,arguments);
+      if(id==='ai')setTimeout(tryInject,200);
+      return r;
+    };
+    try{nav=window.nav}catch(e){}
+  }
+  /* Also try on load */
+  setTimeout(tryInject,2000);
+  setInterval(function(){
+    const aiPage=document.getElementById('page-ai');
+    if(aiPage&&aiPage.classList.contains('active')&&!aiPage.querySelector('.ai-ctx-bar'))tryInject();
+  },3000);
+})();
+</script>
+
 </body>
 </html>
