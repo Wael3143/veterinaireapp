@@ -20249,8 +20249,8 @@ function saveAdmission() {
   .pdrawer-back{position:fixed;inset:0;z-index:150;background:rgba(0,0,0,.4);backdrop-filter:blur(4px);display:none;animation:pdFadeIn .2s ease}
   .pdrawer-back.open{display:block}
   @keyframes pdFadeIn{from{opacity:0}to{opacity:1}}
-  .pdrawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100%;background:#fff;z-index:151;transform:translateX(100%);transition:transform .25s cubic-bezier(.32,.72,.32,1);box-shadow:-8px 0 32px rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden}
-  .pdrawer.open{transform:translateX(0)}
+  .pdrawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100%;background:#fff;z-index:151;transform:translateX(100%);transition:transform .25s cubic-bezier(.32,.72,.32,1),visibility 0s .25s;box-shadow:-8px 0 32px rgba(0,0,0,.12);display:flex;flex-direction:column;overflow:hidden;pointer-events:none;visibility:hidden}
+  .pdrawer.open{transform:translateX(0);pointer-events:auto;visibility:visible;transition:transform .25s cubic-bezier(.32,.72,.32,1),visibility 0s 0s}
   .pdrawer-head{padding:20px;display:flex;align-items:flex-start;gap:14px;border-bottom:1px solid #e8ece9}
   .pdrawer-avatar{width:54px;height:54px;border-radius:14px;background:linear-gradient(135deg,#0b3826,#0d4a30);color:#49f48a;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
   .pdrawer-info{flex:1;min-width:0}
