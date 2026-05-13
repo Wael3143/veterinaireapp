@@ -95,7 +95,7 @@
     display:inline-block;vertical-align:middle;margin-right:6px;
   }
   #logout-btn{
-    display:none;position:fixed;bottom:20px;right:20px;z-index:9999;
+    display:none;position:fixed;bottom:20px;left:20px;z-index:9999;
     background:var(--ink);color:#fff;border:1px solid rgba(255,255,255,.1);
     border-radius:12px;padding:12px 18px;cursor:pointer;
     font-size:13px;font-family:'Outfit',sans-serif;font-weight:600;
@@ -16468,8 +16468,11 @@ function saveAdmission() {
 
   @media (max-width:768px){
     #vp-bottom-bar{display:block}
+    /* Fix mobile scroll: force shell to use real viewport height */
+    .shell{height:100vh;height:100dvh;height:calc(var(--vp-vh,1vh) * 100)}
+    .main{min-height:0!important;overflow:hidden!important}
     /* Push content above bottom bar + ensure touch scroll works */
-    .content{padding-bottom:72px!important;-webkit-overflow-scrolling:touch!important;overflow-y:auto!important}
+    .content{padding-bottom:72px!important;-webkit-overflow-scrolling:touch!important;overflow-y:auto!important;overflow-y:scroll!important;min-height:0!important}
     /* Hide hamburger top-left since we have bottom bar now */
     #vp-mobile-toggle{top:12px;left:12px}
     /* Show backdrop when sidebar is open */
@@ -16502,6 +16505,16 @@ function saveAdmission() {
 <script id="vetpro-mobile-ui-v3-script">
 (function(){
   'use strict';
+
+  /* ── Fix mobile viewport height (100vh includes address bar on iOS/Android) ── */
+  function setVH(){
+    var vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vp-vh', vh + 'px');
+  }
+  setVH();
+  window.addEventListener('resize', setVH);
+  window.addEventListener('orientationchange', function(){ setTimeout(setVH, 150); });
+
   if (window.__vetproMobileUIV3) return;
   window.__vetproMobileUIV3 = true;
 
@@ -18594,7 +18607,7 @@ function saveAdmission() {
     border: 1px solid rgba(13,148,136,.18);
     border-radius: 18px;
     box-shadow: 0 1px 2px rgba(15,61,42,.05), 0 24px 60px rgba(15,61,42,.22);
-    z-index: 9000;
+    z-index: 9998;
     display: none;
     flex-direction: column;
     overflow: hidden;
@@ -20477,149 +20490,7 @@ function saveAdmission() {
 })();
 </script>
 
-<!-- ═══════════════════════════════════════════════════════════════════
-     FEATURE 04: NOTIFICATION CENTER
-═══════════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-  'use strict';
-  const style=document.createElement('style');
-  style.textContent=`
-  .notif-bell{position:relative;width:36px;height:36px;border-radius:10px;background:var(--surface2,#f0f5f2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:18px;transition:background .15s;border:none}
-  .notif-bell:hover{background:#dce5df}
-  .notif-badge{position:absolute;top:-2px;right:-2px;min-width:16px;height:16px;border-radius:8px;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid #fff}
-  .notif-badge:empty{display:none}
-  .notif-drop{position:fixed;top:58px;right:16px;width:340px;max-height:420px;background:#fff;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.15);display:none;flex-direction:column;overflow:hidden;z-index:9998;animation:notifSlide .15s ease}
-  .notif-drop.open{display:flex}
-  @keyframes notifSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
-  .notif-drop-header{padding:12px 16px;border-bottom:1px solid #e8ece9;display:flex;justify-content:space-between;align-items:center}
-  .notif-drop-title{font-weight:700;font-size:14px;color:#0b3826}
-  .notif-drop-mark{font-size:12px;color:#49f48a;cursor:pointer;font-weight:600;background:none;border:none}
-  .notif-drop-mark:hover{text-decoration:underline}
-  .notif-list{overflow-y:auto;flex:1}
-  .notif-item{display:flex;gap:10px;padding:12px 16px;border-bottom:1px solid #f5f7f6;cursor:pointer;transition:background .1s}
-  .notif-item:hover{background:#f7faf8}
-  .notif-item.unread{background:#f0faf4}
-  .notif-item-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
-  .notif-item-icon.red{background:#fde8e8}
-  .notif-item-icon.yellow{background:#fff8e5}
-  .notif-item-icon.blue{background:#e8f0fd}
-  .notif-item-icon.green{background:#e8f9ef}
-  .notif-item-text{flex:1;min-width:0}
-  .notif-item-title{font-size:12.5px;font-weight:600;color:#1a2e23}
-  .notif-item-body{font-size:11.5px;color:#7a9488;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .notif-item-time{font-size:10px;color:#a0b4a8;margin-top:3px}
-  .notif-empty{text-align:center;padding:32px;color:#a0b4a8;font-size:13px}
-  @media(max-width:600px){.notif-drop{position:fixed;top:56px;left:0;right:0;width:100%;max-height:70vh;border-radius:0 0 14px 14px;z-index:9998}}
-  `;
-  document.head.appendChild(style);
-
-  const READ_KEY='vetpro_notifications_read';
-  function getRead(){try{return JSON.parse(localStorage.getItem(READ_KEY)||'[]')}catch(e){return[]}}
-  function markRead(id){const r=getRead();if(!r.includes(id)){r.push(id);localStorage.setItem(READ_KEY,JSON.stringify(r))}updateBadge()}
-  function markAllRead(){const notifs=buildNotifications();localStorage.setItem(READ_KEY,JSON.stringify(notifs.map(n=>n.id)));updateBadge();renderDrop()}
-
-  function buildNotifications(){
-    const notifs=[];
-    const read=getRead();
-    /* Stock alerts */
-    const drugs=window.DRUGS||[];
-    drugs.forEach(function(d,i){
-      if(d.s!==undefined&&d.smin!==undefined&&d.s<=d.smin){
-        const level=d.s<=0?'critical':'low';
-        notifs.push({id:'stock-'+i,icon:'💊',iconClass:level==='critical'?'red':'yellow',title:d.s<=0?'Rupture de stock':'Stock bas',body:(d.n||d.name||'Médicament')+' — '+d.s+' restants (seuil: '+d.smin+')',nav:'meds',read:read.includes('stock-'+i)});
-      }
-    });
-    /* Vaccine reminders */
-    const reminders=window.VACCINE_REMINDERS||[];
-    reminders.forEach(function(r,i){
-      notifs.push({id:'vacc-'+i,icon:'💉',iconClass:'blue',title:'Rappel vaccinal',body:(r.animal||r.patient||'Patient')+' — '+(r.vaccine||r.vaccin||'Vaccin'),nav:'vaccines',read:read.includes('vacc-'+i)});
-    });
-    /* Today appointments */
-    const appts=window.APPOINTMENTS||[];
-    const today=new Date().toLocaleDateString('fr-FR');
-    appts.forEach(function(a,i){
-      if((a.date||'')==today||(a.jour||'')==today){
-        notifs.push({id:'rdv-'+i,icon:'📅',iconClass:'green',title:'RDV aujourd\'hui',body:(a.animal||a.patient||'Patient')+' — '+(a.heure||a.time||'')+' '+(a.motif||a.reason||''),nav:'appointments',read:read.includes('rdv-'+i)});
-      }
-    });
-    /* Hospitalized > 7 days */
-    const cages=window.CAGES||[];
-    cages.forEach(function(c,i){
-      if(c.statut==='occupe'||c.statut==='occupée'){
-        if(c.depuis){
-          const d=new Date(c.depuis);
-          const days=Math.floor((Date.now()-d.getTime())/(86400000));
-          if(days>7){
-            notifs.push({id:'cage-'+i,icon:'🏥',iconClass:'yellow',title:'Séjour prolongé ('+days+'j)',body:(c.animal||'Animal')+' — Cage '+(i+1),nav:'hospitalisation',read:read.includes('cage-'+i)});
-          }
-        }
-      }
-    });
-    return notifs;
-  }
-
-  function updateBadge(){
-    const badge=document.querySelector('.notif-badge');
-    if(!badge)return;
-    const notifs=buildNotifications();
-    const unread=notifs.filter(n=>!n.read).length;
-    badge.textContent=unread>9?'9+':unread>0?unread:'';
-  }
-
-  function renderDrop(){
-    const list=document.querySelector('.notif-list');
-    if(!list)return;
-    const notifs=buildNotifications();
-    if(!notifs.length){list.innerHTML='<div class="notif-empty">Aucune notification</div>';return}
-    list.innerHTML=notifs.map(n=>`
-      <div class="notif-item ${n.read?'':'unread'}" data-id="${n.id}" data-nav="${n.nav||''}">
-        <div class="notif-item-icon ${n.iconClass||''}">${n.icon}</div>
-        <div class="notif-item-text">
-          <div class="notif-item-title">${n.title}</div>
-          <div class="notif-item-body">${n.body}</div>
-        </div>
-      </div>`).join('');
-  }
-
-  function injectBell(){
-    const topbarRight=document.querySelector('.topbar-right');
-    if(!topbarRight||topbarRight.querySelector('.notif-bell'))return;
-    const wrap=document.createElement('div');
-    wrap.style.cssText='position:relative';
-    wrap.innerHTML=`
-      <button class="notif-bell" aria-label="Notifications">🔔<span class="notif-badge"></span></button>
-      <div class="notif-drop">
-        <div class="notif-drop-header">
-          <div class="notif-drop-title">Notifications</div>
-          <button class="notif-drop-mark">Tout marquer lu</button>
-        </div>
-        <div class="notif-list"></div>
-      </div>`;
-
-    const bell=wrap.querySelector('.notif-bell');
-    const drop=wrap.querySelector('.notif-drop');
-    bell.addEventListener('click',function(e){e.stopPropagation();drop.classList.toggle('open');if(drop.classList.contains('open'))renderDrop()});
-    wrap.querySelector('.notif-drop-mark').addEventListener('click',function(e){e.stopPropagation();markAllRead()});
-    wrap.querySelector('.notif-list').addEventListener('click',function(e){
-      const item=e.target.closest('.notif-item');
-      if(item){markRead(item.dataset.id);drop.classList.remove('open');if(item.dataset.nav&&typeof window.nav==='function')window.nav(item.dataset.nav)}
-    });
-    document.addEventListener('click',function(e){if(!wrap.contains(e.target))drop.classList.remove('open')});
-
-    const searchBtn=topbarRight.querySelector('.topbar-search');
-    if(searchBtn)topbarRight.insertBefore(wrap,searchBtn.nextSibling);
-    else topbarRight.insertBefore(wrap,topbarRight.firstChild);
-    updateBadge();
-  }
-
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',injectBell);
-  else injectBell();
-  let bAttempts=0;
-  const bTimer=setInterval(()=>{injectBell();if(document.querySelector('.notif-bell')||++bAttempts>30)clearInterval(bTimer)},500);
-  /* Auto refresh */
-  setInterval(updateBadge,60000);
-})();
+<!-- Feature 04 removed: duplicate notification center — using the one from line ~18544 instead -->
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════════
