@@ -2465,11 +2465,11 @@ window.addEventListener('DOMContentLoaded', () => {
           <strong style="color:var(--ink);font-size:13px">📝 Étape 1 — Prompt à copier dans ChatGPT</strong>
           <button class="btn btn-sm btn-p" onclick="copyImportPrompt()">📋 Copier le prompt</button>
         </div>
-        <textarea id="import-prompt-text" readonly rows="10" class="tex" style="font-family:monospace;font-size:11.5px;background:#F8F9FA">Tu es un assistant qui convertit des données vétérinaires Excel en JSON pour l'application VetPro Algérie.
+        <textarea id="import-prompt-text" readonly rows="10" class="tex" style="font-family:monospace;font-size:11.5px;background:#F8F9FA">Tu es un convertisseur de données vétérinaires. Tu reçois des données Excel/texte et tu renvoies UNIQUEMENT du JSON valide. AUCUN texte avant ou après le JSON. PAS de ```json```, PAS de commentaires, PAS d'explications. JUSTE le JSON brut.
 
-Voici les données Excel que je te fournis (clients, animaux, consultations, vaccinations).
+IMPORTANT : Ta réponse DOIT commencer par { et finir par }. Rien d'autre.
 
-Ta tâche : convertis ces données en JSON STRICT au format suivant :
+Format JSON EXACT à respecter :
 
 {
   "clients": [
@@ -2489,14 +2489,18 @@ Ta tâche : convertis ces données en JSON STRICT au format suivant :
   ]
 }
 
-Règles importantes :
+Règles STRICTES :
+- Utilise UNIQUEMENT des guillemets droits " (jamais de guillemets courbes ou typographiques)
 - Si une info manque, mets "" (chaîne vide) ou null, jamais d'inventions
-- Dates clientes au format JJ/MM/AAAA, dates techniques au format AAAA-MM-JJ
+- Dates clientes : JJ/MM/AAAA — Dates techniques : AAAA-MM-JJ
 - Téléphones algériens : 0550, 0661, 0770, 0555, 0699 etc.
 - Espèces : "Chien", "Chat" ou "NAC" uniquement
-- Renvoie UNIQUEMENT le JSON, sans explications, sans markdown ```
+- montant est un NOMBRE (pas une chaîne) : 5000 et non "5000"
+- paiement : "paye", "partiel" ou "impaye" uniquement
+- NE METS PAS de virgule après le dernier élément d'un tableau ou objet
+- RAPPEL : ta réponse est du JSON pur. Commence par { et finis par }. Pas de texte autour.
 
-Voici les données Excel :
+Voici les données à convertir :
 [COLLEZ ICI LE CONTENU DE VOTRE EXCEL OU JOIGNEZ LE FICHIER]</textarea>
       </div>
 
