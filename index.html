@@ -4694,7 +4694,20 @@ function initializePersistentState(){
   replaceArrayContents(CAGES, saved?.cages || defaults.cages);
   replaceArrayContents(DRUGS, saved?.drugs || defaults.drugs);
   replaceArrayContents(ORDOS, saved?.ordos || defaults.ordos);
-  replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
+  const rawHist = saved?.historique || defaults.historique;
+  /* Sanitize traitements: imported data may have string arrays instead of object arrays */
+  rawHist.forEach(function(h){
+    if (Array.isArray(h.traitements)) {
+      h.traitements = h.traitements.map(function(t){
+        if (typeof t === 'string') {
+          var parts = t.split(/[-–—]/);
+          return { medicament: (parts[0]||t).trim(), posologie: parts.slice(1).join('-').trim()||t, duree:'', resultat:'en-cours' };
+        }
+        return t;
+      });
+    }
+  });
+  replaceArrayContents(HISTORIQUE_DATA, rawHist);
   replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
   replaceArrayContents(VACCINE_REMINDERS, saved?.vaccineReminders || defaults.vaccineReminders);
   replaceArrayContents(VACC_HISTORY, saved?.vaccHistory || getDefaultVaccHistory());
@@ -7229,7 +7242,12 @@ function executeImport() {
           dateSortie: null,
           diagnostic: h.diagnostic,
           urgence: h.urgence || 'normal',
-          traitements: h.traitement ? h.traitement.split(/[·\n]/).map(s => s.trim()).filter(Boolean) : [],
+          traitements: h.traitement ? h.traitement.split(/[·;\n]/).map(s => s.trim()).filter(Boolean).map(s => ({
+            medicament: s.split(/[-–—]/)[0]?.trim() || s,
+            posologie: s.split(/[-–—]/).slice(1).join('-').trim() || s,
+            duree: '',
+            resultat: 'en-cours'
+          })) : [],
           traitement: h.traitement || '',
           statutTraitement: 'en-cours',
           resultat: h.resultat || 'stabilisation',
@@ -8323,7 +8341,7 @@ function renderHist(filter) {
         ${h.dateSortie ? `<div style="font-size:10px;color:var(--muted)">Sortie: ${h.dateSortie}</div>` : '<div style="font-size:10px;color:var(--warning)">En hospit.</div>'}
       </td>
       <td style="max-width:160px">
-        <div style="font-size:12px;font-weight:600">${h.diagnostic}</div>
+        <div style="font-size:12px;font-weight:600">${h.diagnostic||'—'}</div>
       </td>
       <td style="max-width:200px">
         ${meds}
@@ -10587,6 +10605,22 @@ function saveAdmission() {
     };
   }
 
+  function sanitizeHistTraitements(histArr){
+    if (!Array.isArray(histArr)) return histArr;
+    histArr.forEach(function(h){
+      if (Array.isArray(h.traitements)) {
+        h.traitements = h.traitements.map(function(t){
+          if (typeof t === 'string') {
+            var parts = t.split(/[-–—]/);
+            return { medicament: (parts[0]||t).trim(), posologie: parts.slice(1).join('-').trim()||t, duree:'', resultat:'en-cours' };
+          }
+          return t;
+        });
+      }
+    });
+    return histArr;
+  }
+
   function applyAppStateSnapshot(saved, defaults){
     replaceArrayContents(CAGES, (saved?.cages?.length ? saved.cages : null) || defaults.cages);
     // Never wipe drug catalog — if saved drugs is empty, use frozen backup catalog with stock=0
@@ -10594,7 +10628,7 @@ function saveAdmission() {
       ? window.__vpDrugsCatalogBackup.map(d => ({ ...d, s: 0 })) : defaults.drugs;
     replaceArrayContents(DRUGS, (saved?.drugs?.length ? saved.drugs : null) || drugsFallback);
     replaceArrayContents(ORDOS, saved?.ordos || defaults.ordos);
-    replaceArrayContents(HISTORIQUE_DATA, saved?.historique || defaults.historique);
+    replaceArrayContents(HISTORIQUE_DATA, sanitizeHistTraitements(saved?.historique || defaults.historique));
     replaceArrayContents(APPOINTMENTS, saved?.appointments || defaults.appointments);
     replaceArrayContents(VACCINE_REMINDERS, saved?.vaccineReminders || defaults.vaccineReminders);
     if (typeof VACC_HISTORY !== 'undefined') replaceArrayContents(VACC_HISTORY, saved?.vaccHistory || getDefaultVaccHistory());
