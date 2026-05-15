@@ -21751,34 +21751,37 @@ function saveAdmission() {
       window.__aiSelectedPatient=ctx;
     });
 
-    /* Templates */
-    const tplBar=document.createElement('div');
-    tplBar.className='ai-templates';
-    const templates=[
-      {icon:'💊',label:'Calculer dosage',prompt:'Calculer le dosage de [médicament] pour ce patient'},
-      {icon:'🔍',label:'Diagnostic diff.',prompt:'Diagnostic différentiel pour les symptômes suivants : '},
-      {icon:'📋',label:'Plan traitement',prompt:'Plan de traitement pour '},
-      {icon:'🚨',label:'Urgence',prompt:'Protocole d\'urgence pour '},
-      {icon:'📊',label:'Examens',prompt:'Examens complémentaires recommandés pour '},
-    ];
-    templates.forEach(t=>{
-      const btn=document.createElement('button');
-      btn.className='ai-tpl-btn';
-      btn.textContent=t.icon+' '+t.label;
-      btn.addEventListener('click',function(){
-        const textarea=aiPage.querySelector('textarea')||aiPage.querySelector('input[type="text"]');
-        if(textarea){textarea.value=t.prompt;textarea.focus();textarea.dispatchEvent(new Event('input',{bubbles:true}))}
+    /* Templates — only create once */
+    if(!aiPage.querySelector('.ai-templates')){
+      const tplBar=document.createElement('div');
+      tplBar.className='ai-templates';
+      const templates=[
+        {icon:'💊',label:'Calculer dosage',prompt:'Calculer le dosage de [médicament] pour ce patient'},
+        {icon:'🔍',label:'Diagnostic diff.',prompt:'Diagnostic différentiel pour les symptômes suivants : '},
+        {icon:'📋',label:'Plan traitement',prompt:'Plan de traitement pour '},
+        {icon:'🚨',label:'Urgence',prompt:'Protocole d\'urgence pour '},
+        {icon:'📊',label:'Examens',prompt:'Examens complémentaires recommandés pour '},
+      ];
+      templates.forEach(t=>{
+        const btn=document.createElement('button');
+        btn.className='ai-tpl-btn';
+        btn.textContent=t.icon+' '+t.label;
+        btn.addEventListener('click',function(){
+          const textarea=aiPage.querySelector('textarea')||aiPage.querySelector('input[type="text"]');
+          if(textarea){textarea.value=t.prompt;textarea.focus();textarea.dispatchEvent(new Event('input',{bubbles:true}))}
+        });
+        tplBar.appendChild(btn);
       });
-      tplBar.appendChild(btn);
-    });
-    ctxBar.parentNode.insertBefore(tplBar,ctxBar.nextSibling);
+      ctxBar.parentNode.insertBefore(tplBar,ctxBar.nextSibling);
+    }
 
-    /* Disclaimer */
-    const disclaimer=document.createElement('div');
-    disclaimer.className='ai-disclaimer';
-    disclaimer.textContent='⚠️ Les réponses IA sont indicatives. La décision clinique reste celle du vétérinaire.';
-    /* Append at bottom of AI page */
-    aiPage.appendChild(disclaimer);
+    /* Disclaimer — only create once */
+    if(!aiPage.querySelector('.ai-disclaimer')){
+      const disclaimer=document.createElement('div');
+      disclaimer.className='ai-disclaimer';
+      disclaimer.textContent='⚠️ Les réponses IA sont indicatives. La décision clinique reste celle du vétérinaire.';
+      aiPage.appendChild(disclaimer);
+    }
   }
 
   function getAnimalEmoji(species){
