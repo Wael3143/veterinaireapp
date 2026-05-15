@@ -5643,7 +5643,7 @@ function renderDrugs(g,s){
             <span class="drug-group" style="background:${d.c}20;color:${d.c};border-color:${d.c}40">${d.g}</span>
             <span class="drug-group" style="background:var(--surface2);color:var(--muted);border-color:var(--brd)">${d.f} · ${d.v}</span>
           </div>
-          <div style="font-size:11px;color:var(--muted);line-height:1.5">${d.poso.substring(0,65)}…</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.5">${(d.poso||'').substring(0,65)}…</div>
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:10px">
           <div style="font-weight:800;color:var(--forest);font-size:13.5px">${d.p.toLocaleString()} DA</div>
@@ -8273,8 +8273,8 @@ function renderHist(filter) {
   const urgF   = document.getElementById('hist-urgence')?.value || '';
 
   const filtered = HISTORIQUE_DATA.filter(h => {
-    const matchQ    = !q || h.animal.toLowerCase().includes(q) || h.client.toLowerCase().includes(q) ||
-                      h.diagnostic.toLowerCase().includes(q) || h.traitements.some(t => t.medicament.toLowerCase().includes(q));
+    const matchQ    = !q || (h.animal||'').toLowerCase().includes(q) || (h.client||'').toLowerCase().includes(q) ||
+                      (h.diagnostic||'').toLowerCase().includes(q) || (Array.isArray(h.traitements) ? h.traitements.some(t => (t.medicament||'').toLowerCase().includes(q)) : (h.traitement||'').toLowerCase().includes(q));
     const matchEsp  = !espF || h.espece === espF;
     const matchStat = !statF || h.statutTraitement === statF;
     const matchUrg  = !urgF || h.urgence === urgF;
@@ -8306,13 +8306,17 @@ function renderHist(filter) {
   };
 
   tbody.innerHTML = filtered.map(h => {
-    const meds = h.traitements.slice(0,2).map(t => `<div style="font-size:10.5px;padding:2px 0"><strong>${t.medicament}</strong> — ${t.posologie.substring(0,40)}${t.posologie.length>40?'…':''}</div>`).join('');
-    const moreCount = h.traitements.length - 2;
+    const traitArr = Array.isArray(h.traitements) ? h.traitements : [];
+    const meds = traitArr.slice(0,2).map(t => {
+      const poso = t.posologie || t.traitement || '';
+      return `<div style="font-size:10.5px;padding:2px 0"><strong>${t.medicament || '—'}</strong> — ${poso.substring(0,40)}${poso.length>40?'…':''}</div>`;
+    }).join('') || (h.traitement ? `<div style="font-size:10.5px;padding:2px 0">${(h.traitement||'').substring(0,60)}${(h.traitement||'').length>60?'…':''}</div>` : '');
+    const moreCount = traitArr.length - 2;
     return `<tr style="cursor:pointer" onclick="showHistDetail('${h.id}')">
       <td>
-        <div style="font-weight:700;font-size:13px">${h.animal}</div>
-        <div style="font-size:10.5px;color:var(--muted)">${h.client} · ${h.race}</div>
-        <div style="font-size:10px;color:var(--muted)">${h.poids}</div>
+        <div style="font-weight:700;font-size:13px">${h.animal||'?'}</div>
+        <div style="font-size:10.5px;color:var(--muted)">${h.client||'?'} · ${h.race||''}</div>
+        <div style="font-size:10px;color:var(--muted)">${h.poids||''}</div>
       </td>
       <td>
         <div style="font-size:12px;font-weight:600">${h.date}</div>
@@ -8328,7 +8332,7 @@ function renderHist(filter) {
       <td>${traitBadge[h.statutTraitement] || ''}</td>
       <td style="font-size:11.5px">${resultBadge[h.resultat] || ''}</td>
       <td>${urgBadge[h.urgence] || ''}</td>
-      <td><strong>${h.montant.toLocaleString()} DA</strong></td>
+      <td><strong>${(h.montant||0).toLocaleString()} DA</strong></td>
       <td>${payBadge[h.paiement] || ''}</td>
       <td>
         <div style="display:flex;gap:5px">
@@ -8353,13 +8357,13 @@ function showHistDetail(id) {
   body.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap;gap:10px">
       <div>
-        <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink)">${h.animal} <span style="font-size:14px;color:var(--muted)">— ${h.race} · ${h.age} · ${h.poids}</span></div>
-        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">👤 ${h.client} · 📞 ${h.tel}</div>
-        <div style="font-size:12.5px;color:var(--ink);margin-top:4px;font-weight:600">📋 ${h.diagnostic}</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink)">${h.animal||'?'} <span style="font-size:14px;color:var(--muted)">— ${h.race||''} · ${h.age||''} · ${h.poids||''}</span></div>
+        <div style="font-size:12.5px;color:var(--muted);margin-top:3px">👤 ${h.client||'?'} · 📞 ${h.tel||'—'}</div>
+        <div style="font-size:12.5px;color:var(--ink);margin-top:4px;font-weight:600">📋 ${h.diagnostic||'—'}</div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <div style="background:${rbg};color:${rfc};border-radius:10px;padding:5px 12px;font-size:11px;font-weight:700">
-          ${{'guerison':'💚 Guérison complète','amelioration':'🟡 En amélioration','stabilisation':'🔵 Stabilisé','palliatif':'🟠 Palliatif','reference':'⚫ Référé'}[h.resultat]}
+          ${{'guerison':'💚 Guérison complète','amelioration':'🟡 En amélioration','stabilisation':'🔵 Stabilisé','palliatif':'🟠 Palliatif','reference':'⚫ Référé'}[h.resultat] || h.resultat || '—'}
         </div>
         ${h.vaccAJour ? '<span class="bdg bdg-n">💉 Vaccins à jour</span>' : '<span class="bdg bdg-c">💉 Vaccins non à jour</span>'}
       </div>
@@ -8368,40 +8372,40 @@ function showHistDetail(id) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--brd)">
-          💊 Traitements administrés (${h.traitements.length})
+          💊 Traitements administrés (${(Array.isArray(h.traitements) ? h.traitements : []).length || (h.traitement ? 1 : 0)})
         </div>
-        ${h.traitements.map((t,i) => `
+        ${Array.isArray(h.traitements) && h.traitements.length ? h.traitements.map((t,i) => `
           <div style="display:grid;grid-template-columns:auto 1fr;gap:10px;padding:9px 0;border-bottom:1px solid var(--surface2)">
             <div style="width:22px;height:22px;background:var(--forest);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${i+1}</div>
             <div>
-              <div style="font-weight:700;font-size:12.5px">${t.medicament}</div>
-              <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${t.posologie}</div>
+              <div style="font-weight:700;font-size:12.5px">${t.medicament||'—'}</div>
+              <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${t.posologie||'—'}</div>
               <div style="display:flex;gap:6px;margin-top:4px">
-                <span style="font-size:10px;background:var(--surface2);color:var(--muted);padding:2px 7px;border-radius:7px">⏳ ${t.duree}</span>
+                <span style="font-size:10px;background:var(--surface2);color:var(--muted);padding:2px 7px;border-radius:7px">⏳ ${t.duree||'—'}</span>
                 <span style="font-size:10px;padding:2px 7px;border-radius:7px;background:${
                   t.resultat==='efficace'?'#D5F5E3':t.resultat==='guerison'?'#D5F5E3':t.resultat==='preventif'?'#D6EAF8':'#FEF9E7'
                 };color:${
                   t.resultat==='efficace'?'#1A5E35':t.resultat==='guerison'?'#1A5E35':t.resultat==='preventif'?'#1A5276':'#784212'
                 }">
-                  ${{efficace:'✅ Efficace',guerison:'✅ Guérison',preventif:'🛡️ Préventif',palliatif:'🟠 Palliatif',stabilisation:'🔵 Stable','en-cours':'⏳ En cours'}[t.resultat]||t.resultat}
+                  ${{efficace:'✅ Efficace',guerison:'✅ Guérison',preventif:'🛡️ Préventif',palliatif:'🟠 Palliatif',stabilisation:'🔵 Stable','en-cours':'⏳ En cours'}[t.resultat]||t.resultat||'—'}
                 </span>
               </div>
             </div>
-          </div>`).join('')}
+          </div>`).join('') : (h.traitement ? `<div style="padding:9px 0;font-size:12px">${h.traitement}</div>` : '<div style="padding:9px 0;font-size:12px;color:var(--muted)">Aucun traitement renseigné</div>')}
       </div>
       <div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--brd)">
           📋 Notes cliniques
         </div>
-        <div style="font-size:12.5px;line-height:1.7;color:var(--ink);margin-bottom:12px">${h.notesCliniques}</div>
+        <div style="font-size:12.5px;line-height:1.7;color:var(--ink);margin-bottom:12px">${h.notesCliniques||'—'}</div>
         <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">
           🏠 Conseils à la sortie
         </div>
-        <div style="font-size:12.5px;line-height:1.7;color:var(--ink)">${h.conseilsSortie}</div>
-        <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:10px;display:flex;justify-content:space-between;font-size:12px">
-          <div><strong>Montant :</strong> ${h.montant.toLocaleString()} DA</div>
-          <div><strong>Paiement :</strong> ${{paye:'✅ Payé',partiel:'⚠️ Partiel',impaye:'❌ Impayé'}[h.paiement]}</div>
-          <div><strong>RDV :</strong> ${h.rdv}</div>
+        <div style="font-size:12.5px;line-height:1.7;color:var(--ink)">${h.conseilsSortie||'—'}</div>
+        <div style="margin-top:12px;padding:10px;background:var(--surface2);border-radius:10px;display:flex;justify-content:space-between;font-size:12px;flex-wrap:wrap;gap:8px">
+          <div><strong>Montant :</strong> ${(h.montant||0).toLocaleString()} DA</div>
+          <div><strong>Paiement :</strong> ${{paye:'✅ Payé',partiel:'⚠️ Partiel',impaye:'❌ Impayé',gratuit:'🆓 Gratuit'}[h.paiement]||h.paiement||'—'}</div>
+          <div><strong>RDV :</strong> ${h.rdv||'—'}</div>
         </div>
       </div>
     </div>
