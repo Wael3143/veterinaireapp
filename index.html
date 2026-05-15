@@ -6225,10 +6225,25 @@ appendTyping();aiLoading=true;
 var btn=document.getElementById("ai-btn");btn.disabled=true;btn.textContent="⏳";
 try{
   var ctxParts=[];
-  if(espece)ctxParts.push("Espèce: "+espece);
-  if(poids)ctxParts.push("Poids: "+poids+"kg");
-  if(age)ctxParts.push("Âge: "+age);
-  if(race)ctxParts.push("Race: "+race);
+  /* Use selected patient from AI sidebar if available */
+  var selPat=window.__aiSelectedPatient;
+  if(selPat){
+    if(selPat.species)ctxParts.push("Espece: "+selPat.species);
+    if(selPat.breed)ctxParts.push("Race: "+selPat.breed);
+    if(selPat.weight)ctxParts.push("Poids: "+selPat.weight+"kg");
+    if(selPat.age)ctxParts.push("Age: "+selPat.age);
+    if(selPat.name)ctxParts.push("Nom: "+selPat.name);
+    if(selPat.sex)ctxParts.push("Sexe: "+selPat.sex);
+    if(selPat.history&&selPat.history.length){
+      var histLines=selPat.history.map(function(h){return(h.date||"?")+": "+(h.diagnostic||"?")+(h.traitement?" - Traitement: "+h.traitement:"");});
+      ctxParts.push("Historique clinique:\n"+histLines.join("\n"));
+    }
+  } else {
+    if(espece)ctxParts.push("Espece: "+espece);
+    if(poids)ctxParts.push("Poids: "+poids+"kg");
+    if(age)ctxParts.push("Age: "+age);
+    if(race)ctxParts.push("Race: "+race);
+  }
   var ctx=ctxParts.join(", ");
   var sys=ctx?SYS+"\n\nCONTEXTE PATIENT : "+ctx:SYS;
   var messages=[{role:"system",content:sys}].concat(chatHist.slice(-8));
