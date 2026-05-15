@@ -8338,7 +8338,7 @@ function renderHist(filter) {
       </td>
       <td>
         <div style="font-size:12px;font-weight:600">${h.date}</div>
-        ${h.dateSortie ? `<div style="font-size:10px;color:var(--muted)">Sortie: ${h.dateSortie}</div>` : '<div style="font-size:10px;color:var(--warning)">En hospit.</div>'}
+        ${h.dateSortie ? `<div style="font-size:10px;color:var(--muted)">Sortie: ${h.dateSortie}</div>` : (h.hospitalise ? '<div style="font-size:10px;color:var(--warning)">En hospit.</div>' : '')}
       </td>
       <td style="max-width:160px">
         <div style="font-size:12px;font-weight:600">${h.diagnostic||'—'}</div>
