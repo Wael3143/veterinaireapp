@@ -3233,17 +3233,14 @@ Voici les données Excel :
   <div class="modal" style="max-width:460px">
     <div class="modal-hdr"><div class="modal-title">📅 Nouveau rendez-vous</div><button class="btn-ico" onclick="closeModal('modal-rdv')">✕</button></div>
     <div class="fg"><label class="lbl">Animal *</label><select class="sel" id="rdv-animal"></select></div>
+    <button type="button" class="btn btn-ghost" id="rdv-toggle-new-client" style="width:100%;margin-bottom:8px;font-size:13px" onclick="var w=document.getElementById('rdv-new-client-wrap');if(w){w.style.display=w.style.display==='none'?'block':'none';if(w.style.display==='block'){w.scrollIntoView({behavior:'smooth',block:'nearest'});var s=document.getElementById('rdv-animal');if(s)s.value='nouveau'}}">➕ Nouveau client & animal</button>
     <!-- Nouveau client inline -->
     <div id="rdv-new-client-wrap" style="display:none;border:1px solid var(--sage);border-radius:10px;padding:12px;background:rgba(74,124,89,.04)">
       <div style="font-weight:700;font-size:12px;color:var(--sage);margin-bottom:8px">➕ Nouveau client & animal</div>
-      <div class="row2">
-        <div class="fg"><label class="lbl">Nom client *</label><input class="inp" id="rdv-nc-name" placeholder="Benali Ahmed"/></div>
-        <div class="fg"><label class="lbl">Téléphone</label><input class="inp" id="rdv-nc-phone" placeholder="0550 000 000"/></div>
-      </div>
-      <div class="row2">
-        <div class="fg"><label class="lbl">Nom animal *</label><input class="inp" id="rdv-nc-animal" placeholder="Rex"/></div>
-        <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="rdv-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="NAC">🐾 NAC</option></select></div>
-      </div>
+      <div class="fg" style="margin-bottom:8px"><label class="lbl">Nom client *</label><input class="inp" id="rdv-nc-name" placeholder="Benali Ahmed"/></div>
+      <div class="fg" style="margin-bottom:8px"><label class="lbl">Téléphone</label><input class="inp" id="rdv-nc-phone" placeholder="0550 000 000"/></div>
+      <div class="fg" style="margin-bottom:8px"><label class="lbl">Nom animal *</label><input class="inp" id="rdv-nc-animal" placeholder="Rex"/></div>
+      <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="rdv-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="NAC">🐾 NAC</option></select></div>
     </div>
     <div class="row2"><div class="fg"><label class="lbl">Date *</label><input class="inp" type="date" id="rdv-date"/></div><div class="fg"><label class="lbl">Heure *</label><input class="inp" type="time" id="rdv-time"/></div></div>
     <div class="fg"><label class="lbl">Type</label><select class="sel" id="rdv-type"><option>Consultation</option><option>Contrôle</option><option>Post-opératoire</option><option>Vaccination</option><option>Vermifugation</option></select></div>
@@ -4193,6 +4190,11 @@ function populatePatientSelects(){
       const wrap = document.getElementById('rdv-new-client-wrap');
       if (wrap) wrap.style.display = this.value === 'nouveau' ? 'block' : 'none';
     };
+    /* If "nouveau" is the only/default option, show the form immediately */
+    if (rdvSelect.value === 'nouveau') {
+      const wrap = document.getElementById('rdv-new-client-wrap');
+      if (wrap) wrap.style.display = 'block';
+    }
   }
   // Bilan animal select
   const bilanSelect = document.getElementById('bilan-animal');
@@ -8879,11 +8881,11 @@ function saveAdmission() {
         '<strong>Éligibilité professionnelle.</strong> L\'accès complet à VetPro est réservé aux docteurs vétérinaires, aux structures autorisées et, après validation, aux stagiaires ou étudiants encadrés. VetPro peut demander une vérification professionnelle ou académique avant ou après l\'activation du compte.',
         '<strong>Approbation manuelle des comptes.</strong> Toute inscription reste en attente tant qu\'elle n\'a pas été approuvée par l\'administration VetPro. VetPro peut refuser, suspendre ou supprimer un accès à tout moment en cas d\'information inexacte, incomplète, trompeuse ou contraire à l\'éthique professionnelle.',
         '<strong>Usage autorisé.</strong> La plateforme doit être utilisée exclusivement dans un cadre vétérinaire, éducatif, administratif ou clinique licite. Il est interdit de céder son accès, usurper l\'identité d\'un tiers, contourner les contrôles de sécurité, extraire massivement les données ou perturber le service.',
-        '<strong>Données et consentement.</strong> En créant un compte, l\'utilisateur autorise VetPro à traiter ses données professionnelles, coordonnées, documents justificatifs, informations liées aux rendez-vous, rappels et communications par email, téléphone ou SMS pour l\'exploitation, la sécurité, l\'assistance, la facturation, l\'information produit et la conformité.',
+        '<strong>Données et consentement.</strong> En créant un compte, l\'utilisateur autorise VetPro à traiter ses données professionnelles et coordonnées uniquement pour l\'authentification, les rappels de rendez-vous et le fonctionnement technique de la plateforme. <strong>VetPro n\'a aucun accès aux données cliniques, financières, aux historiques de cas, aux montants facturés ni à toute autre donnée métier saisie par l\'utilisateur.</strong> Ces données sont chiffrées et stockées de manière sécurisée ; seul l\'utilisateur et les personnes qu\'il autorise peuvent y accéder. VetPro respecte la loi algérienne n° 18-07 du 10 juin 2018 relative à la protection des personnes physiques dans le traitement des données à caractère personnel, ainsi que ses textes d\'application. L\'utilisateur dispose d\'un droit d\'accès, de rectification, d\'opposition et de suppression de ses données conformément à cette loi.',
         '<strong>Documents requis.</strong> VetPro peut demander à tout moment un diplôme vétérinaire, une pièce d\'identité, une attestation professionnelle, une preuve académique ou tout document justificatif complémentaire. L\'absence de réponse ou la fourniture de pièces non valides peut entraîner un blocage immédiat du compte.',
         '<strong>Responsabilité clinique.</strong> Les contenus, suggestions, statistiques, protocoles, rappels et aides affichés dans VetPro restent des outils d\'assistance. Les décisions médicales, diagnostiques, thérapeutiques, juridiques et déontologiques relèvent exclusivement du praticien ou de la structure utilisatrice.',
         '<strong>Propriété intellectuelle.</strong> Le design, la structure, les textes, bases, interfaces, modules, marques et éléments visuels VetPro demeurent protégés. Toute reproduction, revente, extraction, duplication fonctionnelle ou réutilisation non autorisée est interdite.',
-        '<strong>Droit applicable.</strong> L\'utilisateur s\'engage à respecter les lois et règlements applicables en Algérie, notamment ceux relatifs à l\'exercice vétérinaire, à la santé animale, à la confidentialité et à l\'usage des données professionnelles.'
+        '<strong>Droit applicable.</strong> L\'utilisateur s\'engage à respecter les lois et règlements applicables en Algérie, notamment la loi n° 18-07 du 10 juin 2018 relative à la protection des données à caractère personnel, les textes relatifs à l\'exercice vétérinaire, à la santé animale et à la confidentialité des données professionnelles. Tout litige relève de la compétence des juridictions algériennes.'
       ]
     },
     en: {
@@ -8893,11 +8895,11 @@ function saveAdmission() {
         '<strong>Professional eligibility.</strong> Full access is reserved for licensed veterinarians, authorized veterinary structures and, after validation, supervised trainees or students. VetPro may request professional or academic verification before or after account activation.',
         '<strong>Manual account approval.</strong> Every registration remains pending until approved by VetPro administration. VetPro may refuse, suspend or revoke access at any time if submitted information is false, incomplete, misleading or inconsistent with professional ethics.',
         '<strong>Authorized use.</strong> The platform may only be used for lawful veterinary, educational, administrative or clinical purposes. Sharing credentials, impersonation, bypassing security, scraping data or disrupting the service is prohibited.',
-        '<strong>Data and consent.</strong> By creating an account, the user authorizes VetPro to process professional data, contact details, supporting documents, appointment information, reminders and communications by email, phone or SMS for operations, security, support, billing, product information and compliance.',
+        '<strong>Data and consent.</strong> By creating an account, the user authorizes VetPro to process professional data and contact details solely for authentication, appointment reminders and platform operation. <strong>VetPro has no access to clinical data, financial records, case histories, invoiced amounts or any other business data entered by the user.</strong> This data is encrypted and securely stored; only the user and persons they authorize may access it. VetPro complies with Algerian Law No. 18-07 of June 10, 2018 on the protection of natural persons in the processing of personal data, and its implementing regulations. Users have the right to access, rectify, object to and delete their data in accordance with this law.',
         '<strong>Required documents.</strong> VetPro may request a veterinary diploma, identity document, professional attestation, student proof or any supporting record at any time. Missing or invalid documents may lead to immediate account restriction.',
         '<strong>Clinical responsibility.</strong> All insights, reminders, protocols, statistics and assistance features remain support tools only. Medical, diagnostic, therapeutic, legal and ethical decisions remain the sole responsibility of the practitioner or clinic.',
         '<strong>Intellectual property.</strong> VetPro design, structure, texts, interfaces, modules, marks and visual assets remain protected. Unauthorized reproduction, resale, extraction, cloning or reuse is prohibited.',
-        '<strong>Applicable law.</strong> Users agree to comply with all laws and regulations applicable in Algeria, especially those governing veterinary practice, animal health, confidentiality and use of professional data.'
+        '<strong>Applicable law.</strong> Users agree to comply with all laws and regulations applicable in Algeria, including Law No. 18-07 of June 10, 2018 on the protection of personal data, regulations governing veterinary practice, animal health and the confidentiality of professional data. Any dispute falls under the jurisdiction of Algerian courts.'
       ]
     },
     ar: {
@@ -8907,11 +8909,11 @@ function saveAdmission() {
         '<strong>الأهلية المهنية.</strong> الوصول الكامل مخصص للأطباء البيطريين والجهات المرخصة. يجب على كل طلب تسجيل تقديم رقم وطني ساري للتسجيل البيطري. أما الطلبة والمتربصون فعليهم تقديم بطاقة طالب أو وثيقة مماثلة ويخضعون لموافقة يدوية.',
         '<strong>الموافقة اليدوية.</strong> يبقى كل حساب جديد في حالة انتظار إلى غاية الموافقة عليه من إدارة VetPro. ويحق لـ VetPro رفض أو تعليق أو سحب الوصول عند وجود معلومات ناقصة أو خاطئة أو مضللة أو مخالفة لأخلاقيات المهنة.',
         '<strong>الاستخدام المسموح.</strong> يجب استعمال المنصة فقط لأغراض بيطرية أو تعليمية أو إدارية أو سريرية مشروعة. يمنع مشاركة الحساب أو انتحال الهوية أو تجاوز وسائل الحماية أو استخراج البيانات جماعيا أو تعطيل الخدمة.',
-        '<strong>البيانات والموافقة.</strong> بإنشاء الحساب يوافق المستخدم على معالجة بياناته المهنية ووسائل الاتصال والوثائق المرفوعة ومعلومات المواعيد والتذكيرات ورسائل البريد والهاتف وSMS لأغراض التشغيل والأمان والدعم والفوترة والإعلام والامتثال.',
+        '<strong>البيانات والموافقة.</strong> بإنشاء الحساب يوافق المستخدم على معالجة بياناته المهنية ووسائل الاتصال فقط لأغراض المصادقة وتذكيرات المواعيد والتشغيل التقني للمنصة. <strong>لا تملك VetPro أي صلاحية للاطلاع على البيانات السريرية أو المالية أو سجلات الحالات أو المبالغ المفوترة أو أي بيانات مهنية أخرى يدخلها المستخدم.</strong> تُشفَّر هذه البيانات وتُخزَّن بشكل آمن ولا يمكن الوصول إليها إلا من طرف المستخدم والأشخاص الذين يأذن لهم. تلتزم VetPro بالقانون الجزائري رقم 18-07 المؤرخ في 10 جوان 2018 المتعلق بحماية الأشخاص الطبيعيين في مجال معالجة المعطيات ذات الطابع الشخصي ونصوصه التطبيقية. للمستخدم حق الوصول والتصحيح والاعتراض والحذف وفقاً لهذا القانون.',
         '<strong>الوثائق المطلوبة.</strong> يمكن لـ VetPro طلب شهادة الطب البيطري أو رقم التسجيل الوطني أو وثيقة الهوية أو بطاقة الطالب أو أي وثيقة داعمة في أي وقت. ويجوز تقييد الحساب فورا عند غياب الوثائق أو عدم صحتها.',
         '<strong>المسؤولية السريرية.</strong> كل الاقتراحات والإحصاءات والبروتوكولات والتنبيهات أدوات مساعدة فقط. وتبقى القرارات الطبية والتشخيصية والعلاجية والقانونية والأخلاقية مسؤولية الطبيب أو العيادة حصرا.',
         '<strong>الملكية الفكرية.</strong> يبقى تصميم VetPro وبنيته ونصوصه وواجهاته ووحداته وعلاماته وعناصره البصرية محمية. ويمنع النسخ أو البيع أو الاستنساخ أو إعادة الاستخدام دون ترخيص.',
-        '<strong>القانون الواجب التطبيق.</strong> يلتزم المستخدم باحترام القوانين والتنظيمات المطبقة في الجزائر، خاصة ما يتعلق بممارسة الطب البيطري وصحة الحيوان والسرية واستعمال البيانات المهنية.'
+        '<strong>القانون الواجب التطبيق.</strong> يلتزم المستخدم باحترام القوانين والتنظيمات المطبقة في الجزائر، بما فيها القانون رقم 18-07 المؤرخ في 10 جوان 2018 المتعلق بحماية المعطيات ذات الطابع الشخصي، والنصوص المنظمة لممارسة الطب البيطري وصحة الحيوان وسرية البيانات المهنية. يختص القضاء الجزائري بالنظر في أي نزاع.'
       ]
     }
   };
@@ -11843,17 +11845,63 @@ function saveAdmission() {
     }
     if (Notification.permission !== 'granted') return;
     const now = new Date();
-    const tomorrow = new Date(now);
-    tomorrow.setDate(now.getDate() + 1);
-    const tomorrowIso = tomorrow.toISOString().slice(0, 10);
-    APPOINTMENTS.filter(item => item.date === tomorrowIso).forEach(item => {
-      const key = `vetpro-rdv-notified:${item.id}:${tomorrowIso}`;
-      if (localStorage.getItem(key)) return;
-      new Notification('Rappel rendez-vous VetPro', {
-        body: `${item.animal} - ${item.owner} demain à ${item.time}`,
+
+    /* Check 1 day before and 7 days before */
+    const offsets = [
+      { days: 1, label: 'demain', tag: '1d' },
+      { days: 7, label: 'dans 1 semaine', tag: '7d' }
+    ];
+
+    offsets.forEach(({ days, label, tag }) => {
+      const target = new Date(now);
+      target.setDate(now.getDate() + days);
+      const targetIso = target.toISOString().slice(0, 10);
+
+      APPOINTMENTS.filter(item => item.date === targetIso).forEach(item => {
+        const key = `vetpro-rdv-notified:${item.id}:${targetIso}:${tag}`;
+        if (localStorage.getItem(key)) return;
+        new Notification('Rappel rendez-vous VetPro', {
+          body: `${item.animal || '?'} - ${item.owner || '?'} ${label} à ${item.time || '?'}`,
+          icon: '🐾'
+        });
+        localStorage.setItem(key, '1');
       });
-      localStorage.setItem(key, '1');
     });
+
+    /* Also add in-app toast notifications for upcoming appointments */
+    const inAppOffsets = [1, 7];
+    inAppOffsets.forEach(days => {
+      const target = new Date(now);
+      target.setDate(now.getDate() + days);
+      const targetIso = target.toISOString().slice(0, 10);
+      const label = days === 1 ? 'demain' : 'dans 7 jours';
+      const upcoming = APPOINTMENTS.filter(item => item.date === targetIso);
+      if (upcoming.length && typeof toast === 'function') {
+        const toastKey = `vetpro-rdv-toast:${targetIso}:${days}d:${now.toISOString().slice(0,10)}`;
+        if (!localStorage.getItem(toastKey)) {
+          const names = upcoming.slice(0, 3).map(a => a.animal || a.owner || '?').join(', ');
+          toast(`📅 ${upcoming.length} RDV ${label}: ${names}${upcoming.length > 3 ? '...' : ''}`);
+          localStorage.setItem(toastKey, '1');
+        }
+      }
+    });
+
+    /* Add notification items to the notification center if present */
+    if (typeof window.addNotification === 'function') {
+      inAppOffsets.forEach(days => {
+        const target = new Date(now);
+        target.setDate(now.getDate() + days);
+        const targetIso = target.toISOString().slice(0, 10);
+        const label = days === 1 ? 'Demain' : 'Dans 7 jours';
+        APPOINTMENTS.filter(item => item.date === targetIso).forEach(item => {
+          const nKey = `vetpro-rdv-notifcenter:${item.id}:${targetIso}:${days}d`;
+          if (!localStorage.getItem(nKey)) {
+            window.addNotification(`📅 ${label}: ${item.animal || '?'} (${item.owner || '?'}) à ${item.time || '?'} — ${item.motif || ''}`);
+            localStorage.setItem(nKey, '1');
+          }
+        });
+      });
+    }
   }
 
   function ensureSupportEmail(){
