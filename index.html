@@ -1487,20 +1487,13 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="ibox ibox-b" style="margin-top:12px;margin-bottom:0">📧 Clients avec email → rappel automatique 48h avant le RDV</div>
     </div>
     <div>
-      <div class="card" style="margin-bottom:16px">
+      <div class="card" style="margin-bottom:16px" id="clients-payment-card">
         <div class="card-title">💰 Suivi paiements</div>
-        <div style="display:flex;flex-direction:column;gap:9px">
-          <div style="background:#D5F5E3;border-radius:12px;padding:12px 15px"><div style="font-weight:700;color:#1A5E35;font-size:13px">✅ Payés — 95 500 DA</div><div style="font-size:11px;color:var(--muted);margin-top:2px">4 consultations réglées</div></div>
-          <div style="background:#FEF9E7;border-radius:12px;padding:12px 15px"><div style="font-weight:700;color:#784212;font-size:13px">⚠️ Partiels — 8 400 DA restants</div><div style="font-size:11px;color:var(--muted);margin-top:2px">2 consultations · Relance prévue</div></div>
-          <div style="background:#FDEDEC;border-radius:12px;padding:12px 15px"><div style="font-weight:700;color:#922B21;font-size:13px">❌ Non payés — 6 500 DA</div><div style="font-size:11px;color:var(--muted);margin-top:2px">Misty / Kaci Fatima</div></div>
-        </div>
+        <div id="clients-payment-body" style="display:flex;flex-direction:column;gap:9px"></div>
       </div>
-      <div class="card">
+      <div class="card" id="clients-species-card">
         <div class="card-title">📊 Répartition espèces</div>
-        <div style="display:flex;flex-direction:column;gap:10px">
-          <div><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>🐕 Chiens</span><span style="font-weight:700;color:var(--info)">62%</span></div><div class="pbar"><div class="stock-bar-fill pbar-fill" style="width:62%;background:var(--info)"></div></div></div>
-          <div><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>🐈 Chats</span><span style="font-weight:700;color:#6B21A8">38%</span></div><div class="pbar"><div class="stock-bar-fill pbar-fill" style="width:38%;background:#6B21A8"></div></div></div>
-        </div>
+        <div id="clients-species-body" style="display:flex;flex-direction:column;gap:10px"></div>
       </div>
     </div>
   </div>
@@ -4448,7 +4441,85 @@ function renderClientsPage(){
       <td><button class="btn-ico">›</button></td>
     </tr>
   `).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Aucun client trouvé</td></tr>';
+  renderClientsSidebar();
 }
+
+function renderClientsSidebar(){
+  const hist = (typeof HISTORIQUE_DATA !== 'undefined') ? HISTORIQUE_DATA : [];
+  const patients = (typeof PATIENTS !== 'undefined') ? PATIENTS : [];
+
+  // ── Payment tracking ──
+  let paidTotal = 0, paidCount = 0;
+  let partialTotal = 0, partialCount = 0, partialNames = [];
+  let unpaidTotal = 0, unpaidCount = 0, unpaidNames = [];
+
+  hist.forEach(h => {
+    const amount = parseInt(h.montant, 10) || 0;
+    const status = (h.paiement || '').toLowerCase();
+    if (status === 'paye' || status === 'payé' || status === 'gratuit') {
+      paidTotal += amount; paidCount++;
+    } else if (status === 'partiel') {
+      partialTotal += amount; partialCount++;
+      if (h.client && !partialNames.includes(h.client)) partialNames.push(h.client);
+    } else {
+      unpaidTotal += amount; unpaidCount++;
+      if (h.client && !unpaidNames.includes(h.client)) unpaidNames.push(h.client);
+    }
+  });
+
+  const payBody = document.getElementById('clients-payment-body');
+  if (payBody) {
+    payBody.innerHTML = `
+      <div style="background:#D5F5E3;border-radius:12px;padding:12px 15px">
+        <div style="font-weight:700;color:#1A5E35;font-size:13px">✅ Payés — ${paidTotal.toLocaleString('fr-FR')} DA</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${paidCount} consultation${paidCount>1?'s':''} réglée${paidCount>1?'s':''}</div>
+      </div>
+      <div style="background:#FEF9E7;border-radius:12px;padding:12px 15px">
+        <div style="font-weight:700;color:#784212;font-size:13px">⚠️ Partiels — ${partialTotal.toLocaleString('fr-FR')} DA restants</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${partialCount} consultation${partialCount>1?'s':''} ${partialNames.length ? '· ' + partialNames.slice(0,3).join(', ') : ''}</div>
+      </div>
+      <div style="background:#FDEDEC;border-radius:12px;padding:12px 15px">
+        <div style="font-weight:700;color:#922B21;font-size:13px">❌ Non payés — ${unpaidTotal.toLocaleString('fr-FR')} DA</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${unpaidNames.length ? unpaidNames.slice(0,3).join(' / ') : 'Aucun'}</div>
+      </div>
+    `;
+  }
+
+  // ── Species distribution ──
+  const speciesCounts = {};
+  const speciesEmoji = { chien: '🐕', chat: '🐈', oiseau: '🐦', lapin: '🐇', reptile: '🦎', poisson: '🐠', hamster: '🐹', cheval: '🐴', tortue: '🐢' };
+  const speciesColors = ['var(--info)', '#6B21A8', '#D97706', '#059669', '#DC2626', '#7C3AED', '#0891B2', '#BE185D'];
+
+  patients.forEach(p => {
+    const sp = (p.species || p.espece || '').toLowerCase().trim();
+    if (sp) speciesCounts[sp] = (speciesCounts[sp] || 0) + 1;
+  });
+  // Also count from client animals list if PATIENTS is empty
+  if (!patients.length && CLIENTS.length) {
+    CLIENTS.forEach(c => {
+      (c.animals || []).forEach(a => {
+        const sp = (a.match(/🐕|chien/i) ? 'chien' : a.match(/🐈|chat/i) ? 'chat' : a.match(/🐦|oiseau/i) ? 'oiseau' : '').toLowerCase();
+        if (sp) speciesCounts[sp] = (speciesCounts[sp] || 0) + 1;
+      });
+    });
+  }
+
+  const totalAnimals = Object.values(speciesCounts).reduce((a,b) => a+b, 0) || 1;
+  const speciesSorted = Object.entries(speciesCounts).sort((a,b) => b[1] - a[1]);
+
+  const spBody = document.getElementById('clients-species-body');
+  if (spBody) {
+    spBody.innerHTML = speciesSorted.length ? speciesSorted.map(([sp, count], i) => {
+      const pct = Math.round(count / totalAnimals * 100);
+      const emoji = speciesEmoji[sp] || '🐾';
+      const color = speciesColors[i % speciesColors.length];
+      const label = sp.charAt(0).toUpperCase() + sp.slice(1) + 's';
+      return `<div>
+        <div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${emoji} ${label}</span><span style="font-weight:700;color:${color}">${pct}%</span></div>
+        <div class="pbar"><div class="stock-bar-fill pbar-fill" style="width:${pct}%;background:${color}"></div></div>
+      </div>`;
+    }).join('') : '<div style="color:var(--muted);font-size:12px;padding:8px">Aucun animal enregistré</div>';
+  }
 
 function showClientDetail(clientName){
   const client = CLIENTS.find(c => c.fullName === clientName);
@@ -11568,9 +11639,18 @@ function saveAdmission() {
     showGoogleAccountHint();
     if (_sb && !window.__vetproFinalAuthBound) {
       window.__vetproFinalAuthBound = true;
-      _sb.auth.onAuthStateChange((event) => {
+      _sb.auth.onAuthStateChange(async (event, session) => {
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
-          setTimeout(() => { runFinalAuthRefresh(); }, 0);
+          /* Direct session check — don't rely solely on recoverGoogleHashIfNeeded */
+          if (session?.user?.email) {
+            /* Clean code/hash from URL */
+            if (window.location.search?.includes('code=') || window.location.hash?.includes('access_token=')) {
+              window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
+            }
+            await finalizeSessionAccess('google-auth-event');
+          } else {
+            setTimeout(() => { runFinalAuthRefresh(); }, 0);
+          }
         }
         if (event === 'SIGNED_OUT') {
           showLoginScreen();
@@ -11886,15 +11966,73 @@ function saveAdmission() {
       next.legacyRecords = records;
       saveStatsMeta(next);
     }
+    /* Helper: parse date string to JS Date */
+    function parseHistDate(dateText){
+      const p = normalizeDateParts(dateText);
+      if (!p) return null;
+      return new Date(p.year, p.month - 1, p.day);
+    }
+
+    window.setStatsQuickFilter = function(preset){
+      const now = new Date();
+      const meta = getStatsMeta();
+      if (preset === ‘today’) {
+        meta.day = now.getDate();
+        meta.month = now.getMonth() + 1;
+        meta.year = now.getFullYear();
+      } else if (preset === ‘week’) {
+        meta.day = ‘week’;
+        meta.month = now.getMonth() + 1;
+        meta.year = now.getFullYear();
+      } else if (preset === ‘month’) {
+        meta.day = ‘all’;
+        meta.month = now.getMonth() + 1;
+        meta.year = now.getFullYear();
+      } else if (preset === ‘year’) {
+        meta.day = ‘all’;
+        meta.month = ‘all’;
+        meta.year = now.getFullYear();
+      } else {
+        meta.day = ‘all’;
+        meta.month = ‘all’;
+        meta.year = ‘all’;
+      }
+      saveStatsMeta(meta);
+      renderStatistics();
+    };
+
+    /* Enhanced filtered history with day support */
+    function getFilteredHistoryWithDay(){
+      const meta = getStatsMeta();
+      const now = new Date();
+      return HISTORIQUE_DATA.filter((item) => {
+        const parts = normalizeDateParts(item.date);
+        if (!parts) return meta.month === ‘all’ && meta.year === ‘all’;
+        if (meta.year !== ‘all’ && Number(meta.year) !== parts.year) return false;
+        if (meta.month !== ‘all’ && Number(meta.month) !== parts.month) return false;
+        if (meta.day && meta.day !== ‘all’) {
+          if (meta.day === ‘week’) {
+            const itemDate = new Date(parts.year, parts.month - 1, parts.day);
+            const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+            if (itemDate < weekAgo || itemDate > now) return false;
+          } else {
+            if (Number(meta.day) !== parts.day) return false;
+          }
+        }
+        return true;
+      });
+    }
+
     window.renderStatistics = function(){
-      const page = document.getElementById('page-statistics');
+      const page = document.getElementById(‘page-statistics’);
       if (!page) return;
       const meta = getStatsMeta();
-      const history = getFilteredHistory();
+      const history = getFilteredHistoryWithDay();
       const years = Array.from(new Set(HISTORIQUE_DATA.map(item => normalizeDateParts(item.date)?.year).filter(Boolean))).sort((a,b) => b-a);
+      if (!years.length) years.push(new Date().getFullYear());
       const legacyRecords = getLegacyRecords().filter((item) => {
-        if (meta.year !== 'all' && Number(meta.year) !== Number(item.year)) return false;
-        if (meta.month !== 'all' && Number(meta.month) !== Number(item.month)) return false;
+        if (meta.year !== ‘all’ && Number(meta.year) !== Number(item.year)) return false;
+        if (meta.month !== ‘all’ && Number(meta.month) !== Number(item.month)) return false;
         return true;
       });
       const legacyCasesTotal = legacyRecords.reduce((sum, item) => sum + (Number(item.cases) || 0), 0) + meta.legacyCases;
@@ -11902,8 +12040,19 @@ function saveAdmission() {
       const casesCount = history.length + legacyCasesTotal;
       const clientsCount = CLIENTS.length;
       const revenue = history.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0), 0) + legacyRevenueTotal;
-      const recovered = history.filter(item => item.resultat === 'guerison').length;
+      const recovered = history.filter(item => item.resultat === ‘guerison’).length;
       const cureRate = history.length ? Math.round((recovered / history.length) * 100) : 0;
+
+      /* Payment breakdown */
+      let paidRev = 0, partialRev = 0, unpaidRev = 0;
+      history.forEach(item => {
+        const amt = parseInt(item.montant || 0, 10) || 0;
+        const st = (item.paiement || ‘’).toLowerCase();
+        if (st === ‘paye’ || st === ‘payé’ || st === ‘gratuit’) paidRev += amt;
+        else if (st === ‘partiel’) partialRev += amt;
+        else unpaidRev += amt;
+      });
+
       const last12 = new Array(12).fill(0);
       const rev12 = new Array(12).fill(0);
       history.forEach(item => {
@@ -11912,43 +12061,66 @@ function saveAdmission() {
         last12[parts.month - 1] += 1;
         rev12[parts.month - 1] += parseInt(item.montant || 0, 10) || 0;
       });
+
+      /* Daily breakdown for the selected month */
+      const now = new Date();
+      const selMonth = meta.month !== ‘all’ ? Number(meta.month) : (now.getMonth() + 1);
+      const selYear = meta.year !== ‘all’ ? Number(meta.year) : now.getFullYear();
+      const daysInMonth = new Date(selYear, selMonth, 0).getDate();
+      const dailyCases = new Array(daysInMonth).fill(0);
+      const dailyRev = new Array(daysInMonth).fill(0);
+      HISTORIQUE_DATA.forEach(item => {
+        const parts = normalizeDateParts(item.date);
+        if (!parts || parts.year !== selYear || parts.month !== selMonth) return;
+        if (parts.day >= 1 && parts.day <= daysInMonth) {
+          dailyCases[parts.day - 1]++;
+          dailyRev[parts.day - 1] += parseInt(item.montant || 0, 10) || 0;
+        }
+      });
+
+      /* Determine active quick filter */
+      const qf = (function(){
+        const d = meta.day, m = meta.month, y = meta.year;
+        if (d === now.getDate() && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return ‘today’;
+        if (d === ‘week’ && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return ‘week’;
+        if ((!d || d === ‘all’) && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return ‘month’;
+        if ((!d || d === ‘all’) && (!m || m === ‘all’) && Number(y) === now.getFullYear()) return ‘year’;
+        if ((!d || d === ‘all’) && (!m || m === ‘all’) && (!y || y === ‘all’)) return ‘all’;
+        return ‘’;
+      })();
+      const qBtn = (label, val) => `<button class="btn ${qf===val?’btn-p’:’btn-ghost’}" style="font-size:12px;padding:6px 14px" onclick="setStatsQuickFilter(‘${val}’)">${label}</button>`;
+
       page.innerHTML = `
         <div class="page-hero">
           <div class="tag">📊 VetPro Analytics</div>
           <h2>Statistiques de la clinique</h2>
-          <p>Filtrez par mois et année, puis ajoutez d’anciennes données si vous migrez depuis un ancien registre.</p>
+          <p>Visualisez vos performances par jour, semaine, mois ou année.</p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+          ${qBtn("Aujourd’hui",’today’)}${qBtn(‘Cette semaine’,’week’)}${qBtn(‘Ce mois’,’month’)}${qBtn(‘Cette année’,’year’)}${qBtn(‘Tout’,’all’)}
         </div>
         <div class="stats-action-bar" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:18px">
           <div class="fg"><label class="lbl">Mois</label><select id="stats-month" class="sel">
             <option value="all">Tous</option>
-            ${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => `<option value="${i + 1}" ${String(meta.month) === String(i + 1) ? 'selected' : ''}>${m}</option>`).join('')}
+            ${[‘Janvier’,’Février’,’Mars’,’Avril’,’Mai’,’Juin’,’Juillet’,’Août’,’Septembre’,’Octobre’,’Novembre’,’Décembre’].map((m, i) => `<option value="${i + 1}" ${String(meta.month) === String(i + 1) ? ‘selected’ : ‘’}>${m}</option>`).join(‘’)}
           </select></div>
           <div class="fg"><label class="lbl">Année</label><select id="stats-year" class="sel">
             <option value="all">Toutes</option>
-            ${years.map(year => `<option value="${year}" ${String(meta.year) === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
+            ${years.map(year => `<option value="${year}" ${String(meta.year) === String(year) ? ‘selected’ : ‘’}>${year}</option>`).join(‘’)}
           </select></div>
-          <div class="fg"><label class="lbl">Anciennes consultations</label><input id="legacy-cases" class="inp" type="number" min="0" value="${meta.legacyCases}"></div>
-          <div class="fg"><label class="lbl">Ancien revenu (DA)</label><input id="legacy-revenue" class="inp" type="number" min="0" value="${meta.legacyRevenue}"></div>
-          <button class="btn btn-ghost" onclick="saveLegacyStats()">Enregistrer historique ancien</button>
           <button class="btn btn-ghost" onclick="renderStatistics()">Actualiser</button>
           <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetStatisticsData()">Réinitialiser</button>
         </div>
-        <div class="card" style="margin-bottom:18px">
-          <div class="card-title">Historique mensuel ancien</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
-            <div class="fg"><label class="lbl">Année</label><input id="legacy-row-year" class="inp" type="number" min="2020" value="${new Date().getFullYear()}"></div>
-            <div class="fg"><label class="lbl">Mois</label><select id="legacy-row-month" class="sel">${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => `<option value="${i + 1}">${m}</option>`).join('')}</select></div>
-            <div class="fg"><label class="lbl">Cas</label><input id="legacy-row-cases" class="inp" type="number" min="0" value="0"></div>
-            <div class="fg"><label class="lbl">Revenus (DA)</label><input id="legacy-row-revenue" class="inp" type="number" min="0" value="0"></div>
-            <button class="btn btn-ghost" onclick="addLegacyStatsRow()">Ajouter</button>
-          </div>
-          <div id="legacy-stats-list" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
-        </div>
         <div class="stats-mini-grid" style="margin-bottom:18px">
           <div class="stats-card"><div class="big" style="color:var(--info)">${casesCount}</div><div class="kpi-lbl">Cas enregistrés</div></div>
-          <div class="stats-card"><div class="big" style="color:var(--forest)">${revenue.toLocaleString('fr-FR')} DA</div><div class="kpi-lbl">Revenus totaux</div></div>
+          <div class="stats-card"><div class="big" style="color:var(--forest)">${revenue.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Revenus totaux</div></div>
           <div class="stats-card"><div class="big" style="color:var(--warning)">${clientsCount}</div><div class="kpi-lbl">Clients actifs</div></div>
           <div class="stats-card"><div class="big" style="color:var(--sage)">${cureRate}%</div><div class="kpi-lbl">Taux de guérison</div></div>
+        </div>
+        <div class="stats-mini-grid" style="margin-bottom:18px;grid-template-columns:1fr 1fr 1fr">
+          <div class="stats-card" style="border-left:3px solid #1A5E35"><div class="big" style="color:#1A5E35;font-size:18px">${paidRev.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Payés</div></div>
+          <div class="stats-card" style="border-left:3px solid #D97706"><div class="big" style="color:#D97706;font-size:18px">${partialRev.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Partiels</div></div>
+          <div class="stats-card" style="border-left:3px solid #DC2626"><div class="big" style="color:#DC2626;font-size:18px">${unpaidRev.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Impayés</div></div>
         </div>
         <div class="g2">
           <div class="stat-chart-card">
@@ -11962,23 +12134,75 @@ function saveAdmission() {
             <div id="revenue-labels" style="display:flex;gap:8px;margin-top:8px"></div>
           </div>
         </div>
+        <div class="stat-chart-card" style="margin-top:18px">
+          <div class="card-title">Détail journalier — ${[‘Janvier’,’Février’,’Mars’,’Avril’,’Mai’,’Juin’,’Juillet’,’Août’,’Septembre’,’Octobre’,’Novembre’,’Décembre’][selMonth-1]} ${selYear}</div>
+          <div id="daily-chart" style="display:flex;gap:2px;height:100px;align-items:flex-end;overflow-x:auto"></div>
+          <div id="daily-labels" style="display:flex;gap:2px;margin-top:6px;overflow-x:auto"></div>
+        </div>
+        <div class="stat-chart-card" style="margin-top:18px">
+          <div class="card-title">Répartition rapide</div>
+          <div id="patho-bars"></div>
+        </div>
+        <div class="card" style="margin-top:18px">
+          <div class="card-title">Historique mensuel ancien</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
+            <div class="fg"><label class="lbl">Année</label><input id="legacy-row-year" class="inp" type="number" min="2020" value="${new Date().getFullYear()}"></div>
+            <div class="fg"><label class="lbl">Mois</label><select id="legacy-row-month" class="sel">${[‘Janvier’,’Février’,’Mars’,’Avril’,’Mai’,’Juin’,’Juillet’,’Août’,’Septembre’,’Octobre’,’Novembre’,’Décembre’].map((m, i) => `<option value="${i + 1}">${m}</option>`).join(‘’)}</select></div>
+            <div class="fg"><label class="lbl">Cas</label><input id="legacy-row-cases" class="inp" type="number" min="0" value="0"></div>
+            <div class="fg"><label class="lbl">Revenus (DA)</label><input id="legacy-row-revenue" class="inp" type="number" min="0" value="0"></div>
+            <button class="btn btn-ghost" onclick="addLegacyStatsRow()">Ajouter</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div class="fg"><label class="lbl">Anciennes consultations</label><input id="legacy-cases" class="inp" type="number" min="0" value="${meta.legacyCases}"></div>
+            <div class="fg"><label class="lbl">Ancien revenu (DA)</label><input id="legacy-revenue" class="inp" type="number" min="0" value="${meta.legacyRevenue}"></div>
+          </div>
+          <button class="btn btn-ghost" style="margin-top:10px" onclick="saveLegacyStats()">Enregistrer historique ancien</button>
+          <div id="legacy-stats-list" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
+        </div>
       `;
-      const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
+      const months = [‘Jan’,’Fév’,’Mar’,’Avr’,’Mai’,’Jun’,’Jul’,’Aoû’,’Sep’,’Oct’,’Nov’,’Déc’];
       const maxCases = Math.max(...last12, 1);
       const maxRev = Math.max(...rev12, 1);
-      document.getElementById('cases-chart').innerHTML = last12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxCases) * 120) || 8)}px;background:linear-gradient(180deg,var(--mint),var(--forest));border-radius:10px 10px 0 0"></div>`).join('');
-      document.getElementById('cases-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
-      document.getElementById('revenue-chart').innerHTML = rev12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxRev) * 120) || 8)}px;background:linear-gradient(180deg,var(--gold2),var(--gold));border-radius:10px 10px 0 0"></div>`).join('');
-      document.getElementById('revenue-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
-      document.getElementById('stats-month')?.addEventListener('change', (e) => {
+      document.getElementById(‘cases-chart’).innerHTML = last12.map((v,i) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">${v>0?’<div style="font-size:9px;font-weight:700;color:var(--forest);margin-bottom:2px">’+v+’</div>’:’’}<div style="width:100%;height:${Math.max(8, Math.round((v / maxCases) * 120))}px;background:${v>0?’linear-gradient(180deg,var(--mint),var(--forest))’:’var(--brd)’};border-radius:10px 10px 0 0;cursor:pointer" onclick="setStatsQuickFilter(‘all’);document.getElementById(‘stats-month’).value=’${i+1}’;document.getElementById(‘stats-month’).dispatchEvent(new Event(‘change’))"></div></div>`).join(‘’);
+      document.getElementById(‘cases-labels’).innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join(‘’);
+      document.getElementById(‘revenue-chart’).innerHTML = rev12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxRev) * 120) || 8)}px;background:${v>0?’linear-gradient(180deg,var(--gold2),var(--gold))’:’var(--brd)’};border-radius:10px 10px 0 0"></div>`).join(‘’);
+      document.getElementById(‘revenue-labels’).innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join(‘’);
+
+      /* Daily chart */
+      const maxDaily = Math.max(...dailyCases, 1);
+      const dc = document.getElementById(‘daily-chart’);
+      const dl = document.getElementById(‘daily-labels’);
+      if (dc) dc.innerHTML = dailyCases.map((v,i) => `<div style="flex:1;min-width:14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">${v>0?’<div style="font-size:8px;font-weight:700;color:var(--forest);margin-bottom:1px">’+v+’</div>’:’’}<div style="width:100%;height:${v>0?Math.max(8,Math.round(v/maxDaily*80)):4}px;background:${v>0?’linear-gradient(180deg,var(--sage),var(--forest))’:’var(--brd)’};border-radius:4px 4px 0 0"></div></div>`).join(‘’);
+      if (dl) dl.innerHTML = dailyCases.map((_,i) => `<div style="flex:1;min-width:14px;text-align:center;font-size:8px;color:var(--muted)">${i+1}</div>`).join(‘’);
+
+      /* Pathology bars */
+      const pathologies = {};
+      history.forEach(item => {
+        const key = (item.diagnostic || ‘Non précisé’).split(‘·’)[0].trim();
+        if (key) pathologies[key] = (pathologies[key] || 0) + 1;
+      });
+      const pathos = Object.entries(pathologies).sort((a,b) => b[1] - a[1]).slice(0,8);
+      const pb = document.getElementById(‘patho-bars’);
+      if (pb) pb.innerHTML = (pathos.length ? pathos : [[‘Aucune donnée’, 0]]).map(([name, total], index) => `
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--surface2)">
+          <div style="width:18px;font-size:11px;font-weight:700;color:var(--forest)">${index + 1}.</div>
+          <div style="flex:1">${name}</div>
+          <div style="width:140px;height:8px;background:var(--brd);border-radius:999px;overflow:hidden"><div style="width:${pathos.length ? Math.max(6, Math.round((total / (pathos[0][1] || 1)) * 100)) : 0}%;height:100%;background:var(--sage)"></div></div>
+          <div style="font-weight:700;color:var(--forest)">${total}</div>
+        </div>
+      `).join(‘’);
+
+      document.getElementById(‘stats-month’)?.addEventListener(‘change’, (e) => {
         const next = getStatsMeta();
         next.month = e.target.value;
+        next.day = ‘all’;
         saveStatsMeta(next);
         renderStatistics();
       });
-      document.getElementById('stats-year')?.addEventListener('change', (e) => {
+      document.getElementById(‘stats-year’)?.addEventListener(‘change’, (e) => {
         const next = getStatsMeta();
         next.year = e.target.value;
+        next.day = ‘all’;
         saveStatsMeta(next);
         renderStatistics();
       });
