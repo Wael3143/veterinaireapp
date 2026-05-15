@@ -4526,6 +4526,7 @@ function renderClientsSidebar(){
       </div>`;
     }).join('') : '<div style="color:var(--muted);font-size:12px;padding:8px">Aucun animal enregistré</div>';
   }
+}
 
 function showClientDetail(clientName){
   const client = CLIENTS.find(c => c.fullName === clientName);
