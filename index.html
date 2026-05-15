@@ -21713,43 +21713,43 @@ function saveAdmission() {
     const insertTarget=chatForm||aiPage.querySelector('.page-hero')?.nextElementSibling||aiPage.firstElementChild;
     if(!insertTarget)return;
 
-    /* Rebuild or create context bar */
+    /* Rebuild or create context bar — only build once */
     let ctxBar=aiPage.querySelector('.ai-ctx-bar');
-    const isNew=!ctxBar;
-    if(isNew){
+    if(!ctxBar){
       ctxBar=document.createElement('div');
       ctxBar.className='ai-ctx-bar';
+
+      const allPatients=buildAIPatientList();
+      let optionsHtml='<option value="">Selectionner un patient...</option>';
+      allPatients.forEach((p,i)=>{
+        const name=(p.name||p.nom||p.animal||'').replace(/[🐕🐈🐾]\s*/g,'');
+        const species=p.species||p.espece||'';
+        const owner=p.owner||'';
+        optionsHtml+=`<option value="${i}">${name} (${species}${owner?' -- '+owner:''})</option>`;
+      });
+      ctxBar.innerHTML=`<select class="ai-ctx-select" id="ai-patient-select">${optionsHtml}</select><div id="ai-patient-chip"></div>`;
+      ctxBar._patientList=allPatients;
+      insertTarget.parentNode.insertBefore(ctxBar,insertTarget);
+
+      const select=ctxBar.querySelector('#ai-patient-select');
+      const chipContainer=ctxBar.querySelector('#ai-patient-chip');
+
+      select.addEventListener('change',function(){
+        const idx=parseInt(this.value);
+        const patients=ctxBar._patientList||[];
+        if(isNaN(idx)){selectedPatient=null;chipContainer.innerHTML='';window.__aiSelectedPatient=null;return}
+        const p=patients[idx];
+        selectedPatient=p;
+        const ctx=getPatientContext(p);
+        const hist=(window.HISTORIQUE_DATA||[]).filter(h=>(h.animal||'').replace(/[🐕🐈🐾]\s*/g,'').toLowerCase()===(p.name||'').replace(/[🐕🐈🐾]\s*/g,'').toLowerCase());
+        if(hist.length)ctx.history=hist.slice(0,5).map(h=>({date:h.date||'',diagnostic:h.diagnostic||'',traitement:h.traitement||'',montant:h.montant||0}));
+        chipContainer.innerHTML=`<div class="ai-ctx-chip">
+          ${getAnimalEmoji(ctx.species)} ${ctx.name} · ${ctx.species} ${ctx.breed?'('+ctx.breed+')':''} · ${ctx.weight?ctx.weight+'kg':''} · ${ctx.age}${hist.length?' · '+hist.length+' cas':''}
+          <button onclick="document.getElementById('ai-patient-select').value='';this.parentElement.parentElement.innerHTML='';window.__aiSelectedPatient=null">✕</button>
+        </div>`;
+        window.__aiSelectedPatient=ctx;
+      });
     }
-
-    const allPatients=buildAIPatientList();
-    let optionsHtml='<option value="">Sélectionner un patient...</option>';
-    allPatients.forEach((p,i)=>{
-      const name=(p.name||p.nom||p.animal||'').replace(/[🐕🐈🐾]\s*/g,'');
-      const species=p.species||p.espece||'';
-      const owner=p.owner||'';
-      optionsHtml+=`<option value="${i}">${name} (${species}${owner?' — '+owner:''})</option>`;
-    });
-    ctxBar.innerHTML=`<select class="ai-ctx-select" id="ai-patient-select">${optionsHtml}</select><div id="ai-patient-chip"></div>`;
-    if(isNew)insertTarget.parentNode.insertBefore(ctxBar,insertTarget);
-
-    const select=ctxBar.querySelector('#ai-patient-select');
-    const chipContainer=ctxBar.querySelector('#ai-patient-chip');
-
-    select.addEventListener('change',function(){
-      const idx=parseInt(this.value);
-      if(isNaN(idx)){selectedPatient=null;chipContainer.innerHTML='';window.__aiSelectedPatient=null;return}
-      const p=allPatients[idx];
-      selectedPatient=p;
-      const ctx=getPatientContext(p);
-      /* Also attach clinical history for this patient */
-      const hist=(window.HISTORIQUE_DATA||[]).filter(h=>(h.animal||'').replace(/[🐕🐈🐾]\s*/g,'').toLowerCase()===(p.name||'').replace(/[🐕🐈🐾]\s*/g,'').toLowerCase());
-      if(hist.length)ctx.history=hist.slice(0,5).map(h=>({date:h.date||'',diagnostic:h.diagnostic||'',traitement:h.traitement||'',montant:h.montant||0}));
-      chipContainer.innerHTML=`<div class="ai-ctx-chip">
-        ${getAnimalEmoji(ctx.species)} ${ctx.name} · ${ctx.species} ${ctx.breed?'('+ctx.breed+')':''} · ${ctx.weight?ctx.weight+'kg':''} · ${ctx.age}${hist.length?' · '+hist.length+' cas':''}
-        <button onclick="document.getElementById('ai-patient-select').value='';this.parentElement.parentElement.innerHTML='';window.__aiSelectedPatient=null">✕</button>
-      </div>`;
-      window.__aiSelectedPatient=ctx;
-    });
 
     /* Templates — only create once */
     if(!aiPage.querySelector('.ai-templates')){
