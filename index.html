@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
@@ -1607,24 +1607,9 @@ window.addEventListener('DOMContentLoaded', () => {
      PAGE: FINANCES
 ══════════════════════════════════════════════════════════════ -->
 <div id="page-finances" class="page">
-  <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);margin-bottom:18px">💰 Finances</h2>
-  <div class="g4" style="margin-bottom:20px">
-    <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">RECETTES CE MOIS</div><div class="fin-amount" style="color:var(--forest)">145 300 DA</div><div style="font-size:11px;color:var(--sage)">↑ +18% vs mois dernier</div></div>
-    <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">EN ATTENTE</div><div class="fin-amount" style="color:var(--warning)">14 900 DA</div><div style="font-size:11px;color:var(--danger)">3 impayés</div></div>
-    <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">CONSULTATIONS</div><div class="fin-amount" style="color:var(--info)">24</div><div style="font-size:11px;color:var(--muted)">Ce mois</div></div>
-    <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">PANIER MOYEN</div><div class="fin-amount" style="color:var(--ink)">6 054 DA</div><div style="font-size:11px;color:var(--muted)">Par consultation</div></div>
-  </div>
-  <div class="card">
-    <div class="card-title">📋 Transactions récentes</div>
-    <table class="tbl">
-      <thead><tr><th>Date</th><th>Animal / Client</th><th>Type</th><th>Montant</th><th>Statut</th></tr></thead>
-      <tbody>
-        <tr><td>15/04</td><td>Rex / Benali Ahmed</td><td>Consultation + Hospit.</td><td><strong>8 500 DA</strong></td><td><span class="pay-ok">✅ Payé</span></td></tr>
-        <tr><td>14/04</td><td>Fido / Hamdi Karim</td><td>Urgence + traitement</td><td><strong>12 000 DA</strong></td><td><span class="pay-pt">⚠ 6 000 DA reçu</span></td></tr>
-        <tr><td>12/04</td><td>Misty / Kaci Fatima</td><td>Consultation IRC</td><td><strong>6 500 DA</strong></td><td><span class="pay-no">❌ Non payé</span></td></tr>
-        <tr><td>11/04</td><td>Luna / Hamdi Karim</td><td>Ophtalmologie</td><td><strong>2 800 DA</strong></td><td><span class="pay-ok">✅ Payé</span></td></tr>
-      </tbody>
-    </table>
+  <div style="text-align:center;padding:40px;color:var(--muted)">
+    <div style="font-size:36px;margin-bottom:12px">💰</div>
+    <div>Chargement des finances…</div>
   </div>
 </div>
 
@@ -3308,8 +3293,10 @@ Voici les données à convertir :
       <div class="fg"><label class="lbl">Type de transaction</label>
         <select class="sel" id="fin-type" onchange="toggleFinanceFields()">
           <option value="recette">💵 Recette — Consultation / Soin</option>
+          <option value="dette">💳 Règlement dette — Client rembourse</option>
           <option value="vente">🛒 Vente — Croquettes, jouets, accessoires</option>
           <option value="depense">📦 Dépense — Achat marchandise / fournitures</option>
+          <option value="facture">🧾 Facture — Loyer, électricité, eau…</option>
         </select>
       </div>
       <div class="fg"><label class="lbl">Date</label><input class="inp" type="date" id="fin-date"/></div>
@@ -3370,8 +3357,29 @@ Voici les données à convertir :
             <option value="Matériel médical">🔬 Matériel médical / Consommables</option>
             <option value="Fournitures bureau">📎 Fournitures de bureau</option>
             <option value="Entretien">🧹 Entretien / Nettoyage</option>
-            <option value="Loyer">🏠 Loyer / Charges</option>
             <option value="Autre dépense">📦 Autre dépense</option>
+          </select>
+        </div>
+      </div>
+      <div id="fin-dette-details" style="display:none">
+        <div class="fg"><label class="lbl">Client qui rembourse</label>
+          <select class="sel" id="fin-dette-client"><option value="">— Choisir le client —</option></select>
+        </div>
+        <div class="fg"><label class="lbl">Dossier lié (optionnel)</label>
+          <select class="sel" id="fin-dette-dossier"><option value="">— Aucun —</option></select>
+        </div>
+        <div id="fin-dette-info" style="display:none;padding:10px;border-radius:10px;background:var(--surface2);font-size:12px;margin-top:4px"></div>
+      </div>
+      <div id="fin-facture-details" style="display:none">
+        <div class="fg"><label class="lbl">Type de facture</label>
+          <select class="sel" id="fin-facture-cat">
+            <option value="Loyer">🏠 Loyer</option>
+            <option value="Electricité">⚡ Electricité</option>
+            <option value="Eau">💧 Eau</option>
+            <option value="Internet/Téléphone">📡 Internet / Téléphone</option>
+            <option value="Assurance">🛡️ Assurance</option>
+            <option value="Impôts/Taxes">📋 Impôts / Taxes</option>
+            <option value="Autre facture">🧾 Autre facture</option>
           </select>
         </div>
       </div>
@@ -7118,7 +7126,7 @@ function parseImportJson() {
   let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
   // Fix smart/curly quotes → straight quotes (common when copying from ChatGPT/Word/Docs)
   cleaned = cleaned.replace(/[“”„‟″‶]/g, '"')
-                    .replace(/[‘’‚‛′‵]/g, "'")
+                    .replace(/[''‚‛′‵]/g, "'")
                     .replace(/[–—]/g, '-')
                     .replace(/[…]/g, '...')
                     .replace(/\t/g, ' ');
@@ -11527,11 +11535,11 @@ function saveAdmission() {
     setLoginFeedback(
       approval?.status === 'rejected'
         ? `Compte refusé pour ${email}. Contactez VetPro pour une nouvelle vérification.`
-        : `Compte ${email} en attente d’approbation manuelle.`,
+        : `Compte ${email} en attente d'approbation manuelle.`,
       approval?.status === 'rejected' ? 'error' : 'warn'
     );
     if (typeof toast === 'function' && sourceLabel !== 'silent') {
-      toast(approval?.status === 'rejected' ? 'Accès refusé' : 'Compte en attente d’approbation');
+      toast(approval?.status === 'rejected' ? 'Accès refusé' : 'Compte en attente d'approbation');
     }
     return false;
   }
@@ -11607,7 +11615,7 @@ function saveAdmission() {
     }
 
     try {
-      if (!_sb) throw new Error('Supabase n’est pas disponible sur cette page.');
+      if (!_sb) throw new Error('Supabase n'est pas disponible sur cette page.');
       const { error } = await _sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
       await finalizeSessionAccess('password');
@@ -11635,7 +11643,7 @@ function saveAdmission() {
     clearLoginFeedback();
     setLoginFeedback('Redirection vers Google...', 'info');
     try {
-      if (!_sb) throw new Error('Supabase n’est pas disponible pour Google Sign-In.');
+      if (!_sb) throw new Error('Supabase n'est pas disponible pour Google Sign-In.');
       const redirectTo = `${window.location.origin}${window.location.pathname}`;
       const { error } = await _sb.auth.signInWithOAuth({
         provider: 'google',
@@ -11671,7 +11679,7 @@ function saveAdmission() {
       const adminEmail = (localStorage.getItem('vetpro-admin-email') || '').toLowerCase();
       const oauthEmail = (payload?.email || '').toLowerCase();
       if (adminEmail && oauthEmail && oauthEmail !== adminEmail) {
-        setLoginFeedback(`Google s’est connecté avec ${oauthEmail}, pas avec l’email admin configuré.`, 'warn');
+        setLoginFeedback(`Google s'est connecté avec ${oauthEmail}, pas avec l'email admin configuré.`, 'warn');
       }
     } catch (error) {}
   }
@@ -12067,26 +12075,26 @@ function saveAdmission() {
     window.setStatsQuickFilter = function(preset){
       const now = new Date();
       const meta = getStatsMeta();
-      if (preset === ‘today’) {
+      if (preset === 'today') {
         meta.day = now.getDate();
         meta.month = now.getMonth() + 1;
         meta.year = now.getFullYear();
-      } else if (preset === ‘week’) {
-        meta.day = ‘week’;
+      } else if (preset === 'week') {
+        meta.day = 'week';
         meta.month = now.getMonth() + 1;
         meta.year = now.getFullYear();
-      } else if (preset === ‘month’) {
-        meta.day = ‘all’;
+      } else if (preset === 'month') {
+        meta.day = 'all';
         meta.month = now.getMonth() + 1;
         meta.year = now.getFullYear();
-      } else if (preset === ‘year’) {
-        meta.day = ‘all’;
-        meta.month = ‘all’;
+      } else if (preset === 'year') {
+        meta.day = 'all';
+        meta.month = 'all';
         meta.year = now.getFullYear();
       } else {
-        meta.day = ‘all’;
-        meta.month = ‘all’;
-        meta.year = ‘all’;
+        meta.day = 'all';
+        meta.month = 'all';
+        meta.year = 'all';
       }
       saveStatsMeta(meta);
       renderStatistics();
@@ -12098,11 +12106,11 @@ function saveAdmission() {
       const now = new Date();
       return HISTORIQUE_DATA.filter((item) => {
         const parts = normalizeDateParts(item.date);
-        if (!parts) return meta.month === ‘all’ && meta.year === ‘all’;
-        if (meta.year !== ‘all’ && Number(meta.year) !== parts.year) return false;
-        if (meta.month !== ‘all’ && Number(meta.month) !== parts.month) return false;
-        if (meta.day && meta.day !== ‘all’) {
-          if (meta.day === ‘week’) {
+        if (!parts) return meta.month === 'all' && meta.year === 'all';
+        if (meta.year !== 'all' && Number(meta.year) !== parts.year) return false;
+        if (meta.month !== 'all' && Number(meta.month) !== parts.month) return false;
+        if (meta.day && meta.day !== 'all') {
+          if (meta.day === 'week') {
             const itemDate = new Date(parts.year, parts.month - 1, parts.day);
             const weekAgo = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
             if (itemDate < weekAgo || itemDate > now) return false;
@@ -12115,15 +12123,15 @@ function saveAdmission() {
     }
 
     window.renderStatistics = function(){
-      const page = document.getElementById(‘page-statistics’);
+      const page = document.getElementById('page-statistics');
       if (!page) return;
       const meta = getStatsMeta();
       const history = getFilteredHistoryWithDay();
       const years = Array.from(new Set(HISTORIQUE_DATA.map(item => normalizeDateParts(item.date)?.year).filter(Boolean))).sort((a,b) => b-a);
       if (!years.length) years.push(new Date().getFullYear());
       const legacyRecords = getLegacyRecords().filter((item) => {
-        if (meta.year !== ‘all’ && Number(meta.year) !== Number(item.year)) return false;
-        if (meta.month !== ‘all’ && Number(meta.month) !== Number(item.month)) return false;
+        if (meta.year !== 'all' && Number(meta.year) !== Number(item.year)) return false;
+        if (meta.month !== 'all' && Number(meta.month) !== Number(item.month)) return false;
         return true;
       });
       const legacyCasesTotal = legacyRecords.reduce((sum, item) => sum + (Number(item.cases) || 0), 0) + meta.legacyCases;
@@ -12131,16 +12139,16 @@ function saveAdmission() {
       const casesCount = history.length + legacyCasesTotal;
       const clientsCount = CLIENTS.length;
       const revenue = history.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0), 0) + legacyRevenueTotal;
-      const recovered = history.filter(item => item.resultat === ‘guerison’).length;
+      const recovered = history.filter(item => item.resultat === 'guerison').length;
       const cureRate = history.length ? Math.round((recovered / history.length) * 100) : 0;
 
       /* Payment breakdown */
       let paidRev = 0, partialRev = 0, unpaidRev = 0;
       history.forEach(item => {
         const amt = parseInt(item.montant || 0, 10) || 0;
-        const st = (item.paiement || ‘’).toLowerCase();
-        if (st === ‘paye’ || st === ‘payé’ || st === ‘gratuit’) paidRev += amt;
-        else if (st === ‘partiel’) partialRev += amt;
+        const st = (item.paiement || '').toLowerCase();
+        if (st === 'paye' || st === 'payé' || st === 'gratuit') paidRev += amt;
+        else if (st === 'partiel') partialRev += amt;
         else unpaidRev += amt;
       });
 
@@ -12155,8 +12163,8 @@ function saveAdmission() {
 
       /* Daily breakdown for the selected month */
       const now = new Date();
-      const selMonth = meta.month !== ‘all’ ? Number(meta.month) : (now.getMonth() + 1);
-      const selYear = meta.year !== ‘all’ ? Number(meta.year) : now.getFullYear();
+      const selMonth = meta.month !== 'all' ? Number(meta.month) : (now.getMonth() + 1);
+      const selYear = meta.year !== 'all' ? Number(meta.year) : now.getFullYear();
       const daysInMonth = new Date(selYear, selMonth, 0).getDate();
       const dailyCases = new Array(daysInMonth).fill(0);
       const dailyRev = new Array(daysInMonth).fill(0);
@@ -12172,14 +12180,14 @@ function saveAdmission() {
       /* Determine active quick filter */
       const qf = (function(){
         const d = meta.day, m = meta.month, y = meta.year;
-        if (d === now.getDate() && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return ‘today’;
-        if (d === ‘week’ && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return ‘week’;
-        if ((!d || d === ‘all’) && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return ‘month’;
-        if ((!d || d === ‘all’) && (!m || m === ‘all’) && Number(y) === now.getFullYear()) return ‘year’;
-        if ((!d || d === ‘all’) && (!m || m === ‘all’) && (!y || y === ‘all’)) return ‘all’;
-        return ‘’;
+        if (d === now.getDate() && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return 'today';
+        if (d === 'week' && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return 'week';
+        if ((!d || d === 'all') && Number(m) === now.getMonth()+1 && Number(y) === now.getFullYear()) return 'month';
+        if ((!d || d === 'all') && (!m || m === 'all') && Number(y) === now.getFullYear()) return 'year';
+        if ((!d || d === 'all') && (!m || m === 'all') && (!y || y === 'all')) return 'all';
+        return '';
       })();
-      const qBtn = (label, val) => `<button class="btn ${qf===val?’btn-p’:’btn-ghost’}" style="font-size:12px;padding:6px 14px" onclick="setStatsQuickFilter(‘${val}’)">${label}</button>`;
+      const qBtn = (label, val) => `<button class="btn ${qf===val?'btn-p':'btn-ghost'}" style="font-size:12px;padding:6px 14px" onclick="setStatsQuickFilter('${val}')">${label}</button>`;
 
       page.innerHTML = `
         <div class="page-hero">
@@ -12188,30 +12196,30 @@ function saveAdmission() {
           <p>Visualisez vos performances par jour, semaine, mois ou année.</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-          ${qBtn("Aujourd’hui",’today’)}${qBtn(‘Cette semaine’,’week’)}${qBtn(‘Ce mois’,’month’)}${qBtn(‘Cette année’,’year’)}${qBtn(‘Tout’,’all’)}
+          ${qBtn("Aujourd'hui",'today')}${qBtn('Cette semaine','week')}${qBtn('Ce mois','month')}${qBtn('Cette année','year')}${qBtn('Tout','all')}
         </div>
         <div class="stats-action-bar" style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:18px">
           <div class="fg"><label class="lbl">Mois</label><select id="stats-month" class="sel">
             <option value="all">Tous</option>
-            ${[‘Janvier’,’Février’,’Mars’,’Avril’,’Mai’,’Juin’,’Juillet’,’Août’,’Septembre’,’Octobre’,’Novembre’,’Décembre’].map((m, i) => `<option value="${i + 1}" ${String(meta.month) === String(i + 1) ? ‘selected’ : ‘’}>${m}</option>`).join(‘’)}
+            ${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => `<option value="${i + 1}" ${String(meta.month) === String(i + 1) ? 'selected' : ''}>${m}</option>`).join('')}
           </select></div>
           <div class="fg"><label class="lbl">Année</label><select id="stats-year" class="sel">
             <option value="all">Toutes</option>
-            ${years.map(year => `<option value="${year}" ${String(meta.year) === String(year) ? ‘selected’ : ‘’}>${year}</option>`).join(‘’)}
+            ${years.map(year => `<option value="${year}" ${String(meta.year) === String(year) ? 'selected' : ''}>${year}</option>`).join('')}
           </select></div>
           <button class="btn btn-ghost" onclick="renderStatistics()">Actualiser</button>
           <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="resetStatisticsData()">Réinitialiser</button>
         </div>
         <div class="stats-mini-grid" style="margin-bottom:18px">
           <div class="stats-card"><div class="big" style="color:var(--info)">${casesCount}</div><div class="kpi-lbl">Cas enregistrés</div></div>
-          <div class="stats-card"><div class="big" style="color:var(--forest)">${revenue.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Revenus totaux</div></div>
+          <div class="stats-card"><div class="big" style="color:var(--forest)">${revenue.toLocaleString('fr-FR')} DA</div><div class="kpi-lbl">Revenus totaux</div></div>
           <div class="stats-card"><div class="big" style="color:var(--warning)">${clientsCount}</div><div class="kpi-lbl">Clients actifs</div></div>
           <div class="stats-card"><div class="big" style="color:var(--sage)">${cureRate}%</div><div class="kpi-lbl">Taux de guérison</div></div>
         </div>
         <div class="stats-mini-grid" style="margin-bottom:18px;grid-template-columns:1fr 1fr 1fr">
-          <div class="stats-card" style="border-left:3px solid #1A5E35"><div class="big" style="color:#1A5E35;font-size:18px">${paidRev.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Payés</div></div>
-          <div class="stats-card" style="border-left:3px solid #D97706"><div class="big" style="color:#D97706;font-size:18px">${partialRev.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Partiels</div></div>
-          <div class="stats-card" style="border-left:3px solid #DC2626"><div class="big" style="color:#DC2626;font-size:18px">${unpaidRev.toLocaleString(‘fr-FR’)} DA</div><div class="kpi-lbl">Impayés</div></div>
+          <div class="stats-card" style="border-left:3px solid #1A5E35"><div class="big" style="color:#1A5E35;font-size:18px">${paidRev.toLocaleString('fr-FR')} DA</div><div class="kpi-lbl">Payés</div></div>
+          <div class="stats-card" style="border-left:3px solid #D97706"><div class="big" style="color:#D97706;font-size:18px">${partialRev.toLocaleString('fr-FR')} DA</div><div class="kpi-lbl">Partiels</div></div>
+          <div class="stats-card" style="border-left:3px solid #DC2626"><div class="big" style="color:#DC2626;font-size:18px">${unpaidRev.toLocaleString('fr-FR')} DA</div><div class="kpi-lbl">Impayés</div></div>
         </div>
         <div class="g2">
           <div class="stat-chart-card">
@@ -12226,7 +12234,7 @@ function saveAdmission() {
           </div>
         </div>
         <div class="stat-chart-card" style="margin-top:18px">
-          <div class="card-title">Détail journalier — ${[‘Janvier’,’Février’,’Mars’,’Avril’,’Mai’,’Juin’,’Juillet’,’Août’,’Septembre’,’Octobre’,’Novembre’,’Décembre’][selMonth-1]} ${selYear}</div>
+          <div class="card-title">Détail journalier — ${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'][selMonth-1]} ${selYear}</div>
           <div id="daily-chart" style="display:flex;gap:2px;height:100px;align-items:flex-end;overflow-x:auto"></div>
           <div id="daily-labels" style="display:flex;gap:2px;margin-top:6px;overflow-x:auto"></div>
         </div>
@@ -12238,7 +12246,7 @@ function saveAdmission() {
           <div class="card-title">Historique mensuel ancien</div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;align-items:end">
             <div class="fg"><label class="lbl">Année</label><input id="legacy-row-year" class="inp" type="number" min="2020" value="${new Date().getFullYear()}"></div>
-            <div class="fg"><label class="lbl">Mois</label><select id="legacy-row-month" class="sel">${[‘Janvier’,’Février’,’Mars’,’Avril’,’Mai’,’Juin’,’Juillet’,’Août’,’Septembre’,’Octobre’,’Novembre’,’Décembre’].map((m, i) => `<option value="${i + 1}">${m}</option>`).join(‘’)}</select></div>
+            <div class="fg"><label class="lbl">Mois</label><select id="legacy-row-month" class="sel">${['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'].map((m, i) => `<option value="${i + 1}">${m}</option>`).join('')}</select></div>
             <div class="fg"><label class="lbl">Cas</label><input id="legacy-row-cases" class="inp" type="number" min="0" value="0"></div>
             <div class="fg"><label class="lbl">Revenus (DA)</label><input id="legacy-row-revenue" class="inp" type="number" min="0" value="0"></div>
             <button class="btn btn-ghost" onclick="addLegacyStatsRow()">Ajouter</button>
@@ -12251,49 +12259,49 @@ function saveAdmission() {
           <div id="legacy-stats-list" style="margin-top:12px;display:flex;flex-direction:column;gap:8px"></div>
         </div>
       `;
-      const months = [‘Jan’,’Fév’,’Mar’,’Avr’,’Mai’,’Jun’,’Jul’,’Aoû’,’Sep’,’Oct’,’Nov’,’Déc’];
+      const months = ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'];
       const maxCases = Math.max(...last12, 1);
       const maxRev = Math.max(...rev12, 1);
-      document.getElementById(‘cases-chart’).innerHTML = last12.map((v,i) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">${v>0?’<div style="font-size:9px;font-weight:700;color:var(--forest);margin-bottom:2px">’+v+’</div>’:’’}<div style="width:100%;height:${Math.max(8, Math.round((v / maxCases) * 120))}px;background:${v>0?’linear-gradient(180deg,var(--mint),var(--forest))’:’var(--brd)’};border-radius:10px 10px 0 0;cursor:pointer" onclick="setStatsQuickFilter(‘all’);document.getElementById(‘stats-month’).value=’${i+1}’;document.getElementById(‘stats-month’).dispatchEvent(new Event(‘change’))"></div></div>`).join(‘’);
-      document.getElementById(‘cases-labels’).innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join(‘’);
-      document.getElementById(‘revenue-chart’).innerHTML = rev12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxRev) * 120) || 8)}px;background:${v>0?’linear-gradient(180deg,var(--gold2),var(--gold))’:’var(--brd)’};border-radius:10px 10px 0 0"></div>`).join(‘’);
-      document.getElementById(‘revenue-labels’).innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join(‘’);
+      document.getElementById('cases-chart').innerHTML = last12.map((v,i) => `<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">${v>0?'<div style="font-size:9px;font-weight:700;color:var(--forest);margin-bottom:2px">'+v+'</div>':''}<div style="width:100%;height:${Math.max(8, Math.round((v / maxCases) * 120))}px;background:${v>0?'linear-gradient(180deg,var(--mint),var(--forest))':'var(--brd)'};border-radius:10px 10px 0 0;cursor:pointer" onclick="setStatsQuickFilter('all');document.getElementById('stats-month').value='${i+1}';document.getElementById('stats-month').dispatchEvent(new Event('change'))"></div></div>`).join('');
+      document.getElementById('cases-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
+      document.getElementById('revenue-chart').innerHTML = rev12.map(v => `<div style="flex:1;height:${Math.max(8, Math.round((v / maxRev) * 120) || 8)}px;background:${v>0?'linear-gradient(180deg,var(--gold2),var(--gold))':'var(--brd)'};border-radius:10px 10px 0 0"></div>`).join('');
+      document.getElementById('revenue-labels').innerHTML = months.map(m => `<div style="flex:1;text-align:center;font-size:10px;color:var(--muted)">${m}</div>`).join('');
 
       /* Daily chart */
       const maxDaily = Math.max(...dailyCases, 1);
-      const dc = document.getElementById(‘daily-chart’);
-      const dl = document.getElementById(‘daily-labels’);
-      if (dc) dc.innerHTML = dailyCases.map((v,i) => `<div style="flex:1;min-width:14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">${v>0?’<div style="font-size:8px;font-weight:700;color:var(--forest);margin-bottom:1px">’+v+’</div>’:’’}<div style="width:100%;height:${v>0?Math.max(8,Math.round(v/maxDaily*80)):4}px;background:${v>0?’linear-gradient(180deg,var(--sage),var(--forest))’:’var(--brd)’};border-radius:4px 4px 0 0"></div></div>`).join(‘’);
-      if (dl) dl.innerHTML = dailyCases.map((_,i) => `<div style="flex:1;min-width:14px;text-align:center;font-size:8px;color:var(--muted)">${i+1}</div>`).join(‘’);
+      const dc = document.getElementById('daily-chart');
+      const dl = document.getElementById('daily-labels');
+      if (dc) dc.innerHTML = dailyCases.map((v,i) => `<div style="flex:1;min-width:14px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">${v>0?'<div style="font-size:8px;font-weight:700;color:var(--forest);margin-bottom:1px">'+v+'</div>':''}<div style="width:100%;height:${v>0?Math.max(8,Math.round(v/maxDaily*80)):4}px;background:${v>0?'linear-gradient(180deg,var(--sage),var(--forest))':'var(--brd)'};border-radius:4px 4px 0 0"></div></div>`).join('');
+      if (dl) dl.innerHTML = dailyCases.map((_,i) => `<div style="flex:1;min-width:14px;text-align:center;font-size:8px;color:var(--muted)">${i+1}</div>`).join('');
 
       /* Pathology bars */
       const pathologies = {};
       history.forEach(item => {
-        const key = (item.diagnostic || ‘Non précisé’).split(‘·’)[0].trim();
+        const key = (item.diagnostic || 'Non précisé').split('·')[0].trim();
         if (key) pathologies[key] = (pathologies[key] || 0) + 1;
       });
       const pathos = Object.entries(pathologies).sort((a,b) => b[1] - a[1]).slice(0,8);
-      const pb = document.getElementById(‘patho-bars’);
-      if (pb) pb.innerHTML = (pathos.length ? pathos : [[‘Aucune donnée’, 0]]).map(([name, total], index) => `
+      const pb = document.getElementById('patho-bars');
+      if (pb) pb.innerHTML = (pathos.length ? pathos : [['Aucune donnée', 0]]).map(([name, total], index) => `
         <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--surface2)">
           <div style="width:18px;font-size:11px;font-weight:700;color:var(--forest)">${index + 1}.</div>
           <div style="flex:1">${name}</div>
           <div style="width:140px;height:8px;background:var(--brd);border-radius:999px;overflow:hidden"><div style="width:${pathos.length ? Math.max(6, Math.round((total / (pathos[0][1] || 1)) * 100)) : 0}%;height:100%;background:var(--sage)"></div></div>
           <div style="font-weight:700;color:var(--forest)">${total}</div>
         </div>
-      `).join(‘’);
+      `).join('');
 
-      document.getElementById(‘stats-month’)?.addEventListener(‘change’, (e) => {
+      document.getElementById('stats-month')?.addEventListener('change', (e) => {
         const next = getStatsMeta();
         next.month = e.target.value;
-        next.day = ‘all’;
+        next.day = 'all';
         saveStatsMeta(next);
         renderStatistics();
       });
-      document.getElementById(‘stats-year’)?.addEventListener(‘change’, (e) => {
+      document.getElementById('stats-year')?.addEventListener('change', (e) => {
         const next = getStatsMeta();
         next.year = e.target.value;
-        next.day = ‘all’;
+        next.day = 'all';
         saveStatsMeta(next);
         renderStatistics();
       });
@@ -12406,62 +12414,202 @@ function saveAdmission() {
     }
   }
 
+  /* ── finance page state ── */
+  var _finFilter = 'all';   // all | recette | vente | dette | depense | facture
+  var _finMonth  = '';       // '' = all months, or 'MM/YYYY'
+
   function renderFinancesPage(){
     const page = document.getElementById('page-finances');
     if (!page) return;
-    const rows = HISTORIQUE_DATA.slice().sort((a,b) => {
-      const ad = normalizeDateParts(a.date);
-      const bd = normalizeDateParts(b.date);
-      const av = ad ? new Date(ad.year, ad.month - 1, ad.day).getTime() : 0;
-      const bv = bd ? new Date(bd.year, bd.month - 1, bd.day).getTime() : 0;
-      return bv - av;
+
+    /* ── helpers ── */
+    function parseMt(v){ return parseInt(v || 0, 10) || 0; }
+    function dateObj(d){
+      var p = normalizeDateParts(d);
+      return p ? new Date(p.year, p.month - 1, p.day) : null;
+    }
+    function monthKey(d){
+      var p = normalizeDateParts(d);
+      return p ? String(p.month).padStart(2,'0') + '/' + p.year : '';
+    }
+
+    /* ── sort all rows by date desc ── */
+    var allRows = HISTORIQUE_DATA.slice().sort(function(a,b){
+      var av = dateObj(a.date), bv = dateObj(b.date);
+      return (bv ? bv.getTime() : 0) - (av ? av.getTime() : 0);
     });
-    const paidTotal = rows.reduce((sum, item) => sum + ((item.paiement === 'paye') ? (parseInt(item.montant || 0, 10) || 0) : (parseInt(item.paidAmount || 0, 10) || 0)), 0);
-    const waitingTotal = rows.reduce((sum, item) => sum + Math.max((parseInt(item.montant || 0, 10) || 0) - (parseInt(item.paidAmount || 0, 10) || 0), 0), 0);
-    page.innerHTML = `
-      <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink);margin-bottom:18px">💰 Finances</h2>
-      <div class="g4" style="margin-bottom:20px">
-        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">RECETTES</div><div class="fin-amount" style="color:var(--forest)">${paidTotal.toLocaleString('fr-FR')} DA</div></div>
-        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">RESTE À RECEVOIR</div><div class="fin-amount" style="color:var(--warning)">${waitingTotal.toLocaleString('fr-FR')} DA</div></div>
-        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">DOSSIERS</div><div class="fin-amount" style="color:var(--info)">${rows.length}</div></div>
-        <div class="fin-card"><div style="font-size:11px;color:var(--muted);font-weight:600">PANIER MOYEN</div><div class="fin-amount" style="color:var(--ink)">${rows.length ? Math.round(rows.reduce((sum, item) => sum + (parseInt(item.montant || 0, 10) || 0),0) / rows.length).toLocaleString('fr-FR') : 0} DA</div></div>
-      </div>
-      <div class="card">
-        <div class="card-title">Transactions éditables</div>
-        <table class="tbl">
-          <thead><tr><th>Date</th><th>Animal / Client</th><th>Diagnostic</th><th>Total</th><th>Reçu</th><th>Statut</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${rows.map(item => {
-              const total = parseInt(item.montant || 0, 10) || 0;
-              const received = item.paiement === 'paye' ? total : (parseInt(item.paidAmount || 0, 10) || 0);
-              const status = received <= 0 ? 'impaye' : received < total ? 'partiel' : 'paye';
-              return `
-                <tr>
-                  <td>${item.date || '-'}</td>
-                  <td>${item.animal || '-'}<br><span style="color:var(--muted);font-size:11px">${item.client || '-'}</span></td>
-                  <td>${item.diagnostic || '-'}</td>
-                  <td><strong>${total.toLocaleString('fr-FR')} DA</strong></td>
-                  <td><input class="inp" type="number" min="0" value="${received}" data-finance-id="${item.id}" style="max-width:130px"></td>
-                  <td>${status === 'paye' ? '<span class="pay-ok">Payé</span>' : status === 'partiel' ? '<span class="pay-pt">Partiel</span>' : '<span class="pay-no">Impayé</span>'}</td>
-                  <td style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button class="btn btn-ghost btn-sm" onclick="setFinancePayment('${item.id}','full')">Tout payer</button>
-                    <button class="btn btn-ghost btn-sm" onclick="setFinancePayment('${item.id}','save')">Enregistrer</button>
-                  </td>
-                </tr>
-              `;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+
+    /* ── collect unique months for filter ── */
+    var monthSet = {};
+    allRows.forEach(function(r){ var mk = monthKey(r.date); if (mk) monthSet[mk] = true; });
+    var months = Object.keys(monthSet).sort(function(a,b){
+      var pa = a.split('/'), pb = b.split('/');
+      return (pb[1] - pa[1]) || (pb[0] - pa[0]);
+    });
+
+    /* ── filter rows ── */
+    var rows = allRows.filter(function(r){
+      if (_finFilter !== 'all') {
+        var ft = r.finType || '';
+        var mt = parseInt(r.montant||0,10)||0;
+        if (_finFilter === 'recette' && !(ft === 'recette' || (ft === '' && mt >= 0))) return false;
+        if (_finFilter === 'dette'   && ft !== 'dette') return false;
+        if (_finFilter === 'vente'   && ft !== 'vente') return false;
+        if (_finFilter === 'depense' && ft !== 'depense') return false;
+        if (_finFilter === 'facture' && ft !== 'facture') return false;
+      }
+      if (_finMonth) {
+        var mk = monthKey(r.date);
+        if (mk !== _finMonth) return false;
+      }
+      return true;
+    });
+
+    /* ── KPI computation on ALL data (unfiltered) ── */
+    var totalIncome = 0, totalExpenses = 0, totalSales = 0, totalDebts = 0, totalWaiting = 0, consultCount = 0;
+    allRows.forEach(function(r){
+      var mt = parseMt(r.montant);
+      var pa = parseMt(r.paidAmount);
+      var ft = r.finType || '';
+      if (mt < 0) {
+        totalExpenses += Math.abs(mt);
+      } else {
+        var received = r.paiement === 'paye' ? mt : pa;
+        totalIncome += received;
+        var remain = mt - received;
+        if (remain > 0) totalWaiting += remain;
+        if (ft === 'vente') totalSales += received;
+        if (ft === 'dette') totalDebts += received;
+        if (!ft || ft === 'recette') consultCount++;
+      }
+    });
+    var netBalance = totalIncome - totalExpenses;
+
+    /* ── month KPIs (filtered month or current month) ── */
+    var now = new Date();
+    var curMk = _finMonth || (String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear());
+    var monthIncome = 0, monthExpenses = 0;
+    allRows.forEach(function(r){
+      if (monthKey(r.date) !== curMk) return;
+      var mt = parseMt(r.montant);
+      if (mt < 0) monthExpenses += Math.abs(mt);
+      else {
+        var pa = parseMt(r.paidAmount);
+        monthIncome += (r.paiement === 'paye' ? mt : pa);
+      }
+    });
+
+    /* ── type icon ── */
+    function typeIcon(r){
+      var ft = r.finType || '';
+      if (ft === 'vente')   return '<span style="color:#2196F3">🛒</span>';
+      if (ft === 'dette')   return '<span style="color:#4CAF50">💳</span>';
+      if (ft === 'depense') return '<span style="color:#F44336">📦</span>';
+      if (ft === 'facture') return '<span style="color:#FF9800">🧾</span>';
+      var mt = parseMt(r.montant);
+      if (mt < 0) return '<span style="color:#F44336">📦</span>';
+      return '<span style="color:#4CAF50">💵</span>';
+    }
+    function typeLabel(r){
+      var ft = r.finType || '';
+      if (ft === 'vente')   return 'Vente';
+      if (ft === 'dette')   return 'Règlement';
+      if (ft === 'depense') return 'Dépense';
+      if (ft === 'facture') return 'Facture';
+      var mt = parseMt(r.montant);
+      if (mt < 0) return 'Dépense';
+      return 'Recette';
+    }
+
+    /* ── active filter helper ── */
+    function fbtn(val, label){
+      var active = _finFilter === val;
+      return '<button class="btn btn-sm '+(active ? 'btn-p' : 'btn-ghost')+'" onclick="setFinFilter(\''+val+'\')" style="font-size:11px;padding:5px 10px">'+label+'</button>';
+    }
+
+    /* ── render ── */
+    page.innerHTML =
+      '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:18px">' +
+        '<h2 style="font-family:\'DM Serif Display\',serif;font-size:22px;color:var(--ink);margin:0">💰 Finances</h2>' +
+        '<button class="btn btn-p" onclick="openFinanceModal()" style="font-size:13px">+ Nouvelle transaction</button>' +
+      '</div>' +
+
+      /* ── KPI row 1: totals ── */
+      '<div class="g4" style="margin-bottom:14px">' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">REVENUS TOTAUX</div><div class="fin-amount" style="color:var(--forest)">'+totalIncome.toLocaleString('fr-FR')+' DA</div><div style="font-size:10px;color:var(--sage)">'+consultCount+' consultations</div></div>' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">DÉPENSES TOTALES</div><div class="fin-amount" style="color:var(--danger)">'+totalExpenses.toLocaleString('fr-FR')+' DA</div></div>' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">SOLDE NET</div><div class="fin-amount" style="color:'+(netBalance >= 0 ? 'var(--forest)' : 'var(--danger)')+'">'+netBalance.toLocaleString('fr-FR')+' DA</div></div>' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">IMPAYÉS</div><div class="fin-amount" style="color:var(--warning)">'+totalWaiting.toLocaleString('fr-FR')+' DA</div></div>' +
+      '</div>' +
+
+      /* ── KPI row 2: breakdown ── */
+      '<div class="g4" style="margin-bottom:18px">' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">VENTES BOUTIQUE</div><div class="fin-amount" style="color:var(--info)">'+totalSales.toLocaleString('fr-FR')+' DA</div></div>' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">DETTES RÉCUPÉRÉES</div><div class="fin-amount" style="color:var(--forest)">'+totalDebts.toLocaleString('fr-FR')+' DA</div></div>' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">CE MOIS — ENTRÉES</div><div class="fin-amount" style="color:var(--forest)">'+monthIncome.toLocaleString('fr-FR')+' DA</div></div>' +
+        '<div class="fin-card"><div style="font-size:10px;color:var(--muted);font-weight:600">CE MOIS — SORTIES</div><div class="fin-amount" style="color:var(--danger)">'+monthExpenses.toLocaleString('fr-FR')+' DA</div></div>' +
+      '</div>' +
+
+      /* ── filter bar ── */
+      '<div class="card" style="margin-bottom:14px;padding:12px 16px">' +
+        '<div style="display:flex;align-items:center;flex-wrap:wrap;gap:8px">' +
+          '<span style="font-size:12px;font-weight:600;color:var(--muted);margin-right:4px">Filtrer:</span>' +
+          fbtn('all','Tout') + fbtn('recette','💵 Recettes') + fbtn('vente','🛒 Ventes') + fbtn('dette','💳 Dettes') + fbtn('depense','📦 Dépenses') + fbtn('facture','🧾 Factures') +
+          '<select class="sel" onchange="setFinMonth(this.value)" style="max-width:160px;font-size:12px;margin-left:auto">' +
+            '<option value="">Tous les mois</option>' +
+            months.map(function(m){ return '<option value="'+m+'"'+(m===_finMonth?' selected':'')+'>'+m+'</option>'; }).join('') +
+          '</select>' +
+        '</div>' +
+      '</div>' +
+
+      /* ── transactions table ── */
+      '<div class="card">' +
+        '<div class="card-title" style="display:flex;align-items:center;justify-content:space-between">' +
+          '<span>📋 Transactions ('+ rows.length +')</span>' +
+        '</div>' +
+        '<div style="overflow-x:auto">' +
+        '<table class="tbl">' +
+          '<thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Montant</th><th>Reçu</th><th>Statut</th><th>Actions</th></tr></thead>' +
+          '<tbody>' +
+            (rows.length === 0 ? '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">Aucune transaction</td></tr>' : '') +
+            rows.map(function(item){
+              var mt = parseMt(item.montant);
+              var isExpense = mt < 0;
+              var absTotal = Math.abs(mt);
+              var received = isExpense ? absTotal : (item.paiement === 'paye' ? absTotal : (parseMt(item.paidAmount)));
+              var status = isExpense ? 'paye' : (received <= 0 ? 'impaye' : received < absTotal ? 'partiel' : 'paye');
+              var statusHtml = status === 'paye' ? '<span class="pay-ok">Payé</span>' : status === 'partiel' ? '<span class="pay-pt">Partiel</span>' : '<span class="pay-no">Impayé</span>';
+              var descLine = (item.animal || '') + (item.client && item.client !== '—' ? ' / ' + item.client : '');
+              if (item.diagnostic) descLine += '<br><span style="color:var(--muted);font-size:11px">' + (item.diagnostic || '') + '</span>';
+              var amountColor = isExpense ? 'var(--danger)' : 'var(--forest)';
+              var amountPrefix = isExpense ? '-' : '+';
+              return '<tr>' +
+                '<td style="white-space:nowrap">'+(item.date || '-')+'</td>' +
+                '<td style="white-space:nowrap">'+typeIcon(item)+' <span style="font-size:11px">'+typeLabel(item)+'</span></td>' +
+                '<td>'+descLine+'</td>' +
+                '<td><strong style="color:'+amountColor+'">'+amountPrefix+absTotal.toLocaleString('fr-FR')+' DA</strong></td>' +
+                (isExpense ? '<td style="color:var(--muted)">—</td>' : '<td><input class="inp" type="number" min="0" value="'+received+'" data-finance-id="'+item.id+'" style="max-width:110px"></td>') +
+                '<td>'+statusHtml+'</td>' +
+                '<td style="display:flex;gap:6px;flex-wrap:wrap">' +
+                  (isExpense ? '<button class="btn btn-ghost btn-sm" onclick="deleteFinEntry(\''+item.id+'\')" style="font-size:10px;color:var(--danger)">Supprimer</button>'
+                    : '<button class="btn btn-ghost btn-sm" onclick="setFinancePayment(\''+item.id+'\',\'full\')" style="font-size:10px">Tout payer</button>' +
+                      '<button class="btn btn-ghost btn-sm" onclick="setFinancePayment(\''+item.id+'\',\'save\')" style="font-size:10px">Sauver</button>') +
+                '</td>' +
+              '</tr>';
+            }).join('') +
+          '</tbody>' +
+        '</table>' +
+        '</div>' +
+      '</div>';
   }
 
   window.setFinancePayment = function(id, mode){
-    const item = HISTORIQUE_DATA.find(entry => entry.id === id);
+    var item = HISTORIQUE_DATA.find(function(e){ return e.id === id; });
     if (!item) return;
-    const total = parseInt(item.montant || 0, 10) || 0;
-    const input = document.querySelector(`[data-finance-id="${id}"]`);
-    let received = parseInt(input?.value || '0', 10) || 0;
+    var total = parseInt(item.montant || 0, 10) || 0;
+    if (total < 0) return; // expenses don't have receivable
+    var input = document.querySelector('[data-finance-id="'+id+'"]');
+    var received = parseInt(input?.value || '0', 10) || 0;
     if (mode === 'full') {
       received = total;
       if (input) input.value = String(total);
@@ -12475,67 +12623,206 @@ function saveAdmission() {
   };
 
   window.toggleFinanceFields = function(){
-    const type = document.getElementById('fin-type')?.value || 'recette';
-    const animalRow = document.getElementById('fin-animal-row');
-    const venteDetails = document.getElementById('fin-vente-details');
-    const depenseDetails = document.getElementById('fin-depense-details');
-    const statusGroup = document.getElementById('fin-status-group');
-    const paidGroup = document.getElementById('fin-paid-group');
-    const descLabel = document.getElementById('fin-desc-label');
-    // Show/hide fields based on type
-    if (animalRow) animalRow.style.display = type === 'recette' ? '' : 'none';
-    if (venteDetails) venteDetails.style.display = type === 'vente' ? '' : 'none';
-    if (depenseDetails) depenseDetails.style.display = type === 'depense' ? '' : 'none';
-    if (statusGroup) statusGroup.style.display = type === 'depense' ? 'none' : '';
-    if (paidGroup) paidGroup.style.display = type === 'depense' ? 'none' : '';
-    if (descLabel) descLabel.textContent = type === 'depense' ? 'Description de l\'achat' : type === 'vente' ? 'Détails de la vente' : 'Description / Diagnostic';
+    var type = document.getElementById('fin-type')?.value || 'recette';
+    var animalRow = document.getElementById('fin-animal-row');
+    var venteDetails = document.getElementById('fin-vente-details');
+    var depenseDetails = document.getElementById('fin-depense-details');
+    var detteDetails = document.getElementById('fin-dette-details');
+    var factureDetails = document.getElementById('fin-facture-details');
+    var statusGroup = document.getElementById('fin-status-group');
+    var paidGroup = document.getElementById('fin-paid-group');
+    var descLabel = document.getElementById('fin-desc-label');
+    var isOut = (type === 'depense' || type === 'facture');
+    // Show/hide sections
+    if (animalRow) animalRow.style.display = (type === 'recette') ? '' : 'none';
+    if (venteDetails) venteDetails.style.display = (type === 'vente') ? '' : 'none';
+    if (depenseDetails) depenseDetails.style.display = (type === 'depense') ? '' : 'none';
+    if (detteDetails) detteDetails.style.display = (type === 'dette') ? '' : 'none';
+    if (factureDetails) factureDetails.style.display = (type === 'facture') ? '' : 'none';
+    if (statusGroup) statusGroup.style.display = isOut ? 'none' : '';
+    if (paidGroup) paidGroup.style.display = isOut ? 'none' : '';
+    // Label
+    if (descLabel) {
+      if (type === 'depense') descLabel.textContent = 'Description de l\'achat';
+      else if (type === 'vente') descLabel.textContent = 'Détails de la vente';
+      else if (type === 'dette') descLabel.textContent = 'Note (optionnel)';
+      else if (type === 'facture') descLabel.textContent = 'Référence / Note';
+      else descLabel.textContent = 'Description / Diagnostic';
+    }
     // Auto-fill amount for vente
     if (type === 'vente') {
-      const qty = parseInt(document.getElementById('fin-qty')?.value || '1', 10) || 1;
-      const unit = parseInt(document.getElementById('fin-unit-price')?.value || '0', 10) || 0;
+      var qty = parseInt(document.getElementById('fin-qty')?.value || '1', 10) || 1;
+      var unit = parseInt(document.getElementById('fin-unit-price')?.value || '0', 10) || 0;
       if (unit > 0) document.getElementById('fin-amount').value = qty * unit;
     }
+    // Populate dette client list
+    if (type === 'dette') populateDetteClients();
+  };
+
+  /* ── populate debt client list from HISTORIQUE_DATA ── */
+  window.populateDetteClients = function(){
+    var sel = document.getElementById('fin-dette-client');
+    if (!sel) return;
+    // find clients with unpaid balance
+    var clientMap = {};
+    HISTORIQUE_DATA.forEach(function(r){
+      if ((parseInt(r.montant||0,10)||0) < 0) return; // skip expenses
+      if (r.finType === 'dette') return; // skip existing debt payments
+      var cl = (r.client || '').trim();
+      if (!cl || cl === '—') return;
+      var mt = parseInt(r.montant||0,10)||0;
+      var pa = r.paiement === 'paye' ? mt : (parseInt(r.paidAmount||0,10)||0);
+      var remain = mt - pa;
+      if (remain > 0) {
+        if (!clientMap[cl]) clientMap[cl] = { total: 0, count: 0 };
+        clientMap[cl].total += remain;
+        clientMap[cl].count++;
+      }
+    });
+    var opts = '<option value="">— Choisir le client —</option>';
+    Object.keys(clientMap).sort().forEach(function(cl){
+      opts += '<option value="'+cl+'">'+cl+' — dette: '+clientMap[cl].total.toLocaleString('fr-FR')+' DA ('+clientMap[cl].count+' dossiers)</option>';
+    });
+    sel.innerHTML = opts;
+    // on change, populate dossier list
+    sel.onchange = function(){
+      var client = sel.value;
+      var dosSel = document.getElementById('fin-dette-dossier');
+      var info = document.getElementById('fin-dette-info');
+      if (!client) {
+        if (dosSel) dosSel.innerHTML = '<option value="">— Aucun —</option>';
+        if (info) info.style.display = 'none';
+        return;
+      }
+      // find unpaid dossiers for this client
+      var dossiers = HISTORIQUE_DATA.filter(function(r){
+        if ((parseInt(r.montant||0,10)||0) < 0) return false;
+        if (r.finType === 'dette') return false;
+        if ((r.client||'').trim() !== client) return false;
+        var mt = parseInt(r.montant||0,10)||0;
+        var pa = r.paiement === 'paye' ? mt : (parseInt(r.paidAmount||0,10)||0);
+        return (mt - pa) > 0;
+      });
+      var totalDebt = dossiers.reduce(function(s,r){
+        var mt = parseInt(r.montant||0,10)||0;
+        var pa = r.paiement === 'paye' ? mt : (parseInt(r.paidAmount||0,10)||0);
+        return s + (mt - pa);
+      }, 0);
+      var dosOpts = '<option value="">— Régler tout ('+totalDebt.toLocaleString('fr-FR')+' DA) —</option>';
+      dossiers.forEach(function(d){
+        var mt = parseInt(d.montant||0,10)||0;
+        var pa = d.paiement === 'paye' ? mt : (parseInt(d.paidAmount||0,10)||0);
+        var rem = mt - pa;
+        dosOpts += '<option value="'+d.id+'">'+(d.date||'?')+' — '+(d.animal||'?')+' — reste '+rem.toLocaleString('fr-FR')+' DA</option>';
+      });
+      if (dosSel) dosSel.innerHTML = dosOpts;
+      if (info) {
+        info.style.display = '';
+        info.innerHTML = '💳 <strong>'+client+'</strong> doit <strong>'+totalDebt.toLocaleString('fr-FR')+' DA</strong> sur '+dossiers.length+' dossier(s)';
+      }
+      // pre-fill amount with total debt
+      var amtEl = document.getElementById('fin-amount');
+      if (amtEl) amtEl.value = totalDebt;
+    };
   };
 
   window.saveFinanceEntry = function(){
-    const type = document.getElementById('fin-type')?.value || 'recette';
-    const date = document.getElementById('fin-date')?.value;
-    const animal = document.getElementById('fin-animal')?.value?.trim() || '';
-    const client = document.getElementById('fin-client')?.value?.trim() || '';
-    const desc = document.getElementById('fin-desc')?.value?.trim() || '';
-    const amount = parseInt(document.getElementById('fin-amount')?.value || '0', 10) || 0;
-    const status = document.getElementById('fin-status')?.value || 'paye';
-    const paid = parseInt(document.getElementById('fin-paid')?.value || '0', 10) || 0;
-    const product = document.getElementById('fin-product')?.value || '';
-    const depCat = document.getElementById('fin-dep-cat')?.value || '';
+    var type = document.getElementById('fin-type')?.value || 'recette';
+    var date = document.getElementById('fin-date')?.value;
+    var animal = document.getElementById('fin-animal')?.value?.trim() || '';
+    var client = document.getElementById('fin-client')?.value?.trim() || '';
+    var desc = document.getElementById('fin-desc')?.value?.trim() || '';
+    var amount = parseInt(document.getElementById('fin-amount')?.value || '0', 10) || 0;
+    var status = document.getElementById('fin-status')?.value || 'paye';
+    var paid = parseInt(document.getElementById('fin-paid')?.value || '0', 10) || 0;
+    var product = document.getElementById('fin-product')?.value || '';
+    var depCat = document.getElementById('fin-dep-cat')?.value || '';
     if (!amount) { toast('Veuillez saisir un montant'); return; }
-    const now = new Date();
-    const dateStr = date
+    var now = new Date();
+    var dateStr = date
       ? date.split('-').reverse().join('/')
-      : `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
-    let entryDesc = desc;
-    let entryType = 'Consultation';
-    let entryAnimal = animal || '—';
-    let entryClient = client || '—';
-    let finalMontant = amount;
-    let finalPaid = status === 'paye' ? amount : paid;
-    let finalStatus = status;
+      : String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+    var entryDesc = desc;
+    var entryType = 'Consultation';
+    var entryAnimal = animal || '—';
+    var entryClient = client || '—';
+    var finalMontant = amount;
+    var finalPaid = status === 'paye' ? amount : paid;
+    var finalStatus = status;
+
     if (type === 'vente') {
-      const qty = parseInt(document.getElementById('fin-qty')?.value || '1', 10) || 1;
-      entryDesc = `Vente: ${product || desc || 'Produit'} x${qty}`;
+      var qty = parseInt(document.getElementById('fin-qty')?.value || '1', 10) || 1;
+      entryDesc = 'Vente: '+(product || desc || 'Produit')+' x'+qty;
       entryType = 'Vente boutique';
       entryAnimal = product || 'Boutique';
       entryClient = client || 'Client boutique';
     } else if (type === 'depense') {
-      entryDesc = `Achat: ${depCat} — ${desc || 'Fournitures'}`;
+      entryDesc = 'Achat: '+depCat+' — '+(desc || 'Fournitures');
       entryType = 'Dépense';
       entryAnimal = depCat;
       entryClient = '—';
-      finalMontant = -Math.abs(amount); // Negative for expenses
+      finalMontant = -Math.abs(amount);
       finalPaid = -Math.abs(amount);
       finalStatus = 'paye';
+    } else if (type === 'facture') {
+      var facCat = document.getElementById('fin-facture-cat')?.value || 'Facture';
+      entryDesc = 'Facture: '+facCat+' — '+(desc || '');
+      entryType = 'Facture';
+      entryAnimal = facCat;
+      entryClient = '—';
+      finalMontant = -Math.abs(amount);
+      finalPaid = -Math.abs(amount);
+      finalStatus = 'paye';
+    } else if (type === 'dette') {
+      var detteClient = document.getElementById('fin-dette-client')?.value || '';
+      var detteDossier = document.getElementById('fin-dette-dossier')?.value || '';
+      if (!detteClient) { toast('Veuillez choisir un client'); return; }
+      entryClient = detteClient;
+      entryAnimal = '💳 Règlement';
+      entryType = 'Règlement dette';
+      entryDesc = 'Règlement dette'+(desc ? ' — '+desc : '');
+      finalPaid = amount;
+      finalStatus = 'paye';
+      // If a specific dossier is selected, apply the payment to it
+      if (detteDossier) {
+        var target = HISTORIQUE_DATA.find(function(r){ return r.id === detteDossier; });
+        if (target) {
+          var tMt = parseInt(target.montant||0,10)||0;
+          var tPa = target.paiement === 'paye' ? tMt : (parseInt(target.paidAmount||0,10)||0);
+          var newPa = Math.min(tMt, tPa + amount);
+          target.paidAmount = newPa;
+          target.paiement = newPa >= tMt ? 'paye' : 'partiel';
+        }
+      } else {
+        // Apply to ALL unpaid dossiers of this client (oldest first)
+        var remaining = amount;
+        var unpaid = HISTORIQUE_DATA.filter(function(r){
+          if ((parseInt(r.montant||0,10)||0) < 0) return false;
+          if (r.finType === 'dette') return false;
+          if ((r.client||'').trim() !== detteClient) return false;
+          var mt = parseInt(r.montant||0,10)||0;
+          var pa = r.paiement === 'paye' ? mt : (parseInt(r.paidAmount||0,10)||0);
+          return (mt - pa) > 0;
+        }).sort(function(a,b){
+          var ad = normalizeDateParts(a.date), bd = normalizeDateParts(b.date);
+          var av = ad ? new Date(ad.year,ad.month-1,ad.day).getTime() : 0;
+          var bv = bd ? new Date(bd.year,bd.month-1,bd.day).getTime() : 0;
+          return av - bv; // oldest first
+        });
+        unpaid.forEach(function(r){
+          if (remaining <= 0) return;
+          var mt = parseInt(r.montant||0,10)||0;
+          var pa = r.paiement === 'paye' ? mt : (parseInt(r.paidAmount||0,10)||0);
+          var owed = mt - pa;
+          var apply = Math.min(owed, remaining);
+          r.paidAmount = pa + apply;
+          r.paiement = (pa + apply) >= mt ? 'paye' : 'partiel';
+          remaining -= apply;
+        });
+      }
     }
-    const entry = {
+
+    var entry = {
       id: 'fin-' + Date.now(),
       date: dateStr,
       animal: entryAnimal,
@@ -12543,12 +12830,12 @@ function saveAdmission() {
       diagnostic: entryDesc,
       type: entryType,
       statut: 'OK',
-      resultat: type === 'depense' ? 'depense' : 'guerison',
+      resultat: (type === 'depense' || type === 'facture') ? 'depense' : 'guerison',
       montant: finalMontant,
       paidAmount: finalPaid,
       paiement: finalStatus,
       rdv: '—',
-      finType: type // tag for filtering
+      finType: type
     };
     HISTORIQUE_DATA.unshift(entry);
     if (typeof persistAppState === 'function') persistAppState();
@@ -12559,14 +12846,38 @@ function saveAdmission() {
     if (typeof renderStatistics === 'function') renderStatistics();
     closeModal('modal-finance');
     // Clear form
-    ['fin-date','fin-animal','fin-client','fin-desc','fin-amount','fin-paid','fin-unit-price'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
+    ['fin-date','fin-animal','fin-client','fin-desc','fin-amount','fin-paid','fin-unit-price'].forEach(function(id){
+      var el = document.getElementById(id); if (el) el.value = '';
     });
-    const qtyEl = document.getElementById('fin-qty'); if (qtyEl) qtyEl.value = '1';
-    const typeMsg = type === 'depense' ? `Dépense de ${Math.abs(amount).toLocaleString('fr-FR')} DA enregistrée`
-                  : type === 'vente' ? `Vente de ${amount.toLocaleString('fr-FR')} DA enregistrée`
-                  : `Recette de ${amount.toLocaleString('fr-FR')} DA enregistrée`;
+    var qtyEl = document.getElementById('fin-qty'); if (qtyEl) qtyEl.value = '1';
+    var typeMsg = type === 'depense' ? 'Dépense de '+Math.abs(amount).toLocaleString('fr-FR')+' DA enregistrée'
+                : type === 'facture' ? 'Facture de '+Math.abs(amount).toLocaleString('fr-FR')+' DA enregistrée'
+                : type === 'vente' ? 'Vente de '+amount.toLocaleString('fr-FR')+' DA enregistrée'
+                : type === 'dette' ? 'Règlement de '+amount.toLocaleString('fr-FR')+' DA enregistré'
+                : 'Recette de '+amount.toLocaleString('fr-FR')+' DA enregistrée';
     toast(typeMsg + ' ✅');
+  };
+
+  /* ── finance page filter helpers ── */
+  window.setFinFilter = function(val){
+    _finFilter = val;
+    renderFinancesPage();
+  };
+  window.setFinMonth = function(val){
+    _finMonth = val;
+    renderFinancesPage();
+  };
+  window.openFinanceModal = function(){
+    openModal('modal-finance');
+    toggleFinanceFields();
+  };
+  window.deleteFinEntry = function(id){
+    var idx = HISTORIQUE_DATA.findIndex(function(r){ return r.id === id; });
+    if (idx === -1) return;
+    HISTORIQUE_DATA.splice(idx, 1);
+    if (typeof persistAppState === 'function') persistAppState();
+    renderFinancesPage();
+    toast('Transaction supprimée');
   };
 
   function patchApprovalsAccess(){
@@ -12574,7 +12885,7 @@ function saveAdmission() {
     window.renderApprovalsPage = async function(){
       if (!isCurrentAdmin()) {
         const host = document.getElementById('approvals-list');
-        if (host) host.innerHTML = `<div class="ibox ibox-b">Accès réservé à l’administrateur.</div>`;
+        if (host) host.innerHTML = `<div class="ibox ibox-b">Accès réservé à l'administrateur.</div>`;
         return;
       }
       if (typeof originalRefresh === 'function') return originalRefresh();
@@ -15104,7 +15415,7 @@ function saveAdmission() {
     const map = [
       ['#page-clients table tbody', '👥', 'Aucun client',           'Ajoutez votre premier client pour commencer le suivi.', 'Nouveau client', "openModal('modal-client')"],
       ['#page-rdv table tbody',     '📅', 'Aucun rendez-vous',      'Planifiez votre premier rendez-vous.',                    'Nouveau RDV',    "openModal('modal-rdv')"],
-      ['#page-finances table tbody','💰', 'Aucune transaction',     'Enregistrez votre première recette ou dépense.',           'Nouvelle entrée', "openModal('modal-finance')"],
+      ['#page-finances table tbody','💰', 'Aucune transaction',     'Enregistrez votre première recette ou dépense.',           'Nouvelle entrée', "openFinanceModal()"],
       ['#page-cas table tbody',     '📋', 'Aucun cas clinique',     'Créez votre premier cas pour commencer.',                 'Nouveau cas',     "openModal('modal-cas')"],
     ];
     map.forEach(([selector, icon, title, msg, ctaLbl, ctaFn]) => {
