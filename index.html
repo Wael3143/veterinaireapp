@@ -6169,10 +6169,11 @@ function showSurgGuide(id){
 var GEMINI_API_KEY = localStorage.getItem('vetpro-gemini-key') || '';
 var GEMINI_MODEL = 'gemini-3.1-flash-lite';
 let chatHist=[],aiLoading=false; // aiInited declared above
-const SYS=`Assistant vétérinaire expert. Réponds en français, concis et actionnable.
-Diagnostics différentiels, posologie (mg/kg, fréquence, durée, voie, CI), chirurgie, ophtalmo, perfusion, anesthésie.
-Médicaments dispo Algérie : Shotapen, Lavamox LA, Amoxicilline, Ganamic, Métronidazole, Imidocarbe, Kétamine, Xylazine, Atropine, Diazépam, Méloxicam, Prednisolone, Ringer Lactate, NaCl 0.9%.
-Format : emojis structurants (🔬💊⚖️📋⚠️). Réf IRIS/WSAVA si pertinent. Aide à la décision uniquement.`;
+const SYS=`Assistant veterinaire expert. Reponds en francais, concis et actionnable.
+Diagnostics differentiels, posologie (mg/kg, frequence, duree, voie, CI), chirurgie, ophtalmo, perfusion, anesthesie.
+Medicaments dispo Algerie : Shotapen, Lavamox LA, Amoxicilline, Ganamic, Metronidazole, Imidocarbe, Ketamine, Xylazine, Atropine, Diazepam, Meloxicam, Prednisolone, Ringer Lactate, NaCl 0.9%.
+Format : emojis structurants. Ref IRIS/WSAVA si pertinent. Aide a la decision uniquement.
+IMPORTANT: Si un CONTEXTE PATIENT est fourni avec l'historique clinique, utilise ces informations directement pour repondre. Ne redemande PAS les details deja fournis dans le contexte. Base ta reponse sur les donnees du patient.`;
 
 function saveGeminiKey(){
   var inp=document.getElementById("settings-gemini-key");
@@ -6234,8 +6235,27 @@ try{
     if(selPat.age)ctxParts.push("Age: "+selPat.age);
     if(selPat.name)ctxParts.push("Nom: "+selPat.name);
     if(selPat.sex)ctxParts.push("Sexe: "+selPat.sex);
-    if(selPat.history&&selPat.history.length){
-      var histLines=selPat.history.map(function(h){return(h.date||"?")+": "+(h.diagnostic||"?")+(h.traitement?" - Traitement: "+h.traitement:"");});
+    /* Attach full clinical history from HISTORIQUE_DATA */
+    var patName=(selPat.name||'').replace(/[🐕🐈🐾]\s*/g,'').toLowerCase();
+    var fullHist=(window.HISTORIQUE_DATA||[]).filter(function(h){
+      return(h.animal||'').replace(/[🐕🐈🐾]\s*/g,'').toLowerCase()===patName;
+    }).slice(0,5);
+    if(fullHist.length){
+      var histLines=fullHist.map(function(h){
+        var parts=[(h.date||'?')];
+        if(h.diagnostic)parts.push("Diagnostic: "+h.diagnostic);
+        if(h.notesCliniques)parts.push("Notes: "+h.notesCliniques);
+        if(h.conseilsSortie)parts.push("Conseils: "+h.conseilsSortie);
+        if(Array.isArray(h.traitements)&&h.traitements.length){
+          var meds=h.traitements.map(function(t){
+            if(typeof t==='string')return t;
+            return(t.medicament||'?')+(t.posologie?' '+t.posologie:'')+(t.duree?' ('+t.duree+')':'');
+          }).join(', ');
+          parts.push("Traitements: "+meds);
+        }
+        if(h.resultat)parts.push("Resultat: "+h.resultat);
+        return parts.join(" | ");
+      });
       ctxParts.push("Historique clinique:\n"+histLines.join("\n"));
     }
   } else {
