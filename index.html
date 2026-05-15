@@ -4438,16 +4438,142 @@ function renderClientsPage(){
     return !q || client.fullName.toLowerCase().includes(q) || (client.phone || '').toLowerCase().includes(q) || (client.email || '').toLowerCase().includes(q) || animals.includes(q);
   });
   title.innerHTML = `👥 Clients (${CLIENTS.length}) <span>Actifs ce mois</span>`;
-  container.innerHTML = filtered.map(client => `
-    <tr>
+  container.innerHTML = filtered.map((client, idx) => `
+    <tr style="cursor:pointer" onclick="showClientDetail('${(client.fullName||'').replace(/'/g,"\\'")}')">
       <td><strong>${client.fullName}</strong></td>
       <td>${client.phone || '-'}</td>
       <td style="font-size:10.5px;${client.email ? '' : 'color:var(--muted)'}">${client.email || '-'}${client.email ? ' 📧' : ''}</td>
       <td>${(client.animals || []).join(' · ') || '-'}</td>
       <td>${client.nextRdv || '-'}</td>
-      <td><button class="btn-ico" onclick="toast('Client enregistre localement pour ce compte')">...</button></td>
+      <td><button class="btn-ico">›</button></td>
     </tr>
   `).join('') || '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted)">Aucun client trouvé</td></tr>';
+}
+
+function showClientDetail(clientName){
+  const client = CLIENTS.find(c => c.fullName === clientName);
+  if (!client) { toast('Client introuvable'); return; }
+
+  // Find this client's animals from PATIENTS
+  const animals = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).filter(p =>
+    (p.owner || '').toLowerCase() === clientName.toLowerCase()
+  );
+
+  // Find clinical history for this client
+  const history = (typeof HISTORIQUE_DATA !== 'undefined' ? HISTORIQUE_DATA : []).filter(h =>
+    (h.client || '').toLowerCase() === clientName.toLowerCase()
+  );
+
+  // Find appointments
+  const appointments = (typeof APPOINTMENTS !== 'undefined' ? APPOINTMENTS : []).filter(a =>
+    (a.owner || '').toLowerCase() === clientName.toLowerCase()
+  );
+
+  // Find vaccinations
+  const vaccinations = (typeof VACC_HISTORY !== 'undefined' ? VACC_HISTORY : []).filter(v =>
+    (v.owner || '').toLowerCase() === clientName.toLowerCase()
+  );
+
+  // Payment stats
+  const totalPaid = history.reduce((s,h) => s + (h.paiement === 'paye' ? (parseInt(h.montant,10)||0) : 0), 0);
+  const totalDue = history.reduce((s,h) => s + (h.paiement !== 'paye' ? (parseInt(h.montant,10)||0) : 0), 0);
+
+  const animalsHtml = animals.length ? animals.map(a => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface2);border-radius:10px;margin-bottom:6px">
+      <span style="font-size:22px">${(a.species||'').toLowerCase()==='chat'?'🐈':'🐕'}</span>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px">${a.name||'?'}</div>
+        <div style="font-size:11px;color:var(--muted)">${a.species||''} ${a.race?'· '+a.race:''} ${a.age?'· '+a.age:''} ${a.weight?'· '+a.weight:''} ${a.sexe?'· '+a.sexe:''}</div>
+      </div>
+    </div>
+  `).join('') : '<div style="color:var(--muted);font-size:12px;padding:8px">Aucun animal enregistré</div>';
+
+  const historyHtml = history.length ? history.slice(0,10).map(h => `
+    <div style="padding:10px 14px;border-bottom:1px solid var(--brd);font-size:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <strong>${h.animal||'?'}</strong>
+        <span style="color:var(--muted)">${h.date||''}</span>
+      </div>
+      <div style="color:var(--ink)">${h.diagnostic||'—'}</div>
+      <div style="display:flex;gap:8px;margin-top:4px">
+        <span style="font-size:11px;padding:2px 8px;border-radius:6px;background:${h.paiement==='paye'?'#D5F5E3':h.paiement==='partiel'?'#FEF9E7':'#FDEDEC'};font-weight:600">${h.montant||0} DA · ${h.paiement||'?'}</span>
+      </div>
+    </div>
+  `).join('') : '<div style="color:var(--muted);font-size:12px;padding:8px">Aucun historique</div>';
+
+  const vaccHtml = vaccinations.length ? vaccinations.slice(0,5).map(v => `
+    <div style="padding:8px 14px;border-bottom:1px solid var(--brd);font-size:12px">
+      <div style="display:flex;justify-content:space-between">
+        <span><strong>${v.animal||'?'}</strong> — ${v.vaccine||''}</span>
+        <span style="color:var(--muted)">${v.date||''}</span>
+      </div>
+      ${v.rappel ? '<div style="font-size:11px;color:var(--warning);margin-top:2px">Rappel: '+v.rappel+'</div>' : ''}
+    </div>
+  `).join('') : '<div style="color:var(--muted);font-size:12px;padding:8px">Aucune vaccination</div>';
+
+  const detailHtml = `
+    <div class="card" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div>
+          <h3 style="margin:0;font-size:18px;color:var(--ink)">👤 ${client.fullName}</h3>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">
+            ${client.phone ? '📞 '+client.phone : ''} ${client.email ? '· 📧 '+client.email : ''} ${client.address ? '· 📍 '+client.address : ''}
+          </div>
+        </div>
+        <button class="btn btn-ghost" onclick="hideClientDetail()">✕ Fermer</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="text-align:center;padding:12px;background:var(--surface2);border-radius:10px">
+          <div style="font-size:22px;font-weight:800;color:var(--info)">${animals.length}</div>
+          <div style="font-size:11px;color:var(--muted)">Animaux</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:var(--surface2);border-radius:10px">
+          <div style="font-size:22px;font-weight:800;color:var(--forest)">${history.length}</div>
+          <div style="font-size:11px;color:var(--muted)">Consultations</div>
+        </div>
+        <div style="text-align:center;padding:12px;background:var(--surface2);border-radius:10px">
+          <div style="font-size:22px;font-weight:800;color:${totalDue>0?'var(--danger)':'var(--sage)'}">${(totalPaid+totalDue).toLocaleString('fr-FR')} DA</div>
+          <div style="font-size:11px;color:var(--muted)">${totalDue>0?totalDue.toLocaleString('fr-FR')+' DA impayé':'Tout payé'}</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">🐾 Animaux</div>
+        ${animalsHtml}
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">📋 Historique des cas</div>
+        <div style="border:1px solid var(--brd);border-radius:10px;overflow:hidden;max-height:300px;overflow-y:auto">
+          ${historyHtml}
+        </div>
+      </div>
+
+      <div>
+        <div style="font-weight:700;font-size:13px;margin-bottom:8px">💉 Vaccinations</div>
+        <div style="border:1px solid var(--brd);border-radius:10px;overflow:hidden">
+          ${vaccHtml}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Insert or replace detail panel
+  let detailDiv = document.getElementById('client-detail-panel');
+  if (!detailDiv) {
+    detailDiv = document.createElement('div');
+    detailDiv.id = 'client-detail-panel';
+    const page = document.getElementById('page-clients');
+    if (page) page.insertBefore(detailDiv, page.querySelector('.g2'));
+  }
+  detailDiv.innerHTML = detailHtml;
+  detailDiv.scrollIntoView({ behavior:'smooth', block:'start' });
+}
+
+function hideClientDetail(){
+  const panel = document.getElementById('client-detail-panel');
+  if (panel) panel.innerHTML = '';
 }
 function filterClients(q){
   clientSearch = q || '';
@@ -6898,7 +7024,15 @@ function parseImportJson() {
   const raw = document.getElementById('import-json-text')?.value?.trim();
   if (!raw) { toast('Collez d\'abord le JSON renvoyé par ChatGPT'); return null; }
   // Strip markdown code fences if present
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  let cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+  // Fix smart/curly quotes → straight quotes (common when copying from ChatGPT/Word/Docs)
+  cleaned = cleaned.replace(/[“”„‟″‶]/g, '"')
+                    .replace(/[‘’‚‛′‵]/g, "'")
+                    .replace(/[–—]/g, '-')
+                    .replace(/[…]/g, '...')
+                    .replace(/\t/g, ' ');
+  // Remove BOM if present
+  if (cleaned.charCodeAt(0) === 0xFEFF) cleaned = cleaned.slice(1);
   try {
     return JSON.parse(cleaned);
   } catch (e) {
@@ -7080,8 +7214,9 @@ function executeImport() {
       });
     }
 
-    // Persist + refresh
+    // Persist to localStorage + Supabase + refresh views
     if (typeof persistAppState === 'function') persistAppState();
+    if (typeof window.vpFullSave === 'function') window.vpFullSave();
     if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
     if (typeof renderClientsPage === 'function') renderClientsPage();
     if (typeof renderHist === 'function') renderHist('');
@@ -9730,6 +9865,8 @@ function saveAdmission() {
   const TERMS_SOURCE = window.TERMS_TEXT || {};
   let remoteStateSaveTimer = null;
 
+  window.getFallbackState = getFallbackState;
+  window.saveFallbackState = saveFallbackState;
   function getFallbackState(){
     try {
       const parsed = JSON.parse(localStorage.getItem(LOCAL_APPROVALS_KEY) || '{}');
@@ -9785,6 +9922,7 @@ function saveAdmission() {
     return getFallbackState().pending;
   }
 
+  window.upsertApprovalRequest = upsertApprovalRequest;
   async function upsertApprovalRequest(payload){
     const normalized = { ...payload, email:(payload.email || '').toLowerCase() };
     if (await canReachSupabaseTable(APPROVAL_TABLE)) {
@@ -10654,11 +10792,13 @@ function saveAdmission() {
         }
         payload.user_id = data?.user?.id || null;
       }
-      await upsertApprovalRequest(payload);
-      const fallback = getFallbackState();
-      if (ADMIN_EMAIL && email === ADMIN_EMAIL && !fallback.approved.includes(email)) {
-        fallback.approved.push(email);
-        saveFallbackState(fallback);
+      if (typeof window.upsertApprovalRequest === 'function') await window.upsertApprovalRequest(payload);
+      if (typeof window.getFallbackState === 'function') {
+        const fallback = window.getFallbackState();
+        if (ADMIN_EMAIL && email === ADMIN_EMAIL && !fallback.approved.includes(email)) {
+          fallback.approved.push(email);
+          if (typeof window.saveFallbackState === 'function') window.saveFallbackState(fallback);
+        }
       }
       showAuthMode('login');
       const loginEmail = document.getElementById('login-email');
@@ -12361,9 +12501,14 @@ function saveAdmission() {
         const file = input.files?.[0];
         if (!file) return;
         try {
-          const json = JSON.parse(await file.text());
+          let rawText = await file.text();
+          // Fix smart/curly quotes from ChatGPT/Word
+          rawText = rawText.replace(/[""„‟″‶]/g, '"').replace(/[''‚‛′‵]/g, "'");
+          if (rawText.charCodeAt(0) === 0xFEFF) rawText = rawText.slice(1);
+          const json = JSON.parse(rawText);
           if (typeof applyAppStateSnapshot === 'function') applyAppStateSnapshot(json, getDefaultState());
           if (typeof persistAppState === 'function') persistAppState();
+          if (typeof window.vpFullSave === 'function') window.vpFullSave();
           if (typeof refreshPersistentViews === 'function') refreshPersistentViews();
           if (typeof renderFinancesPage === 'function') renderFinancesPage();
           if (typeof renderStatistics === 'function') renderStatistics();
