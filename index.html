@@ -22118,6 +22118,18 @@ function saveAdmission() {
       backdrop-filter: none !important;
       animation: none !important;
     }
+    #login-screen .login-card {
+      position: relative !important;
+      z-index: 2147483000 !important;
+      transform: none !important;
+      -webkit-transform: none !important;
+      touch-action: auto !important;
+      pointer-events: auto !important;
+      contain: none !important;
+    }
+    #login-screen .login-card * {
+      pointer-events: auto !important;
+    }
     #login-screen input,
     #login-screen textarea,
     #login-screen select,
@@ -22129,6 +22141,11 @@ function saveAdmission() {
       user-select: text !important;
       touch-action: auto !important;
       pointer-events: auto !important;
+      opacity: 1 !important;
+      min-height: 44px !important;
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      transform: translateZ(0);
     }
     #login-screen button,
     #login-screen [onclick],
@@ -22223,9 +22240,26 @@ function saveAdmission() {
     checkAndOpenSession();
   }
 
-  function bindOriginalAuthButtons(){
+  function bindOriginalControls(){
     const root = document.getElementById('login-screen');
     if (!root) return;
+    root.querySelectorAll('input, textarea, select').forEach(function(input){
+      if (input.__vpIosInputBound) return;
+      input.__vpIosInputBound = true;
+      input.addEventListener('touchstart', function(){ input.__vpTouched = true; }, { passive:true });
+      input.addEventListener('touchend', function(){
+        setTimeout(function(){ try { input.focus({ preventScroll:true }); } catch(e) { try { input.focus(); } catch(_) {} } }, 0);
+      }, { passive:true });
+    });
+    root.querySelectorAll('label').forEach(function(label){
+      if (label.__vpIosLabelBound) return;
+      label.__vpIosLabelBound = true;
+      label.addEventListener('touchend', function(){
+        const wrap = label.closest('div');
+        const input = wrap?.querySelector?.('input, textarea, select') || label.nextElementSibling;
+        if (input?.focus) setTimeout(function(){ input.focus(); }, 0);
+      }, { passive:true });
+    });
     root.querySelectorAll('button').forEach(function(btn){
       if (btn.__vpIosBound) return;
       btn.__vpIosBound = true;
@@ -22254,26 +22288,9 @@ function saveAdmission() {
     });
   }
 
-  function bindDashboardTapBridge(){
-    if (window.__vpIosDashboardTapBridge) return;
-    window.__vpIosDashboardTapBridge = true;
-    document.addEventListener('touchend', function(e){
-      if (document.getElementById('login-screen') && !document.getElementById('login-screen').classList.contains('hidden')) return;
-      if (e.target.closest('input, textarea, select, option')) return;
-      const el = e.target.closest('button, [onclick], .sb-item, .vp-btab, .btn, .btn-ico, [data-nav], [data-action]');
-      if (!el || el.__vpLastTouchClick && Date.now() - el.__vpLastTouchClick < 500) return;
-      el.__vpLastTouchClick = Date.now();
-      if (el.tagName === 'A') return;
-      e.preventDefault();
-      e.stopPropagation();
-      try { el.click(); } catch(_) {}
-    }, { passive:false });
-  }
-
   function init(){
     removeExperimentalUi();
-    bindOriginalAuthButtons();
-    bindDashboardTapBridge();
+    bindOriginalControls();
     checkAndOpenSession();
   }
 
@@ -22281,7 +22298,7 @@ function saveAdmission() {
   window.addEventListener('load', init);
   setInterval(function(){
     removeExperimentalUi();
-    bindOriginalAuthButtons();
+    bindOriginalControls();
   }, 1000);
   if (client()?.auth?.onAuthStateChange) {
     client().auth.onAuthStateChange(function(event, session){
