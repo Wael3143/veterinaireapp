@@ -22244,5 +22244,245 @@ function saveAdmission() {
   setInterval(bindNativeFocus, 800);
 })();
 </script>
+<style id="vetpro-ios-auth-sheet-style">
+  @supports (-webkit-touch-callout: none) {
+    #vp-ios-auth-sheet {
+      position: fixed; inset: 0; z-index: 2147483640; display: none;
+      background: rgba(4,17,12,.78); padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      font-family: 'Outfit', system-ui, sans-serif;
+    }
+    #vp-ios-auth-sheet.open { display: block; }
+    #vp-ios-auth-card {
+      width: min(100%, 420px); margin: 32px auto; border-radius: 20px;
+      background: #102018; color: #fff; padding: 22px;
+      border: 1px solid rgba(94,234,212,.22); box-shadow: 0 28px 80px rgba(0,0,0,.45);
+    }
+    #vp-ios-auth-card input, #vp-ios-auth-card select {
+      display: block; width: 100%; box-sizing: border-box; margin: 8px 0 12px;
+      min-height: 48px; border-radius: 12px; border: 1px solid rgba(255,255,255,.18);
+      background: #fff; color: #102018; padding: 12px 14px; font-size: 16px;
+      -webkit-user-select: text; user-select: text; touch-action: auto;
+    }
+    #vp-ios-auth-card button {
+      width: 100%; min-height: 48px; border: 0; border-radius: 12px; margin-top: 10px;
+      font-size: 15px; font-weight: 800; touch-action: manipulation; cursor: pointer;
+    }
+    #vp-ios-auth-card .vp-ios-primary { background: #49f48a; color: #062114; }
+    #vp-ios-auth-card .vp-ios-google { background: #fff; color: #102018; }
+    #vp-ios-auth-card .vp-ios-ghost { background: transparent; color: #d7efe1; text-decoration: underline; }
+    #vp-ios-auth-card .vp-ios-row { display: flex; gap: 10px; }
+    #vp-ios-auth-card .vp-ios-row button { flex: 1; }
+    #vp-ios-auth-card .vp-ios-msg { min-height: 18px; margin-top: 12px; color: #fbbf24; font-size: 13px; line-height: 1.35; }
+  }
+</style>
+<script id="vetpro-ios-auth-sheet-script">
+(function(){
+  'use strict';
+  if (window.__vpIosAuthSheetLoaded) return;
+  window.__vpIosAuthSheetLoaded = true;
+
+  function isIOS(){
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+  function sb(){
+    try { if (window._sb) return window._sb; } catch(e) {}
+    try { if (typeof _sb !== 'undefined') return _sb; } catch(e) {}
+    return null;
+  }
+  function norm(v){ return (v || '').trim().toLowerCase(); }
+  function msg(text){ const el = document.getElementById('vp-ios-auth-msg'); if (el) el.textContent = text || ''; }
+
+  async function approvalStatus(email){
+    email = norm(email);
+    const admin = norm(localStorage.getItem('vetpro-admin-email'));
+    if (admin && email === admin) return 'approved';
+    try {
+      const client = sb();
+      if (client) {
+        const { data } = await client.from('vetpro_access_requests')
+          .select('status,reviewed_at,requested_at').ilike('email', email)
+          .order('reviewed_at', { ascending:false, nullsFirst:false })
+          .order('requested_at', { ascending:false, nullsFirst:false })
+          .limit(1);
+        if (data?.[0]?.status) return String(data[0].status).toLowerCase();
+      }
+    } catch(e) {}
+    try {
+      if (typeof window.isApprovedEmail === 'function' && await window.isApprovedEmail(email)) return 'approved';
+    } catch(e) {}
+    return 'pending';
+  }
+
+  function openApp(user){
+    clearInterval(window.__vpIosApprovalTimer);
+    document.getElementById('vp-ios-auth-sheet')?.classList.remove('open');
+    document.getElementById('login-screen')?.classList.add('hidden');
+    const login = document.getElementById('login-screen');
+    if (login) login.style.display = 'none';
+    const logout = document.getElementById('logout-btn');
+    if (logout) logout.style.display = 'block';
+    if (typeof window.setCurrentUserContext === 'function') window.setCurrentUserContext(user);
+    if (typeof window.initializePersistentState === 'function') window.initializePersistentState();
+    setTimeout(function(){
+      if (typeof window.nav === 'function') window.nav('dashboard');
+      if (typeof window.refreshDashboardWelcome === 'function') window.refreshDashboardWelcome();
+      if (typeof window.vpRefreshDashboardWelcome === 'function') window.vpRefreshDashboardWelcome();
+    }, 80);
+  }
+
+  function waitForApproval(user){
+    const email = norm(user?.email);
+    msg("Compte en attente d'approbation. Cette page s'ouvrira automatiquement après validation.");
+    clearInterval(window.__vpIosApprovalTimer);
+    window.__vpIosApprovalTimer = setInterval(async function(){
+      if (await approvalStatus(email) === 'approved') openApp(user);
+    }, 3500);
+  }
+
+  async function loginWithPassword(){
+    const client = sb();
+    const email = norm(document.getElementById('vp-ios-email')?.value);
+    const password = document.getElementById('vp-ios-password')?.value || '';
+    if (!client) { msg("Supabase n'est pas disponible."); return; }
+    if (!email || !password) { msg('Remplissez email et mot de passe.'); return; }
+    msg('Connexion...');
+    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    if (error) { msg(error.message || 'Connexion impossible.'); return; }
+    const user = data?.user || data?.session?.user || { email };
+    if (await approvalStatus(email) === 'approved') openApp(user);
+    else waitForApproval(user);
+  }
+
+  async function signup(){
+    const client = sb();
+    const email = norm(document.getElementById('vp-ios-su-email')?.value);
+    const password = document.getElementById('vp-ios-su-password')?.value || '';
+    const full = (document.getElementById('vp-ios-su-name')?.value || '').trim();
+    if (!client) { msg("Supabase n'est pas disponible."); return; }
+    if (!email || !password || !full) { msg('Remplissez nom, email et mot de passe.'); return; }
+    msg('Création du compte...');
+    const { data, error } = await client.auth.signUp({ email, password, options:{ data:{ full_name: full, role:'veterinaire' } } });
+    if (error) { msg(error.message || 'Inscription impossible.'); return; }
+    try {
+      if (typeof window.upsertApprovalRequest === 'function') {
+        await window.upsertApprovalRequest({
+          user_id: data?.user?.id || null, email, full_name: full, role:'veterinaire',
+          phone:'', order_number:null, student_proof:null, status:'pending', requested_at:new Date().toISOString()
+        });
+      }
+    } catch(e) {}
+    showSheet('login');
+    document.getElementById('vp-ios-email').value = email;
+    msg("Compte créé. Connectez-vous; l'accès s'ouvrira après approbation.");
+  }
+
+  async function google(){
+    const client = sb();
+    if (!client) { msg("Supabase n'est pas disponible."); return; }
+    msg('Redirection vers Google...');
+    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const { error } = await client.auth.signInWithOAuth({ provider:'google', options:{ redirectTo, queryParams:{ prompt:'select_account' } } });
+    if (error) msg(error.message || 'Connexion Google impossible.');
+  }
+
+  function render(mode){
+    const sheet = document.getElementById('vp-ios-auth-sheet');
+    const card = document.getElementById('vp-ios-auth-card');
+    if (!sheet || !card) return;
+    if (mode === 'signup') {
+      card.innerHTML = '<h2>Créer un compte</h2><input id="vp-ios-su-name" autocomplete="name" placeholder="Nom complet"><input id="vp-ios-su-email" type="email" autocomplete="email" placeholder="email@cabinet.dz"><input id="vp-ios-su-password" type="password" autocomplete="new-password" placeholder="Mot de passe"><button class="vp-ios-primary" id="vp-ios-signup">Créer le compte</button><button class="vp-ios-google" id="vp-ios-google-su">Continuer avec Google</button><button class="vp-ios-ghost" id="vp-ios-to-login">J ai déjà un compte</button><button class="vp-ios-ghost" id="vp-ios-close">Fermer</button><div class="vp-ios-msg" id="vp-ios-auth-msg"></div>';
+    } else {
+      card.innerHTML = '<h2>Connexion VetPro</h2><input id="vp-ios-email" type="email" autocomplete="email" placeholder="email@cabinet.dz"><input id="vp-ios-password" type="password" autocomplete="current-password" placeholder="Mot de passe"><button class="vp-ios-primary" id="vp-ios-login">Accéder à la clinique</button><button class="vp-ios-google" id="vp-ios-google">Continuer avec Google</button><div class="vp-ios-row"><button class="vp-ios-ghost" id="vp-ios-to-signup">Créer un compte</button><button class="vp-ios-ghost" id="vp-ios-forgot">Mot de passe oublié</button></div><button class="vp-ios-ghost" id="vp-ios-close">Fermer</button><div class="vp-ios-msg" id="vp-ios-auth-msg"></div>';
+    }
+    sheet.classList.add('open');
+    document.getElementById('vp-ios-login')?.addEventListener('click', loginWithPassword);
+    document.getElementById('vp-ios-signup')?.addEventListener('click', signup);
+    document.getElementById('vp-ios-google')?.addEventListener('click', google);
+    document.getElementById('vp-ios-google-su')?.addEventListener('click', google);
+    document.getElementById('vp-ios-to-signup')?.addEventListener('click', function(){ showSheet('signup'); });
+    document.getElementById('vp-ios-to-login')?.addEventListener('click', function(){ showSheet('login'); });
+    document.getElementById('vp-ios-close')?.addEventListener('click', function(){ sheet.classList.remove('open'); });
+    document.getElementById('vp-ios-forgot')?.addEventListener('click', function(){
+      const email = norm(document.getElementById('vp-ios-email')?.value);
+      if (!email) { msg('Entrez votre email puis réessayez.'); return; }
+      sb()?.auth?.resetPasswordForEmail(email, { redirectTo:`${window.location.origin}${window.location.pathname}` });
+      msg('Lien de réinitialisation envoyé si le compte existe.');
+    });
+  }
+  function showSheet(mode){
+    ensureSheet();
+    render(mode || 'login');
+    setTimeout(function(){
+      const first = document.querySelector('#vp-ios-auth-card input');
+      try { first?.focus({ preventScroll:true }); } catch(e) { first?.focus(); }
+    }, 120);
+  }
+  window.vpShowIosAuthSheet = showSheet;
+
+  function ensureSheet(){
+    if (document.getElementById('vp-ios-auth-sheet')) return;
+    const sheet = document.createElement('div');
+    sheet.id = 'vp-ios-auth-sheet';
+    sheet.innerHTML = '<div id="vp-ios-auth-card"></div>';
+    document.body.appendChild(sheet);
+  }
+
+  function bindLanding(){
+    if (!isIOS()) return;
+    ensureSheet();
+    window.addEventListener('click', function(e){
+      const login = e.target.closest?.('#landing-login-btn, [data-vp-action="open-login"]');
+      const signup = e.target.closest?.('#landing-signup-btn, [data-vp-action="open-signup"]');
+      if (!login && !signup) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      showSheet(signup ? 'signup' : 'login');
+    }, true);
+  }
+
+  async function resumeApprovedSession(){
+    const client = sb();
+    if (!client) return;
+    const { data:{ session } } = await client.auth.getSession();
+    const user = session?.user;
+    if (!user?.email) return;
+    if (await approvalStatus(user.email) === 'approved') openApp(user);
+    else waitForApproval(user);
+  }
+
+  function patchOnboardingOnce(){
+    const userKey = function(){
+      try {
+        const u = window.__vpCurrentUser || JSON.parse(localStorage.getItem('vetpro-current-user') || 'null');
+        return `vetpro_onboarding_seen:${u?.id || u?.email || 'browser'}`;
+      } catch(e) { return 'vetpro_onboarding_seen:browser'; }
+    };
+    const obs = new MutationObserver(function(){
+      document.querySelectorAll('#ob-overlay').forEach(function(overlay, index){
+        const key = userKey();
+        if (index > 0 || localStorage.getItem(key) === 'true') {
+          overlay.remove();
+          return;
+        }
+        localStorage.setItem(key, 'true');
+        localStorage.setItem('vetpro_onboarding_completed', 'true');
+      });
+    });
+    obs.observe(document.body, { childList:true, subtree:true });
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){ bindLanding(); resumeApprovedSession(); patchOnboardingOnce(); });
+  window.addEventListener('load', function(){ bindLanding(); resumeApprovedSession(); });
+  if (sb()?.auth?.onAuthStateChange) {
+    sb().auth.onAuthStateChange(function(event, session){
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED') {
+        const user = session?.user;
+        if (user?.email) approvalStatus(user.email).then(function(status){ status === 'approved' ? openApp(user) : waitForApproval(user); });
+      }
+    });
+  }
+})();
+</script>
 </body>
 </html>
