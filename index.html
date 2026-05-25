@@ -11866,6 +11866,7 @@ function saveAdmission() {
   }
 
   function openApprovedSession(user){
+    clearInterval(window.__vpApprovalWaitTimer);
     if (typeof window.setCurrentUserContext === 'function') window.setCurrentUserContext(user);
     if (typeof window.initializePersistentState === 'function') window.initializePersistentState();
     const screen = document.getElementById('login-screen');
@@ -11879,6 +11880,23 @@ function saveAdmission() {
       if (typeof window.refreshDashboardWelcome === 'function') window.refreshDashboardWelcome();
       if (typeof window.vpRefreshDashboardWelcome === 'function') window.vpRefreshDashboardWelcome();
     }, 50);
+  }
+
+  function waitForApproval(user, email, setFeedback){
+    clearInterval(window.__vpApprovalWaitTimer);
+    const normalized = normalizeEmail(email || user?.email);
+    if (!normalized) return;
+    const feedback = setFeedback || window.setLoginFeedback || window.showLoginError || function(){};
+    feedback(`Compte ${normalized} en attente d'approbation. La page s'ouvrira automatiquement après validation.`, 'warn');
+    window.__vpApprovalWaitTimer = setInterval(async function(){
+      try {
+        if (await resolveApprovalStatus(normalized) === 'approved') {
+          clearInterval(window.__vpApprovalWaitTimer);
+          openApprovedSession(user || { email: normalized });
+          if (typeof window.toast === 'function') window.toast('Compte approuvé, ouverture de VetPro');
+        }
+      } catch(e) {}
+    }, 4000);
   }
 
   function patchLogin(){
@@ -11902,11 +11920,12 @@ function saveAdmission() {
           if (typeof window.toast === 'function') window.toast('Connexion réussie');
           return;
         }
-        await client.auth.signOut();
-        const msg = status === 'rejected'
-          ? `Compte refusé pour ${email}. Contactez VetPro.`
-          : `Compte ${email} en attente d'approbation manuelle.`;
-        setFeedback(msg, status === 'rejected' ? 'error' : 'warn');
+        if (status === 'rejected') {
+          await client.auth.signOut();
+          setFeedback(`Compte refusé pour ${email}. Contactez VetPro.`, 'error');
+          return;
+        }
+        waitForApproval(user, email, setFeedback);
       } catch (error) {
         setFeedback(error?.message || 'Erreur de connexion', 'error');
       } finally {
@@ -22156,6 +22175,7 @@ function saveAdmission() {
     const node = el?.closest?.('button, [onclick], .ob-option');
     if (!node || isTextControl(node)) return false;
     const action = node.getAttribute('onclick') || '';
+    const buttonText = (node.textContent || '').toLowerCase();
     if (node.closest?.('#ob-overlay')) {
       const text = (node.textContent || '').toLowerCase();
       if (node.classList?.contains('ob-option')) {
@@ -22172,6 +22192,7 @@ function saveAdmission() {
     }
     if (node.id === 'login-btn-el') { if (typeof window.doLogin === 'function') window.doLogin(); return true; }
     if (node.id === 'pwd-eye') { if (typeof window.toggleLoginPwd === 'function') window.toggleLoginPwd(); return true; }
+    if (buttonText.includes('google')) { if (typeof window.doGoogleAuth === 'function') window.doGoogleAuth(); return true; }
     if (action.includes('showAuthMode')) {
       if (action.includes('signup') && typeof window.showAuthMode === 'function') window.showAuthMode('signup');
       else if (action.includes('forgot') && typeof window.showAuthMode === 'function') window.showAuthMode('forgot');
@@ -22192,9 +22213,6 @@ function saveAdmission() {
   function protectAuthControls(event){
     if (!isAuthControl(event.target)) return;
     if (isTextControl(event.target)) {
-      if (event.type === 'touchend' || event.type === 'click') {
-        setTimeout(function(){ try { event.target.focus({ preventScroll: true }); } catch(e) { event.target.focus(); } }, 0);
-      }
       return;
     }
     if (event.type === 'touchend' || event.type === 'click') {
@@ -22204,9 +22222,26 @@ function saveAdmission() {
     }
   }
 
-  ['touchstart', 'touchend', 'mousedown', 'mouseup', 'click'].forEach(function(type){
+  ['touchend', 'click'].forEach(function(type){
     window.addEventListener(type, protectAuthControls, { capture: true, passive: false });
   });
+
+  function bindNativeFocus(){
+    document.querySelectorAll(
+      '#login-screen .login-card input, #login-screen .login-card textarea, #login-screen .login-card select, #ob-overlay input, #ob-overlay textarea, #ob-overlay select'
+    ).forEach(function(el){
+      if (el.__vpNativeFocusBound) return;
+      el.__vpNativeFocusBound = true;
+      el.addEventListener('touchend', function(){
+        setTimeout(function(){ try { el.focus({ preventScroll: true }); } catch(e) { try { el.focus(); } catch(_) {} } }, 0);
+      }, { passive: true });
+    });
+  }
+
+  bindNativeFocus();
+  document.addEventListener('DOMContentLoaded', bindNativeFocus);
+  window.addEventListener('load', bindNativeFocus);
+  setInterval(bindNativeFocus, 800);
 })();
 </script>
 </body>
