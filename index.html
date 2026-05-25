@@ -22396,19 +22396,34 @@ function saveAdmission() {
       card.innerHTML = '<h2>Connexion VetPro</h2><input id="vp-ios-email" type="email" autocomplete="email" placeholder="email@cabinet.dz"><input id="vp-ios-password" type="password" autocomplete="current-password" placeholder="Mot de passe"><button class="vp-ios-primary" id="vp-ios-login">Accéder à la clinique</button><button class="vp-ios-google" id="vp-ios-google">Continuer avec Google</button><div class="vp-ios-row"><button class="vp-ios-ghost" id="vp-ios-to-signup">Créer un compte</button><button class="vp-ios-ghost" id="vp-ios-forgot">Mot de passe oublié</button></div><button class="vp-ios-ghost" id="vp-ios-close">Fermer</button><div class="vp-ios-msg" id="vp-ios-auth-msg"></div>';
     }
     sheet.classList.add('open');
-    document.getElementById('vp-ios-login')?.addEventListener('click', loginWithPassword);
-    document.getElementById('vp-ios-signup')?.addEventListener('click', signup);
-    document.getElementById('vp-ios-google')?.addEventListener('click', google);
-    document.getElementById('vp-ios-google-su')?.addEventListener('click', google);
-    document.getElementById('vp-ios-to-signup')?.addEventListener('click', function(){ showSheet('signup'); });
-    document.getElementById('vp-ios-to-login')?.addEventListener('click', function(){ showSheet('login'); });
-    document.getElementById('vp-ios-close')?.addEventListener('click', function(){ sheet.classList.remove('open'); });
-    document.getElementById('vp-ios-forgot')?.addEventListener('click', function(){
+    bindTap(document.getElementById('vp-ios-login'), loginWithPassword);
+    bindTap(document.getElementById('vp-ios-signup'), signup);
+    bindTap(document.getElementById('vp-ios-google'), google);
+    bindTap(document.getElementById('vp-ios-google-su'), google);
+    bindTap(document.getElementById('vp-ios-to-signup'), function(){ showSheet('signup'); });
+    bindTap(document.getElementById('vp-ios-to-login'), function(){ showSheet('login'); });
+    bindTap(document.getElementById('vp-ios-close'), function(){ sheet.classList.remove('open'); });
+    bindTap(document.getElementById('vp-ios-forgot'), function(){
       const email = norm(document.getElementById('vp-ios-email')?.value);
       if (!email) { msg('Entrez votre email puis réessayez.'); return; }
       sb()?.auth?.resetPasswordForEmail(email, { redirectTo:`${window.location.origin}${window.location.pathname}` });
       msg('Lien de réinitialisation envoyé si le compte existe.');
     });
+  }
+
+  function bindTap(el, fn){
+    if (!el || el.__vpIosTapBound) return;
+    el.__vpIosTapBound = true;
+    const run = function(e){
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      }
+      fn();
+    };
+    el.addEventListener('touchend', run, { passive:false });
+    el.addEventListener('click', run, false);
   }
   function showSheet(mode){
     ensureSheet();
@@ -22431,14 +22446,30 @@ function saveAdmission() {
   function bindLanding(){
     if (!isIOS()) return;
     ensureSheet();
-    window.addEventListener('click', function(e){
+    if (!window.__vpIosOpenAuthPatched) {
+      window.__vpIosOpenAuthPatched = true;
+      const originalOpenAuthCard = window.openAuthCard;
+      window.openAuthCard = function(mode){
+        showSheet(mode === 'signup' ? 'signup' : 'login');
+        return originalOpenAuthCard ? undefined : false;
+      };
+    }
+    const handler = function(e){
       const login = e.target.closest?.('#landing-login-btn, [data-vp-action="open-login"]');
       const signup = e.target.closest?.('#landing-signup-btn, [data-vp-action="open-signup"]');
       if (!login && !signup) return;
       e.preventDefault();
       e.stopImmediatePropagation();
       showSheet(signup ? 'signup' : 'login');
-    }, true);
+    };
+    window.addEventListener('touchend', handler, { capture:true, passive:false });
+    window.addEventListener('click', handler, true);
+    document.querySelectorAll('#landing-login-btn, [data-vp-action="open-login"]').forEach(function(el){
+      bindTap(el, function(){ showSheet('login'); });
+    });
+    document.querySelectorAll('#landing-signup-btn, [data-vp-action="open-signup"]').forEach(function(el){
+      bindTap(el, function(){ showSheet('signup'); });
+    });
   }
 
   async function resumeApprovedSession(){
