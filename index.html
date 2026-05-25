@@ -22104,6 +22104,58 @@ function saveAdmission() {
 </script>
 
 <style id="vetpro-ios-original-ui-fix-style">
+  html.vp-ios-touch #login-screen.hidden {
+    display: none !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+  }
+  html.vp-ios-touch #login-screen .login-card,
+  html.vp-ios-touch #login-screen .landing-card,
+  html.vp-ios-touch #login-screen .pricing-card,
+  html.vp-ios-touch #login-screen .feature-card {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    animation: none !important;
+  }
+  html.vp-ios-touch #login-screen .login-card {
+    position: relative !important;
+    z-index: 2147483000 !important;
+    transform: none !important;
+    -webkit-transform: none !important;
+    touch-action: auto !important;
+    pointer-events: auto !important;
+    contain: none !important;
+  }
+  html.vp-ios-touch #login-screen .login-card * {
+    pointer-events: auto !important;
+  }
+  html.vp-ios-touch #login-screen input,
+  html.vp-ios-touch #login-screen textarea,
+  html.vp-ios-touch #login-screen select,
+  html.vp-ios-touch .main input,
+  html.vp-ios-touch .main textarea,
+  html.vp-ios-touch .main select {
+    font-size: 16px !important;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    touch-action: auto !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    min-height: 44px !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    transform: translateZ(0);
+  }
+  html.vp-ios-touch #login-screen button,
+  html.vp-ios-touch #login-screen [onclick],
+  html.vp-ios-touch .main button,
+  html.vp-ios-touch .main [onclick],
+  html.vp-ios-touch .sidebar .sb-item,
+  html.vp-ios-touch #vp-bottom-bar button {
+    touch-action: manipulation !important;
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
   @supports (-webkit-touch-callout: none) {
     #login-screen.hidden {
       display: none !important;
@@ -22166,9 +22218,10 @@ function saveAdmission() {
   window.__vetproIosOriginalUiFix = true;
 
   function isIOS(){
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return /iPad|iPhone|iPod|CriOS|FxiOS|EdgiOS/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
   if (!isIOS()) return;
+  document.documentElement.classList.add('vp-ios-touch');
 
   function client(){
     try { if (window._sb) return window._sb; } catch(e) {}
@@ -22247,9 +22300,6 @@ function saveAdmission() {
       if (input.__vpIosInputBound) return;
       input.__vpIosInputBound = true;
       input.addEventListener('touchstart', function(){ input.__vpTouched = true; }, { passive:true });
-      input.addEventListener('touchend', function(){
-        setTimeout(function(){ try { input.focus({ preventScroll:true }); } catch(e) { try { input.focus(); } catch(_) {} } }, 0);
-      }, { passive:true });
     });
     root.querySelectorAll('label').forEach(function(label){
       if (label.__vpIosLabelBound) return;
