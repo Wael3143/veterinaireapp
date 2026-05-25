@@ -9909,11 +9909,13 @@ function saveAdmission() {
     const email = document.getElementById('login-email')?.value?.trim().toLowerCase();
     const password = document.getElementById('login-password')?.value;
     const btn = document.getElementById('login-btn-el');
-    const state = getApprovalState();
     if (!email || !password) { showLoginError('Veuillez remplir tous les champs.'); return; }
-    if (email !== ADMIN_EMAIL && !state.approved.includes(email)) {
-      const pending = state.pending.find(item => item.email === email);
-      showLoginError(pending ? 'Compte en attente d approbation administrateur.' : 'Compte non approuvé.');
+    const approved = (typeof isApprovedEmail === 'function')
+      ? await isApprovedEmail(email)
+      : (email === ADMIN_EMAIL || getApprovalState().approved.includes(email));
+    if (!approved) {
+      const row = (typeof fetchApprovalRow === 'function') ? await fetchApprovalRow(email) : null;
+      showLoginError(row?.status === 'pending' ? 'Compte en attente d approbation administrateur.' : 'Compte non approuvé.');
       return;
     }
     if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Connexion...'; }
