@@ -21877,6 +21877,7 @@ function saveAdmission() {
   }
   function normalize(email){ return (email || '').trim().toLowerCase(); }
   let openedForUser = '';
+  let oauthFinalizeStarted = false;
 
   async function approvalStatus(email){
     email = normalize(email);
@@ -21945,6 +21946,54 @@ function saveAdmission() {
     if (await approvalStatus(user.email) === 'approved') openDashboard(user);
   }
 
+  async function waitForSession(maxMs){
+    const c = client();
+    if (!c?.auth?.getSession) return null;
+    const started = Date.now();
+    while (Date.now() - started < maxMs) {
+      const { data: { session } } = await c.auth.getSession();
+      if (session?.user?.email) return session;
+      await new Promise(resolve => setTimeout(resolve, 250));
+    }
+    return null;
+  }
+
+  async function finalizeOAuthReturn(){
+    if (oauthFinalizeStarted) return;
+    const hasCode = window.location.search.includes('code=');
+    const hasTokenHash = window.location.hash.includes('access_token=');
+    if (!hasCode && !hasTokenHash) return;
+    oauthFinalizeStarted = true;
+
+    const c = client();
+    if (!c?.auth) return;
+    const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+    try {
+      if (hasCode && c.auth.exchangeCodeForSession) {
+        const code = new URLSearchParams(window.location.search).get('code');
+        if (code) {
+          try { await c.auth.exchangeCodeForSession(code); } catch(e) {}
+        }
+      }
+      if (hasTokenHash) {
+        const params = new URLSearchParams(window.location.hash.slice(1));
+        const access_token = params.get('access_token');
+        const refresh_token = params.get('refresh_token');
+        if (access_token && refresh_token && c.auth.setSession) {
+          try { await c.auth.setSession({ access_token, refresh_token }); } catch(e) {}
+        }
+      }
+      const session = await waitForSession(8000);
+      if (session?.user?.email && await approvalStatus(session.user.email) === 'approved') {
+        openDashboard(session.user);
+      }
+    } finally {
+      try { window.history.replaceState({}, document.title, cleanUrl); } catch(e) {}
+      setTimeout(checkSession, 500);
+      setTimeout(checkSession, 1500);
+    }
+  }
+
   function patchLoginRedirect(){
     if (typeof window.doLogin !== 'function' || window.doLogin.__vpRedirectOnly) return;
     const original = window.doLogin;
@@ -21959,6 +22008,7 @@ function saveAdmission() {
 
   function init(){
     patchLoginRedirect();
+    finalizeOAuthReturn();
     checkSession();
     cleanupBlockingOverlays();
   }
@@ -21966,6 +22016,7 @@ function saveAdmission() {
   document.addEventListener('DOMContentLoaded', init);
   window.addEventListener('load', init);
   setTimeout(init, 500);
+  setTimeout(finalizeOAuthReturn, 1200);
   setInterval(function(){
     checkSession();
     cleanupBlockingOverlays();
