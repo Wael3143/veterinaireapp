@@ -22138,13 +22138,9 @@ function saveAdmission() {
     font-size: 16px !important;
     -webkit-user-select: text !important;
     user-select: text !important;
-    touch-action: auto !important;
     pointer-events: auto !important;
     opacity: 1 !important;
     min-height: 44px !important;
-    -webkit-appearance: none !important;
-    appearance: none !important;
-    transform: translateZ(0);
   }
   html.vp-ios-touch #login-screen button,
   html.vp-ios-touch #login-screen [onclick],
@@ -22191,13 +22187,9 @@ function saveAdmission() {
       font-size: 16px !important;
       -webkit-user-select: text !important;
       user-select: text !important;
-      touch-action: auto !important;
       pointer-events: auto !important;
       opacity: 1 !important;
       min-height: 44px !important;
-      -webkit-appearance: none !important;
-      appearance: none !important;
-      transform: translateZ(0);
     }
     #login-screen button,
     #login-screen [onclick],
@@ -22233,6 +22225,20 @@ function saveAdmission() {
   function removeExperimentalUi(){
     document.getElementById('vp-ios-auth-sheet')?.remove();
     document.getElementById('vp-ios-auth-launcher')?.remove();
+  }
+
+  function removePostLoginBlockers(){
+    const login = document.getElementById('login-screen');
+    if (login && !login.classList.contains('hidden')) return;
+    document.querySelectorAll('#ob-overlay, #vetpro-first-login, #vetpro-first-login-ultra').forEach(function(el){
+      el.remove();
+    });
+    document.querySelectorAll('.overlay').forEach(function(el){
+      const style = getComputedStyle(el);
+      if (style.position === 'fixed' && style.display !== 'none' && Number(style.zIndex || 0) >= 100) {
+        el.style.pointerEvents = 'none';
+      }
+    });
   }
 
   async function approvalStatus(email){
@@ -22275,6 +22281,7 @@ function saveAdmission() {
       if (typeof window.applyUltraIdentity === 'function') window.applyUltraIdentity();
       if (typeof window.refreshDashboardWelcome === 'function') window.refreshDashboardWelcome();
       if (typeof window.vpRefreshDashboardWelcome === 'function') window.vpRefreshDashboardWelcome();
+      removePostLoginBlockers();
     }, 120);
   }
 
@@ -22296,20 +22303,6 @@ function saveAdmission() {
   function bindOriginalControls(){
     const root = document.getElementById('login-screen');
     if (!root) return;
-    root.querySelectorAll('input, textarea, select').forEach(function(input){
-      if (input.__vpIosInputBound) return;
-      input.__vpIosInputBound = true;
-      input.addEventListener('touchstart', function(){ input.__vpTouched = true; }, { passive:true });
-    });
-    root.querySelectorAll('label').forEach(function(label){
-      if (label.__vpIosLabelBound) return;
-      label.__vpIosLabelBound = true;
-      label.addEventListener('touchend', function(){
-        const wrap = label.closest('div');
-        const input = wrap?.querySelector?.('input, textarea, select') || label.nextElementSibling;
-        if (input?.focus) setTimeout(function(){ input.focus(); }, 0);
-      }, { passive:true });
-    });
     root.querySelectorAll('button').forEach(function(btn){
       if (btn.__vpIosBound) return;
       btn.__vpIosBound = true;
@@ -22342,6 +22335,7 @@ function saveAdmission() {
     removeExperimentalUi();
     bindOriginalControls();
     checkAndOpenSession();
+    removePostLoginBlockers();
   }
 
   document.addEventListener('DOMContentLoaded', init);
@@ -22349,6 +22343,7 @@ function saveAdmission() {
   setInterval(function(){
     removeExperimentalUi();
     bindOriginalControls();
+    removePostLoginBlockers();
   }, 1000);
   if (client()?.auth?.onAuthStateChange) {
     client().auth.onAuthStateChange(function(event, session){
