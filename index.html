@@ -22114,12 +22114,23 @@ function saveAdmission() {
     #login-screen .login-card [onclick],
     #auth-login-panel button,
     #auth-signup-panel button,
-    #auth-forgot-panel button {
+    #auth-forgot-panel button,
+    #ob-overlay button,
+    #ob-overlay .ob-option {
       position: relative !important;
       z-index: 2147483001 !important;
       pointer-events: auto !important;
       touch-action: manipulation !important;
       cursor: pointer !important;
+    }
+    #ob-overlay input,
+    #ob-overlay select,
+    #ob-overlay textarea {
+      pointer-events: auto !important;
+      touch-action: auto !important;
+      -webkit-user-select: text !important;
+      user-select: text !important;
+      font-size: 16px !important;
     }
   }
 </style>
@@ -22132,7 +22143,8 @@ function saveAdmission() {
   function isAuthControl(target){
     return !!target?.closest?.(
       '#login-screen .login-card input, #login-screen .login-card textarea, #login-screen .login-card select,' +
-      '#login-screen .login-card button, #login-screen .login-card [onclick]'
+      '#login-screen .login-card button, #login-screen .login-card [onclick],' +
+      '#ob-overlay button, #ob-overlay .ob-option, #ob-overlay input, #ob-overlay textarea, #ob-overlay select'
     );
   }
 
@@ -22141,11 +22153,25 @@ function saveAdmission() {
   }
 
   function runAuthButton(el){
-    const node = el?.closest?.('button, [onclick]');
+    const node = el?.closest?.('button, [onclick], .ob-option');
     if (!node || isTextControl(node)) return false;
+    const action = node.getAttribute('onclick') || '';
+    if (node.closest?.('#ob-overlay')) {
+      const text = (node.textContent || '').toLowerCase();
+      if (node.classList?.contains('ob-option')) {
+        node.parentElement?.querySelectorAll('.ob-option').forEach(function(option){ option.classList.remove('selected'); });
+        node.classList.add('selected');
+        if (action.includes("'demo'") || action.includes('"demo"') || text.includes('démo') || text.includes('demo')) window.__obSetMode?.('demo');
+        else window.__obSetMode?.('empty');
+        return true;
+      }
+      if (action.includes('__obNext') || text.includes('continuer')) { window.__obNext?.(); return true; }
+      if (action.includes('__obBack') || text.includes('retour')) { window.__obBack?.(); return true; }
+      if (action.includes('__obSkip') || text.includes('passer')) { window.__obSkip?.(); return true; }
+      if (action.includes('__obFinish') || text.includes('commencer')) { window.__obFinish?.(); return true; }
+    }
     if (node.id === 'login-btn-el') { if (typeof window.doLogin === 'function') window.doLogin(); return true; }
     if (node.id === 'pwd-eye') { if (typeof window.toggleLoginPwd === 'function') window.toggleLoginPwd(); return true; }
-    const action = node.getAttribute('onclick') || '';
     if (action.includes('showAuthMode')) {
       if (action.includes('signup') && typeof window.showAuthMode === 'function') window.showAuthMode('signup');
       else if (action.includes('forgot') && typeof window.showAuthMode === 'function') window.showAuthMode('forgot');
@@ -22165,7 +22191,6 @@ function saveAdmission() {
 
   function protectAuthControls(event){
     if (!isAuthControl(event.target)) return;
-    event.stopImmediatePropagation();
     if (isTextControl(event.target)) {
       if (event.type === 'touchend' || event.type === 'click') {
         setTimeout(function(){ try { event.target.focus({ preventScroll: true }); } catch(e) { event.target.focus(); } }, 0);
@@ -22174,6 +22199,7 @@ function saveAdmission() {
     }
     if (event.type === 'touchend' || event.type === 'click') {
       event.preventDefault();
+      event.stopImmediatePropagation();
       runAuthButton(event.target);
     }
   }
