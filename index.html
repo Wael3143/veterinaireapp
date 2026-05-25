@@ -21876,6 +21876,7 @@ function saveAdmission() {
     return null;
   }
   function normalize(email){ return (email || '').trim().toLowerCase(); }
+  let openedForUser = '';
 
   async function approvalStatus(email){
     email = normalize(email);
@@ -21900,6 +21901,9 @@ function saveAdmission() {
   }
 
   function openDashboard(user){
+    const email = normalize(user?.email);
+    const firstOpenForUser = email && openedForUser !== email;
+    if (email) openedForUser = email;
     const screen = document.getElementById('login-screen');
     if (screen) {
       screen.classList.add('hidden');
@@ -21910,14 +21914,26 @@ function saveAdmission() {
     const logout = document.getElementById('logout-btn');
     if (logout) logout.style.display = 'block';
     if (typeof window.setCurrentUserContext === 'function') window.setCurrentUserContext(user);
-    if (typeof window.initializePersistentState === 'function') window.initializePersistentState();
+    if (firstOpenForUser && typeof window.initializePersistentState === 'function') window.initializePersistentState();
     setTimeout(function(){
-      if (typeof window.nav === 'function') window.nav('dashboard');
-      if (typeof window.applyUltraIdentity === 'function') window.applyUltraIdentity();
-      if (typeof window.refreshDashboardWelcome === 'function') window.refreshDashboardWelcome();
-      if (typeof window.vpRefreshDashboardWelcome === 'function') window.vpRefreshDashboardWelcome();
-      document.querySelectorAll('#ob-overlay, #vetpro-first-login, #vetpro-first-login-ultra').forEach(el => el.remove());
+      if (firstOpenForUser && typeof window.nav === 'function') window.nav('dashboard');
+      if (firstOpenForUser && typeof window.applyUltraIdentity === 'function') window.applyUltraIdentity();
+      if (firstOpenForUser && typeof window.refreshDashboardWelcome === 'function') window.refreshDashboardWelcome();
+      if (firstOpenForUser && typeof window.vpRefreshDashboardWelcome === 'function') window.vpRefreshDashboardWelcome();
+      cleanupBlockingOverlays();
     }, 100);
+  }
+
+  function cleanupBlockingOverlays(){
+    const login = document.getElementById('login-screen');
+    if (login && !login.classList.contains('hidden')) return;
+    document.querySelectorAll('#ob-overlay, #vetpro-first-login, #vetpro-first-login-ultra').forEach(el => el.remove());
+    document.querySelectorAll('.overlay').forEach(el => {
+      const style = getComputedStyle(el);
+      if (style.position === 'fixed' && style.display !== 'none' && style.visibility !== 'hidden') {
+        el.style.pointerEvents = 'none';
+      }
+    });
   }
 
   async function checkSession(){
@@ -21944,12 +21960,16 @@ function saveAdmission() {
   function init(){
     patchLoginRedirect();
     checkSession();
+    cleanupBlockingOverlays();
   }
 
   document.addEventListener('DOMContentLoaded', init);
   window.addEventListener('load', init);
   setTimeout(init, 500);
-  setInterval(checkSession, 4000);
+  setInterval(function(){
+    checkSession();
+    cleanupBlockingOverlays();
+  }, 4000);
   const c = client();
   if (c?.auth?.onAuthStateChange) {
     c.auth.onAuthStateChange(function(event, session){
