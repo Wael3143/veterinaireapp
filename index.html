@@ -11576,7 +11576,7 @@ function saveAdmission() {
       approval?.status === 'rejected' ? 'error' : 'warn'
     );
     if (typeof toast === 'function' && sourceLabel !== 'silent') {
-      toast(approval?.status === 'rejected' ? 'Accès refusé' : 'Compte en attente d'approbation');
+      toast(approval?.status === 'rejected' ? 'Accès refusé' : "Compte en attente d'approbation");
     }
     return false;
   }
@@ -11652,7 +11652,7 @@ function saveAdmission() {
     }
 
     try {
-      if (!_sb) throw new Error('Supabase n'est pas disponible sur cette page.');
+      if (!_sb) throw new Error("Supabase n'est pas disponible sur cette page.");
       const { error } = await _sb.auth.signInWithPassword({ email, password });
       if (error) throw error;
       await finalizeSessionAccess('password');
@@ -11680,7 +11680,7 @@ function saveAdmission() {
     clearLoginFeedback();
     setLoginFeedback('Redirection vers Google...', 'info');
     try {
-      if (!_sb) throw new Error('Supabase n'est pas disponible pour Google Sign-In.');
+      if (!_sb) throw new Error("Supabase n'est pas disponible pour Google Sign-In.");
       const redirectTo = `${window.location.origin}${window.location.pathname}`;
       const { error } = await _sb.auth.signInWithOAuth({
         provider: 'google',
@@ -11752,6 +11752,226 @@ function saveAdmission() {
 
   document.addEventListener('DOMContentLoaded', initFinalVetProHotfix);
   window.addEventListener('load', initFinalVetProHotfix);
+})();
+</script>
+
+<style id="vetpro-auth-iphone-hotfix-style">
+  @media (max-width: 768px), (pointer: coarse) {
+    #login-screen.vetpro-landing {
+      min-height: 100dvh !important;
+      height: auto !important;
+      overflow-y: auto !important;
+      -webkit-overflow-scrolling: touch !important;
+      touch-action: pan-y manipulation !important;
+    }
+    #login-screen.vetpro-landing::before,
+    #login-screen.vetpro-landing::after {
+      display: none !important;
+    }
+    #login-screen.vetpro-landing .landing-card,
+    #login-screen.vetpro-landing .pricing-card,
+    #login-screen.vetpro-landing .feature-card,
+    #login-screen.vetpro-landing .login-card,
+    #login-screen.vetpro-landing .vp-trust-pill {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+    }
+    #login-screen.vetpro-landing button,
+    #login-screen.vetpro-landing a,
+    #login-screen.vetpro-landing input,
+    #login-screen.vetpro-landing select,
+    #login-screen.vetpro-landing textarea,
+    #login-screen.vetpro-landing [data-vp-action],
+    #login-screen.vetpro-landing [data-vp-scroll],
+    #login-screen.vetpro-landing [onclick] {
+      pointer-events: auto !important;
+      touch-action: manipulation !important;
+    }
+    #login-screen.vetpro-landing .landing-panel > *,
+    #login-screen.vetpro-landing .landing-right {
+      animation: none !important;
+    }
+  }
+</style>
+
+<script id="vetpro-auth-iphone-hotfix-script">
+(function(){
+  'use strict';
+  if (window.__vetproAuthIphoneHotfix) return;
+  window.__vetproAuthIphoneHotfix = true;
+
+  function normalizeEmail(email){
+    return (email || '').trim().toLowerCase();
+  }
+
+  function supabaseClient(){
+    try { if (window._sb) return window._sb; } catch(e) {}
+    try { if (typeof _sb !== 'undefined') return _sb; } catch(e) {}
+    return null;
+  }
+
+  function localApprovalStatus(email){
+    const normalized = normalizeEmail(email);
+    if (!normalized) return null;
+    const sources = [];
+    try { if (typeof window.getFallbackState === 'function') sources.push(window.getFallbackState()); } catch(e) {}
+    try {
+      const raw = localStorage.getItem('vetpro-access-fallback-v2');
+      if (raw) sources.push(JSON.parse(raw));
+    } catch(e) {}
+    try {
+      const raw = localStorage.getItem('vetpro-approvals');
+      if (raw) sources.push(JSON.parse(raw));
+    } catch(e) {}
+    for (const state of sources) {
+      if (Array.isArray(state?.approved) && state.approved.map(normalizeEmail).includes(normalized)) return 'approved';
+      if (Array.isArray(state?.pending) && state.pending.some(item => normalizeEmail(item?.email || item) === normalized)) return 'pending';
+      if (Array.isArray(state?.rejected) && state.rejected.some(item => normalizeEmail(item?.email || item) === normalized)) return 'rejected';
+    }
+    return null;
+  }
+
+  async function resolveApprovalStatus(email){
+    const normalized = normalizeEmail(email);
+    if (!normalized) return null;
+    const adminEmail = normalizeEmail(localStorage.getItem('vetpro-admin-email'));
+    if (adminEmail && normalized === adminEmail) return 'approved';
+
+    try {
+      if (typeof window.fetchApprovalRow === 'function') {
+        const row = await window.fetchApprovalRow(normalized);
+        if (row?.status) return String(row.status).toLowerCase();
+      }
+    } catch(e) {}
+
+    try {
+      const client = supabaseClient();
+      if (client) {
+        const { data } = await client
+          .from('vetpro_access_requests')
+          .select('status,requested_at,reviewed_at')
+          .ilike('email', normalized)
+          .order('reviewed_at', { ascending:false, nullsFirst:false })
+          .order('requested_at', { ascending:false, nullsFirst:false })
+          .limit(1);
+        if (data?.[0]?.status) return String(data[0].status).toLowerCase();
+      }
+    } catch(e) {}
+
+    try {
+      if (typeof window.isApprovedEmail === 'function' && await window.isApprovedEmail(normalized)) return 'approved';
+    } catch(e) {}
+
+    return localApprovalStatus(normalized);
+  }
+
+  function openApprovedSession(user){
+    if (typeof window.setCurrentUserContext === 'function') window.setCurrentUserContext(user);
+    if (typeof window.initializePersistentState === 'function') window.initializePersistentState();
+    const screen = document.getElementById('login-screen');
+    if (screen) { screen.classList.add('hidden'); screen.style.display = 'none'; }
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) logoutBtn.style.display = 'block';
+    if (typeof window.clearLoginFeedback === 'function') window.clearLoginFeedback();
+    setTimeout(function(){
+      if (typeof window.nav === 'function') window.nav('dashboard');
+      if (typeof window.applyUltraIdentity === 'function') window.applyUltraIdentity();
+      if (typeof window.refreshDashboardWelcome === 'function') window.refreshDashboardWelcome();
+      if (typeof window.vpRefreshDashboardWelcome === 'function') window.vpRefreshDashboardWelcome();
+    }, 50);
+  }
+
+  function patchLogin(){
+    if (typeof window.doLogin !== 'function' || window.doLogin.__vpApprovedRedirectFix) return false;
+    window.doLogin = async function(){
+      const email = normalizeEmail(document.getElementById('login-email')?.value);
+      const password = document.getElementById('login-password')?.value;
+      const btn = document.getElementById('login-btn-el');
+      const setFeedback = window.setLoginFeedback || window.showLoginError || function(msg){ if (typeof window.toast === 'function') window.toast(msg); };
+      if (!email || !password) { setFeedback('Veuillez remplir tous les champs.', 'error'); return; }
+      if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Connexion...'; }
+      try {
+        const client = supabaseClient();
+        if (!client) throw new Error("Supabase n'est pas disponible sur cette page.");
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const user = data?.user || data?.session?.user || { email };
+        const status = await resolveApprovalStatus(email);
+        if (status === 'approved') {
+          openApprovedSession(user);
+          if (typeof window.toast === 'function') window.toast('Connexion réussie');
+          return;
+        }
+        await client.auth.signOut();
+        const msg = status === 'rejected'
+          ? `Compte refusé pour ${email}. Contactez VetPro.`
+          : `Compte ${email} en attente d'approbation manuelle.`;
+        setFeedback(msg, status === 'rejected' ? 'error' : 'warn');
+      } catch (error) {
+        setFeedback(error?.message || 'Erreur de connexion', 'error');
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Accéder à la clinique'; }
+      }
+    };
+    window.doLogin.__vpApprovedRedirectFix = true;
+    return true;
+  }
+
+  function patchAuthEvents(){
+    const client = supabaseClient();
+    if (!client?.auth?.onAuthStateChange || window.__vpApprovedRedirectEventFix) return false;
+    window.__vpApprovedRedirectEventFix = true;
+    client.auth.onAuthStateChange(async function(event, session){
+      if (!(event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) return;
+      const user = session?.user;
+      const email = normalizeEmail(user?.email);
+      if (!email) return;
+      if (await resolveApprovalStatus(email) === 'approved') openApprovedSession(user);
+    });
+    return true;
+  }
+
+  function bindIphoneLandingActions(){
+    const screen = document.getElementById('login-screen');
+    if (!screen || screen.__vpIphoneLandingBound) return;
+    screen.__vpIphoneLandingBound = true;
+    const activate = function(target){
+      const actionNode = target.closest?.('[data-vp-action], [data-vp-scroll], #landing-login-btn, #landing-signup-btn');
+      if (!actionNode) return false;
+      const action = actionNode.dataset?.vpAction;
+      const scroll = actionNode.dataset?.vpScroll;
+      if (action === 'open-login' || actionNode.id === 'landing-login-btn') {
+        if (typeof window.openAuthCard === 'function') window.openAuthCard('login');
+        return true;
+      }
+      if (action === 'open-signup' || actionNode.id === 'landing-signup-btn') {
+        if (typeof window.openAuthCard === 'function') window.openAuthCard('signup');
+        return true;
+      }
+      if (scroll) {
+        document.getElementById(scroll)?.scrollIntoView({ behavior:'smooth', block:'start' });
+        return true;
+      }
+      return false;
+    };
+    screen.addEventListener('click', function(e){
+      if (activate(e.target)) e.preventDefault();
+    }, true);
+    screen.addEventListener('touchend', function(e){
+      if (activate(e.target)) e.preventDefault();
+    }, { passive:false, capture:true });
+  }
+
+  function init(){
+    patchLogin();
+    patchAuthEvents();
+    bindIphoneLandingActions();
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+  window.addEventListener('load', init);
+  setTimeout(init, 500);
+  setTimeout(init, 1500);
 })();
 </script>
 
