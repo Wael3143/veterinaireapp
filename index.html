@@ -22274,6 +22274,17 @@ function saveAdmission() {
     #vp-ios-auth-card .vp-ios-row { display: flex; gap: 10px; }
     #vp-ios-auth-card .vp-ios-row button { flex: 1; }
     #vp-ios-auth-card .vp-ios-msg { min-height: 18px; margin-top: 12px; color: #fbbf24; font-size: 13px; line-height: 1.35; }
+    #vp-ios-auth-launcher {
+      position: fixed; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom));
+      z-index: 2147483639; display: none; min-height: 48px; padding: 0 18px;
+      border: 0; border-radius: 999px; background: #49f48a; color: #062114;
+      font: 800 15px 'Outfit', system-ui, sans-serif; box-shadow: 0 12px 34px rgba(0,0,0,.35);
+      touch-action: manipulation; cursor: pointer;
+    }
+    #login-screen:not(.hidden) ~ #vp-ios-auth-launcher,
+    body:has(#login-screen:not(.hidden)) #vp-ios-auth-launcher {
+      display: block;
+    }
   }
 </style>
 <script id="vetpro-ios-auth-sheet-script">
@@ -22422,6 +22433,8 @@ function saveAdmission() {
       }
       fn();
     };
+    el.onclick = run;
+    el.ontouchend = run;
     el.addEventListener('touchend', run, { passive:false });
     el.addEventListener('click', run, false);
   }
@@ -22441,6 +22454,18 @@ function saveAdmission() {
     sheet.id = 'vp-ios-auth-sheet';
     sheet.innerHTML = '<div id="vp-ios-auth-card"></div>';
     document.body.appendChild(sheet);
+  }
+
+  function ensureLauncher(){
+    if (!isIOS()) return;
+    if (!document.getElementById('vp-ios-auth-launcher')) {
+      const btn = document.createElement('button');
+      btn.id = 'vp-ios-auth-launcher';
+      btn.type = 'button';
+      btn.textContent = 'Connexion';
+      document.body.appendChild(btn);
+    }
+    bindTap(document.getElementById('vp-ios-auth-launcher'), function(){ showSheet('login'); });
   }
 
   function bindLanding(){
@@ -22470,6 +22495,7 @@ function saveAdmission() {
     document.querySelectorAll('#landing-signup-btn, [data-vp-action="open-signup"]').forEach(function(el){
       bindTap(el, function(){ showSheet('signup'); });
     });
+    ensureLauncher();
   }
 
   async function resumeApprovedSession(){
@@ -22503,7 +22529,11 @@ function saveAdmission() {
     obs.observe(document.body, { childList:true, subtree:true });
   }
 
-  document.addEventListener('DOMContentLoaded', function(){ bindLanding(); resumeApprovedSession(); patchOnboardingOnce(); });
+  bindLanding();
+  ensureLauncher();
+  resumeApprovedSession();
+  patchOnboardingOnce();
+  document.addEventListener('DOMContentLoaded', function(){ bindLanding(); ensureLauncher(); resumeApprovedSession(); patchOnboardingOnce(); });
   window.addEventListener('load', function(){ bindLanding(); resumeApprovedSession(); });
   if (sb()?.auth?.onAuthStateChange) {
     sb().auth.onAuthStateChange(function(event, session){
