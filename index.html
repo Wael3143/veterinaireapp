@@ -719,6 +719,8 @@ function showAuthMode(mode){
   if (forgot) forgot.style.display = maps.forgot;
   const error = document.getElementById('login-error');
   if (error) error.style.display = 'none';
+  // Rebuild the enhanced signup panel as soon as it becomes visible
+  if (mode === 'signup' && typeof rebuildSignupPanel === 'function') rebuildSignupPanel();
 }
 function ensureAuthEnhancements(){
   const card = document.querySelector('#login-screen .login-card');
@@ -10018,7 +10020,6 @@ function saveAdmission() {
   }
 
   window.doSignup = async function(){
-    rebuildSignupPanel();
     const firstName = document.getElementById('signup-first-name')?.value?.trim();
     const lastName = document.getElementById('signup-last-name')?.value?.trim();
     const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
@@ -11067,8 +11068,6 @@ function saveAdmission() {
 
   window.doSignup = async function(){
     /* Ensure enhanced signup panel is present */
-    if (typeof rebuildSignupPanel === 'function') rebuildSignupPanel();
-
     const firstName = document.getElementById('signup-first-name')?.value?.trim();
     const lastName = document.getElementById('signup-last-name')?.value?.trim();
     const email = document.getElementById('signup-email')?.value?.trim().toLowerCase();
