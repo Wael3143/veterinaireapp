@@ -9,6 +9,14 @@
 <meta name="author" content="VetPro">
 <meta name="robots" content="index, follow">
 <link rel="canonical" href="https://vetpro.vercel.app/">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/vetpro-icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/vetpro-icon-192.png">
+<meta name="theme-color" content="#1A4A2E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="VetPro">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 <!-- Open Graph -->
 <meta property="og:type" content="website">
@@ -340,8 +348,9 @@ html{height:100%;overflow:hidden}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 
 /* ── MODALS ── */
-.overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.5);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
-.overlay.open{display:flex}
+.overlay{display:none;position:fixed;inset:0;background:rgba(13,27,42,.5);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);pointer-events:none}
+.overlay.open{display:flex;pointer-events:auto}
+.overlay.open .modal{pointer-events:auto}
 .modal{background:#fff;border-radius:var(--r2);padding:26px 28px;width:640px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.28);animation:fadeIn .2s ease}
 .modal-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--brd)}
 .modal-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink)}
@@ -3512,7 +3521,10 @@ const TITLES={
 
 function nav(id){
   // Close any open modals to prevent stuck UI
-  document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.overlay.open').forEach(m => {
+    m.classList.remove('open');
+    m.style.pointerEvents = 'none';
+  });
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
   const pg=document.getElementById('page-'+id);
@@ -3544,13 +3556,19 @@ function openModal(id){
   const el = document.getElementById(id);
   if (!el) return;
   el.classList.add('open');
+  el.style.pointerEvents = 'auto';
 }
 function closeModal(id){
   const el = document.getElementById(id);
-  if (el) el.classList.remove('open');
+  if (!el) return;
+  el.classList.remove('open');
+  el.style.pointerEvents = 'none';
 }
 function closeAllModals(){
-  document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
+  document.querySelectorAll('.overlay.open').forEach(m => {
+    m.classList.remove('open');
+    m.style.pointerEvents = 'none';
+  });
 }
 // Backdrop click closes modal — works for dynamically-added overlays
 // Uses BUBBLE phase so it never interferes with button clicks
@@ -3559,6 +3577,7 @@ document.addEventListener('click', function(e){
     const t = e.target;
     if (t && t.classList && t.classList.contains('overlay') && t.classList.contains('open')) {
       t.classList.remove('open');
+      t.style.pointerEvents = 'none';
     }
   } catch(err) {}
 });
@@ -3566,7 +3585,10 @@ document.addEventListener('click', function(e){
 document.addEventListener('keydown', function(e){
   if (e.key === 'Escape') {
     const open = document.querySelectorAll('.overlay.open');
-    if (open.length) open[open.length - 1].classList.remove('open');
+    if (open.length) {
+      open[open.length - 1].classList.remove('open');
+      open[open.length - 1].style.pointerEvents = 'none';
+    }
   }
 });
 
@@ -21931,7 +21953,9 @@ function saveAdmission() {
     document.querySelectorAll('#ob-overlay, #vetpro-first-login, #vetpro-first-login-ultra').forEach(el => el.remove());
     document.querySelectorAll('.overlay').forEach(el => {
       const style = getComputedStyle(el);
-      if (style.position === 'fixed' && style.display !== 'none' && style.visibility !== 'hidden') {
+      if (el.classList.contains('open')) {
+        el.style.pointerEvents = 'auto';
+      } else if (style.position === 'fixed' && style.display !== 'none' && style.visibility !== 'hidden') {
         el.style.pointerEvents = 'none';
       }
     });
@@ -22032,6 +22056,139 @@ function saveAdmission() {
       }
     });
   }
+})();
+</script>
+<script id="vetpro-runtime-stabilizer">
+(function(){
+  'use strict';
+  if (window.__vetproRuntimeStabilizerLoaded) return;
+  window.__vetproRuntimeStabilizerLoaded = true;
+
+  let lastRun = 0;
+  let pending = 0;
+
+  function call(name){
+    try {
+      if (typeof window[name] === 'function') window[name]();
+    } catch (error) {
+      console.warn('[VetPro stabilizer]', name, error);
+    }
+  }
+
+  function activePageId(){
+    return document.querySelector('.page.active')?.id?.replace(/^page-/, '') || '';
+  }
+
+  function repairOverlays(){
+    document.querySelectorAll('.overlay').forEach((overlay) => {
+      if (overlay.classList.contains('open')) {
+        overlay.style.pointerEvents = 'auto';
+        overlay.querySelectorAll('.modal').forEach(modal => {
+          modal.style.pointerEvents = 'auto';
+        });
+      } else {
+        overlay.style.pointerEvents = 'none';
+      }
+    });
+  }
+
+  function refreshActivePage(){
+    const page = activePageId();
+    try {
+      if (page === 'meds' && typeof window.renderDrugs === 'function') {
+        window.renderDrugs(window.drugFilter || '', window.drugSearch || '');
+      }
+      if (page === 'historique' && typeof window.renderHist === 'function') {
+        window.renderHist(document.getElementById('hist-search')?.value || '');
+      }
+      if (page === 'ordonnances' && typeof window.renderOrdos === 'function') {
+        window.renderOrdos(document.getElementById('ordo-search')?.value || '', true);
+      }
+      if (page === 'cages' && typeof window.renderCages === 'function') {
+        window.renderCages();
+      }
+      if (page === 'clients' && typeof window.renderClientsPage === 'function') {
+        window.renderClientsPage();
+      }
+      if (page === 'rdv' && typeof window.renderRdvPage === 'function') {
+        window.renderRdvPage();
+      }
+      if (page === 'vaccinations') {
+        call('renderVaccineReminders');
+        call('renderVaccHistorique');
+      }
+      if (page === 'statistics' && typeof window.renderStatistics === 'function') {
+        window.renderStatistics();
+      }
+      if (page === 'finances' && typeof window.renderFinancesPage === 'function') {
+        window.renderFinancesPage();
+      }
+      if (page === 'cas') {
+        call('ensureCaseFormEnhancements');
+        if (typeof window.ensureCaseOrdonnanceOption === 'function') window.ensureCaseOrdonnanceOption();
+      }
+      if (page === 'ai' && typeof window.__vetproInjectAIContext === 'function') {
+        window.__vetproInjectAIContext();
+      }
+    } catch (error) {
+      console.warn('[VetPro stabilizer] active page refresh', error);
+    }
+  }
+
+  function rebindCore(){
+    call('ensureModalBindings');
+    call('ensureCaseFormEnhancements');
+    call('ensureClientIntakePanel');
+    call('ensureCageAdmissionEnhancements');
+    call('populatePatientSelects');
+    call('bindHistoriqueActions');
+    call('applyUltraTheme');
+    call('applyUltraIdentity');
+    call('refreshUserBranding');
+    call('hideApprovalsForNonAdmin');
+    repairOverlays();
+    refreshActivePage();
+  }
+
+  function schedule(reason){
+    clearTimeout(pending);
+    pending = setTimeout(() => {
+      const now = Date.now();
+      if (now - lastRun < 120 && reason !== 'pageshow') return;
+      lastRun = now;
+      rebindCore();
+    }, 60);
+  }
+
+  if (typeof window.nav === 'function' && !window.nav.__vetproRuntimeStabilized) {
+    const originalNav = window.nav;
+    window.nav = function(){
+      const result = originalNav.apply(this, arguments);
+      schedule('nav');
+      setTimeout(() => schedule('nav-late'), 220);
+      return result;
+    };
+    window.nav.__vetproRuntimeStabilized = true;
+    try { nav = window.nav; } catch (_error) {}
+  }
+
+  document.addEventListener('DOMContentLoaded', () => schedule('dom'));
+  window.addEventListener('load', () => schedule('load'));
+  window.addEventListener('pageshow', () => schedule('pageshow'));
+  window.addEventListener('focus', () => schedule('focus'));
+  window.addEventListener('online', () => schedule('online'));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') schedule('visible');
+  });
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('.sb-item, .btn, .btn-ico, .fchip, .drug-card, .maladie-card, .surg-card')) {
+      setTimeout(() => schedule('click'), 120);
+    }
+  }, true);
+
+  schedule('initial');
+  setTimeout(() => schedule('initial-late'), 800);
+  setTimeout(() => schedule('initial-later'), 1800);
 })();
 </script>
 </body>
