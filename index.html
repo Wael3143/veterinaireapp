@@ -5252,118 +5252,33 @@ function refreshSyncStats() {
 let _qrCurrentClient = null;
 let _qrPortalUrl = '';
 
-function buildPetPortalHTML(clientName) {
-  const client  = CLIENTS.find(c => c.fullName === clientName) || { fullName: clientName };
-  const animals = PATIENTS.filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
-  const history = HISTORIQUE_DATA.filter(h => (h.client||'').toLowerCase() === clientName.toLowerCase()).slice(0,20);
-  const vaccs   = VACC_HISTORY.filter(v => (v.owner||'').toLowerCase() === clientName.toLowerCase()).slice(0,20);
+function buildPetPortalData(clientName) {
+  const client    = CLIENTS.find(c => c.fullName === clientName) || { fullName: clientName };
+  const animals   = PATIENTS.filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
+  const history   = HISTORIQUE_DATA.filter(h => (h.client||'').toLowerCase() === clientName.toLowerCase()).slice(0,10);
+  const vaccs     = VACC_HISTORY.filter(v => (v.owner||'').toLowerCase() === clientName.toLowerCase()).slice(0,10);
   const reminders = VACCINE_REMINDERS.filter(r => (r.owner||'').toLowerCase() === clientName.toLowerCase())
-    .filter(r => r.reminderDate >= new Date().toISOString().slice(0,10)).slice(0,10);
-  const hospAnimal = CAGES.find(c => c.animal && (c.patient||c.owner||'').toLowerCase() === clientName.toLowerCase() && c.statut === 'occupée');
-
-  const animalsHTML = animals.map(a => `
-    <div class="pet-card">
-      <div class="pet-ico">${(a.species||'').toLowerCase()==='chat'?'🐈':'🐕'}</div>
-      <div>
-        <div class="pet-name">${a.name||'?'}</div>
-        <div class="pet-meta">${[a.species,a.race,a.age,a.weight,a.sexe].filter(Boolean).join(' · ')}</div>
-      </div>
-    </div>`).join('') || '<p class="empty">Aucun animal enregistré</p>';
-
-  const hospHTML = hospAnimal ? `
-    <div class="alert-hosp">
-      🏥 <strong>${hospAnimal.animal}</strong> est actuellement hospitalisé — Cage ${hospAnimal.id}${hospAnimal.diagnostic ? ' · ' + hospAnimal.diagnostic : ''}
-    </div>` : '';
-
-  const histHTML = history.length ? history.map(h => `
-    <div class="row-item">
-      <div class="row-left">
-        <div class="row-title">${h.animal||'?'} — ${h.diagnostic||'Consultation'}</div>
-        <div class="row-meta">${h.traitement ? 'Traitement : ' + h.traitement.slice(0,80) : ''}</div>
-      </div>
-      <div class="row-date">${h.date||''}</div>
-    </div>`).join('') : '<p class="empty">Aucun historique</p>';
-
-  const vaccHTML = vaccs.length ? vaccs.map(v => `
-    <div class="row-item">
-      <div class="row-left">
-        <div class="row-title">💉 ${v.animal||'?'} — ${v.vaccine||''}</div>
-        ${v.rappel ? '<div class="row-meta rappel">⏰ Prochain rappel : ' + v.rappel + '</div>' : ''}
-      </div>
-      <div class="row-date">${v.date||''}</div>
-    </div>`).join('') : '<p class="empty">Aucune vaccination enregistrée</p>';
-
-  const remHTML = reminders.length ? reminders.map(r => `
-    <div class="row-item remind">
-      <div class="row-left">
-        <div class="row-title">🔔 ${r.animal||'?'} — ${r.vaccine||''}</div>
-      </div>
-      <div class="row-date remind-date">${r.reminderDate||''}</div>
-    </div>`).join('') : '<p class="empty">Aucun rappel à venir</p>';
-
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Fiche Vétérinaire — ${client.fullName}</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f9f4;color:#1a2e23;min-height:100vh}
-.header{background:linear-gradient(135deg,#1A4A2E,#2d7a4a);color:#fff;padding:20px 16px 24px;text-align:center}
-.logo{font-size:36px;margin-bottom:6px}
-.clinic{font-size:11px;opacity:.7;margin-top:2px}
-.owner{font-size:20px;font-weight:800;margin:4px 0 0}
-.phone{font-size:12px;opacity:.75;margin-top:3px}
-.badge-hosp{display:inline-block;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:8px}
-.content{padding:16px}
-.section{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
-.section-title{font-size:13px;font-weight:700;color:#1A4A2E;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-.pet-card{display:flex;align-items:center;gap:12px;padding:10px;background:#f0f9f4;border-radius:10px;margin-bottom:8px}
-.pet-ico{font-size:28px}
-.pet-name{font-weight:700;font-size:14px}
-.pet-meta{font-size:11px;color:#5a7a65;margin-top:2px}
-.alert-hosp{background:#fdf0ee;border:1.5px solid #e74c3c;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#c0392b;margin-bottom:14px}
-.row-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #eaf3ee;gap:10px}
-.row-item:last-child{border-bottom:none}
-.row-title{font-size:12.5px;font-weight:600}
-.row-meta{font-size:11px;color:#5a7a65;margin-top:3px}
-.rappel{color:#d4813a!important}
-.row-date{font-size:11px;color:#8aab95;white-space:nowrap;padding-top:2px}
-.remind{background:#fff8ee;margin:0 -2px;padding:10px 2px;border-radius:6px}
-.remind-date{color:#d4813a;font-weight:700}
-.empty{font-size:12px;color:#8aab95;padding:8px 0}
-.footer{text-align:center;padding:20px 16px;font-size:11px;color:#8aab95}
-.footer strong{color:#1A4A2E}
-</style></head><body>
-<div class="header">
-  <div class="logo">🐾</div>
-  <div class="owner">${client.fullName}</div>
-  ${client.phone ? `<div class="phone">📞 ${client.phone}</div>` : ''}
-  <div class="clinic">VetPro · Fiche Patient · Dr. Kherbache Wail · ENSV Algérie</div>
-  ${hospAnimal ? `<div class="badge-hosp">🏥 Animal hospitalisé</div>` : ''}
-</div>
-<div class="content">
-  ${hospHTML}
-  <div class="section">
-    <div class="section-title">🐾 Mes animaux</div>
-    ${animalsHTML}
-  </div>
-  <div class="section">
-    <div class="section-title">📋 Historique clinique</div>
-    ${histHTML}
-  </div>
-  <div class="section">
-    <div class="section-title">💉 Vaccinations</div>
-    ${vaccHTML}
-  </div>
-  ${reminders.length ? `<div class="section">
-    <div class="section-title">🔔 Rappels à venir</div>
-    ${remHTML}
-  </div>` : ''}
-</div>
-<div class="footer">
-  Généré le ${new Date().toLocaleDateString('fr-FR')} · <strong>VetPro</strong> — Confidentiel
-</div>
-</body></html>`;
+    .filter(r => r.reminderDate >= new Date().toISOString().slice(0,10)).slice(0,6);
+  const hospCage  = CAGES.find(c => c.statut === 'occupée' && (c.animal||'').toLowerCase().includes(
+    animals[0]?.name?.toLowerCase() || '____'
+  ));
+  return {
+    n: client.fullName,
+    p: client.phone || '',
+    a: animals.map(a => ({ n: a.name, s: a.species, r: a.race, ag: a.age, w: a.weight })),
+    h: history.map(h => ({ an: h.animal, d: h.diagnostic, t: h.traitement, dt: h.date })),
+    v: vaccs.map(v => ({ an: v.animal, vc: v.vaccine, dt: v.date, rp: v.rappel })),
+    rm: reminders.map(r => ({ an: r.animal, vc: r.vaccine, dt: r.reminderDate })),
+    hosp: hospCage ? { cage: hospCage.id, an: hospCage.animal } : null,
+    ts: new Date().toLocaleDateString('fr-FR')
+  };
 }
+
+// kept as stub — actual QR uses hash URL
+function buildPetPortalHTML(clientName) { return ''; }
+
+// ══════════════════════════════════════════════════════════
+
 
 async function loadQRLib() {
   if (window.QRCode) return;
@@ -5383,14 +5298,15 @@ async function openClientQR(clientName) {
   document.getElementById('qr-client-name').textContent = '👤 ' + clientName;
   document.getElementById('qr-client-animals').textContent = animals.map(a => (a.species==='chat'?'🐈':'🐕') + ' ' + a.name).join('  ') || 'Aucun animal';
 
-  // Build portal HTML and create blob URL
-  const html  = buildPetPortalHTML(clientName);
-  const blob  = new Blob([html], { type: 'text/html' });
-  _qrPortalUrl = URL.createObjectURL(blob);
+  // Encode compact data as base64 hash — works on any device when scanned
+  const data   = buildPetPortalData(clientName);
+  const json   = JSON.stringify(data);
+  const b64    = btoa(unescape(encodeURIComponent(json)));
+  const baseUrl = window.location.href.split('#')[0];
+  _qrPortalUrl  = baseUrl + '#pet-portal/' + b64;
 
   openModal('modal-client-qr');
 
-  // Draw QR
   await loadQRLib();
   const wrap = document.getElementById('qr-canvas-wrap');
   wrap.innerHTML = '<div id="qr-render"></div>';
@@ -5400,7 +5316,7 @@ async function openClientQR(clientName) {
     height: 240,
     colorDark: '#1A4A2E',
     colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M
+    correctLevel: QRCode.CorrectLevel.L
   });
 }
 
@@ -5408,11 +5324,7 @@ function downloadClientQR() {
   const img = document.querySelector('#qr-render img') || document.querySelector('#qr-render canvas');
   if (!img) { toast('QR non encore généré'); return; }
   const a = document.createElement('a');
-  if (img.tagName === 'IMG') {
-    a.href = img.src;
-  } else {
-    a.href = img.toDataURL('image/png');
-  }
+  a.href = img.tagName === 'IMG' ? img.src : img.toDataURL('image/png');
   a.download = `vetpro-qr-${(_qrCurrentClient||'client').replace(/\s+/g,'-')}.png`;
   a.click();
   toast('✅ QR téléchargé');
@@ -5437,7 +5349,52 @@ function printClientQR() {
 
 function copyPetPortalLink() {
   if (!_qrPortalUrl) { toast('QR non encore généré'); return; }
-  navigator.clipboard.writeText(_qrPortalUrl).then(() => toast('🔗 Lien copié dans le presse-papier'));
+  navigator.clipboard?.writeText(_qrPortalUrl)
+    .then(() => toast('🔗 Lien copié — partageable par WhatsApp ou email'))
+    .catch(() => { window.open(_qrPortalUrl, '_blank'); toast('✅ Fiche ouverte dans un nouvel onglet'); });
+}
+
+// ══════════════════════════════════════════════════════════
+// PET PORTAL HASH ROUTER — renders when QR is scanned
+// Only activates if URL hash starts with #pet-portal/
+// ══════════════════════════════════════════════════════════
+window.addEventListener('load', function initPetPortalRouter() {
+  const hash = window.location.hash || '';
+  if (!hash.startsWith('#pet-portal/')) return;
+  try {
+    const b64  = hash.slice('#pet-portal/'.length);
+    const json = decodeURIComponent(escape(atob(b64)));
+    const d    = JSON.parse(json);
+    renderPetPortal(d);
+  } catch(e) {
+    console.error('Pet portal decode error:', e);
+  }
+});
+
+function renderPetPortal(d) {
+  document.body.innerHTML = '';
+  document.body.style.cssText = 'margin:0;padding:0;font-family:-apple-system,sans-serif;background:#f0f9f4;color:#1a2e23';
+  const css = `*{box-sizing:border-box}.h{background:linear-gradient(135deg,#1A4A2E,#2d7a4a);color:#fff;padding:20px;text-align:center}.h h1{font-size:20px;margin:6px 0}.h p{font-size:12px;opacity:.75}.sec{background:#fff;margin:10px;border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}.st{font-size:12px;font-weight:700;color:#1A4A2E;margin-bottom:10px}.row{padding:9px 0;border-bottom:1px solid #eaf3ee;font-size:12.5px}.row:last-child{border-bottom:none}.r1{font-weight:600;margin-bottom:2px}.r2{color:#5a7a65;font-size:11px}.dt{float:right;color:#8aab95;font-size:11px;margin-left:8px}.warn{background:#fdf0ee;border:1.5px solid #e74c3c;border-radius:10px;padding:12px;margin:10px;font-size:12.5px;color:#c0392b}.rem{background:#fff8ee}.rdt{color:#d4813a;font-weight:700}.ft{text-align:center;padding:20px;font-size:11px;color:#8aab95}`;
+  const style = document.createElement('style');
+  style.textContent = css;
+  document.head.appendChild(style);
+  document.title = `Fiche — ${d.n}`;
+
+  const hosp = d.hosp ? `<div class="warn">🏥 <strong>${d.hosp.an}</strong> est actuellement hospitalisé · Cage ${d.hosp.cage}</div>` : '';
+  const animRows = (d.a||[]).map(a => `<div class="row"><div class="r1">${a.s==='chat'?'🐈':'🐕'} ${a.n}</div><div class="r2">${[a.r,a.ag,a.w].filter(Boolean).join(' · ')}</div></div>`).join('') || '<div class="row" style="color:#aaa">—</div>';
+  const histRows = (d.h||[]).map(h => `<div class="row"><span class="dt">${h.dt||''}</span><div class="r1">${h.an} — ${(h.d||'').slice(0,70)}</div>${h.t?`<div class="r2">${h.t.slice(0,80)}</div>`:''}</div>`).join('') || '<div class="row" style="color:#aaa">Aucun historique</div>';
+  const vaccRows = (d.v||[]).map(v => `<div class="row"><span class="dt">${v.dt||''}</span><div class="r1">💉 ${v.an} — ${v.vc}</div>${v.rp?`<div class="r2" style="color:#d4813a">⏰ Rappel : ${v.rp}</div>`:''}</div>`).join('') || '<div class="row" style="color:#aaa">Aucune vaccination</div>';
+  const remRows = (d.rm||[]).map(r => `<div class="row rem"><span class="dt rdt">${r.dt}</span><div class="r1">🔔 ${r.an} — ${r.vc}</div></div>`).join('');
+
+  document.body.innerHTML = `
+    <div class="h"><div style="font-size:36px">🐾</div><h1>${d.n}</h1><p>${d.p?'📞 '+d.p+' · ':''}VetPro · Dr. Kherbache Wail · ENSV Algérie</p></div>
+    ${hosp}
+    <div class="sec"><div class="st">🐾 Mes animaux</div>${animRows}</div>
+    <div class="sec"><div class="st">📋 Historique clinique</div>${histRows}</div>
+    <div class="sec"><div class="st">💉 Vaccinations</div>${vaccRows}</div>
+    ${remRows?`<div class="sec"><div class="st">🔔 Rappels à venir</div>${remRows}</div>`:''}
+    <div class="ft">Généré le ${d.ts} · <strong style="color:#1A4A2E">VetPro</strong> — Confidentiel</div>
+  `;
 }
 function refreshPersistentViews(){
   ensureCaseFormEnhancements();
