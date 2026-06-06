@@ -644,12 +644,36 @@ async function checkSession() {
   }
   try {
     const { data: { session } } = await _sb.auth.getSession();
-    setCurrentUserContext(session?.user || null);
-    initializePersistentState();
-    if (session) {
-      if (screen)    screen.classList.add('hidden');
-      if (logoutBtn) logoutBtn.style.display = 'block';
+    if (session?.user?.email) {
+      // Verify approval before granting access
+      let status = 'approved';
+      try {
+        const adminEmail = (localStorage.getItem('vetpro-admin-email') || '').trim().toLowerCase();
+        if (adminEmail && session.user.email.toLowerCase() === adminEmail) {
+          status = 'approved';
+        } else {
+          const { data: rows } = await _sb.from('vetpro_access_requests')
+            .select('status')
+            .ilike('email', session.user.email)
+            .order('reviewed_at', { ascending: false, nullsFirst: false })
+            .limit(1);
+          if (rows?.[0]?.status) status = String(rows[0].status).toLowerCase();
+        }
+      } catch(e) {}
+      if (status === 'approved') {
+        setCurrentUserContext(session.user);
+        initializePersistentState();
+        if (screen)    screen.classList.add('hidden');
+        if (logoutBtn) logoutBtn.style.display = 'block';
+      } else {
+        // Logged in but not approved — sign out and show login
+        await _sb.auth.signOut().catch(()=>{});
+        setCurrentUserContext(null);
+        if (screen)    screen.classList.remove('hidden');
+        if (logoutBtn) logoutBtn.style.display = 'none';
+      }
     } else {
+      setCurrentUserContext(null);
       if (screen)    screen.classList.remove('hidden');
       if (logoutBtn) logoutBtn.style.display = 'none';
     }
@@ -662,35 +686,8 @@ async function checkSession() {
   }
 }
 
-async function doLogin() {
-  const email    = document.getElementById('login-email')?.value?.trim();
-  const password = document.getElementById('login-password')?.value;
-  const btn      = document.getElementById('login-btn-el');
-  const errEl    = document.getElementById('login-error');
-  if (!email || !password) { showLoginError('Veuillez remplir tous les champs.'); return; }
-  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Connexion…'; }
-  if (errEl) errEl.style.display = 'none';
-  try {
-    if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
-      // Dev mode bypass
-      document.getElementById('login-screen')?.classList.add('hidden');
-      document.getElementById('logout-btn').style.display = 'block';
-      toast('✅ Connecté (mode développement)');
-      return;
-    }
-    const { data, error } = await _sb.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    setCurrentUserContext(data?.user || data?.session?.user || { email });
-    initializePersistentState();
-    document.getElementById('login-screen')?.classList.add('hidden');
-    document.getElementById('logout-btn').style.display = 'block';
-    toast('✅ Bienvenue !');
-  } catch(err) {
-    showLoginError(err.message || 'Erreur de connexion. Vérifiez vos identifiants.');
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = 'Accéder à la clinique →'; }
-  }
-}
+// doLogin is defined below after ensureAuthEnhancements — this placeholder is intentionally empty.
+// The real doLogin further down in the script handles sign-in with approval checks.
 
 function showLoginError(msg) {
   const el = document.getElementById('login-error');
@@ -707,21 +704,21 @@ function toggleLoginPwd() {
 
 function showAuthMode(mode){
   const maps = {
-    login: { login:'block', signup:'none', forgot:'none' },
-    signup: { login:'none', signup:'block', forgot:'none' },
-    forgot: { login:'none', signup:'none', forgot:'block' },
-  }[mode] || { login:'block', signup:'none', forgot:'none' };
-  const login = document.getElementById('auth-login-panel');
-  const signup = document.getElementById('auth-signup-panel');
-  const forgot = document.getElementById('auth-forgot-panel');
-  if (login) login.style.display = maps.login;
-  if (signup) signup.style.display = maps.signup;
-  if (forgot) forgot.style.display = maps.forgot;
+    login:  { login:'block', signup:'none',  forgot:'none',  reset:'none' },
+    signup: { login:'none',  signup:'block', forgot:'none',  reset:'none' },
+    forgot: { login:'none',  signup:'none',  forgot:'block', reset:'none' },
+    reset:  { login:'none',  signup:'none',  forgot:'none',  reset:'block' },
+  }[mode] || { login:'block', signup:'none', forgot:'none', reset:'none' };
+  const panels = ['login','signup','forgot','reset'];
+  panels.forEach(function(id){
+    const el = document.getElementById('auth-' + id + '-panel');
+    if (el) el.style.display = maps[id];
+  });
   const error = document.getElementById('login-error');
   if (error) error.style.display = 'none';
-  // Rebuild the enhanced signup panel as soon as it becomes visible
-  if (mode === 'signup' && typeof rebuildSignupPanel === 'function') rebuildSignupPanel();
 }
+// No-op stub — signup panel is built statically in ensureAuthEnhancements
+function rebuildSignupPanel(){}
 function ensureAuthEnhancements(){
   const card = document.querySelector('#login-screen .login-card');
   const loginButton = document.getElementById('login-btn-el');
@@ -758,6 +755,18 @@ function ensureAuthEnhancements(){
       <button class="login-btn" onclick="doForgotPassword()">Envoyer le lien de reinitialisation</button>
       <div style="text-align:center;margin-top:10px"><button type="button" onclick="showAuthMode('login')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">Retour a la connexion</button></div>
     </div>
+    <div id="auth-reset-panel" style="display:none">
+      <p style="color:rgba(255,255,255,.6);font-size:12px;margin-bottom:14px;text-align:center">Choisissez un nouveau mot de passe</p>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Nouveau mot de passe</label>
+        <input class="login-input" type="password" id="reset-new-password" placeholder="Minimum 6 caracteres" autocomplete="new-password"/>
+      </div>
+      <div style="margin-bottom:14px">
+        <label class="login-label">Confirmer le mot de passe</label>
+        <input class="login-input" type="password" id="reset-confirm-password" placeholder="Retapez le mot de passe" autocomplete="new-password"/>
+      </div>
+      <button class="login-btn" onclick="doUpdatePassword()">Mettre a jour le mot de passe</button>
+    </div>
   `;
   loginButton.parentNode.insertBefore(authBody, divider);
     const loginPanel = document.getElementById('auth-login-panel');
@@ -791,20 +800,42 @@ async function doLogin() {
   if (errEl) errEl.style.display = 'none';
   try {
     if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
-      setCurrentUserContext({ email });
+      const u = { email };
+      setCurrentUserContext(u);
       initializePersistentState();
       document.getElementById('login-screen')?.classList.add('hidden');
-      document.getElementById('logout-btn').style.display = 'block';
+      const lb = document.getElementById('logout-btn'); if (lb) lb.style.display = 'block';
       toast('Connecte (mode developpement)');
+      if (typeof window.nav === 'function') window.nav('dashboard');
       return;
     }
     const { data, error } = await _sb.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    setCurrentUserContext(data?.user || data?.session?.user || { email });
+    const user = data?.user || data?.session?.user || { email };
+    // Check approval before granting access
+    let status = 'approved';
+    try {
+      const { data: rows } = await _sb.from('vetpro_access_requests')
+        .select('status')
+        .ilike('email', email)
+        .order('reviewed_at', { ascending: false, nullsFirst: false })
+        .limit(1);
+      if (rows?.[0]?.status) status = String(rows[0].status).toLowerCase();
+    } catch(e) {}
+    // Check admin override
+    const adminEmail = (localStorage.getItem('vetpro-admin-email') || '').trim().toLowerCase();
+    if (adminEmail && email.toLowerCase() === adminEmail) status = 'approved';
+    if (status !== 'approved') {
+      await _sb.auth.signOut().catch(()=>{});
+      showLoginError('Votre compte est en attente d\'approbation. Contactez l\'administrateur.');
+      return;
+    }
+    setCurrentUserContext(user);
     initializePersistentState();
     document.getElementById('login-screen')?.classList.add('hidden');
-    document.getElementById('logout-btn').style.display = 'block';
+    const lb = document.getElementById('logout-btn'); if (lb) lb.style.display = 'block';
     toast('Connexion reussie');
+    if (typeof window.nav === 'function') window.nav('dashboard');
   } catch(err) {
     showLoginError(err.message || 'Erreur de connexion. Verifiez vos identifiants.');
   } finally {
@@ -816,7 +847,10 @@ async function doSignup(){
   const password = document.getElementById('signup-password')?.value;
   const confirm = document.getElementById('signup-password-confirm')?.value;
   if (!email || !password) { showLoginError('Email et mot de passe requis'); return; }
+  if (password.length < 6) { showLoginError('Le mot de passe doit contenir au moins 6 caracteres'); return; }
   if (password !== confirm) { showLoginError('Les mots de passe ne correspondent pas'); return; }
+  const btn = document.querySelector('#auth-signup-panel .login-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Inscription...'; }
   try {
     if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
       showAuthMode('login');
@@ -825,16 +859,31 @@ async function doSignup(){
     }
     const { error } = await _sb.auth.signUp({ email, password });
     if (error) throw error;
+    // Insert a pending approval request so admin can approve
+    try {
+      await _sb.from('vetpro_access_requests').upsert(
+        [{ email: email.trim().toLowerCase(), status: 'pending', requested_at: new Date().toISOString() }],
+        { onConflict: 'email' }
+      );
+    } catch(e) {}
     showAuthMode('login');
-    if (document.getElementById('login-email')) document.getElementById('login-email').value = email;
-    toast('Compte cree. Verifiez votre email si necessaire');
+    // Pre-fill email in login panel
+    setTimeout(function(){
+      const loginEmail = document.getElementById('login-email');
+      if (loginEmail) loginEmail.value = email;
+    }, 50);
+    toast('Compte cree. Verifiez votre email, puis attendez l\'approbation de l\'administrateur.');
   } catch (err) {
     showLoginError(err.message || 'Inscription impossible');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Creer un compte'; }
   }
 }
 async function doForgotPassword(){
   const email = document.getElementById('forgot-email')?.value?.trim();
   if (!email) { showLoginError('Veuillez saisir votre email'); return; }
+  const btn = document.querySelector('#auth-forgot-panel .login-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Envoi...'; }
   try {
     if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
       showAuthMode('login');
@@ -845,9 +894,29 @@ async function doForgotPassword(){
     const { error } = await _sb.auth.resetPasswordForEmail(email, { redirectTo });
     if (error) throw error;
     showAuthMode('login');
-    toast('Lien de reinitialisation envoye');
+    toast('Lien de reinitialisation envoye. Consultez votre boite email.');
   } catch (err) {
     showLoginError(err.message || 'Impossible d envoyer le lien');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Envoyer le lien de reinitialisation'; }
+  }
+}
+async function doUpdatePassword(){
+  const np = document.getElementById('reset-new-password')?.value;
+  const cp = document.getElementById('reset-confirm-password')?.value;
+  if (!np || np.length < 6) { showLoginError('Mot de passe trop court (minimum 6 caracteres)'); return; }
+  if (np !== cp) { showLoginError('Les mots de passe ne correspondent pas'); return; }
+  const btn = document.querySelector('#auth-reset-panel .login-btn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="login-spinner"></span>Mise a jour...'; }
+  try {
+    const { error } = await _sb.auth.updateUser({ password: np });
+    if (error) throw error;
+    showAuthMode('login');
+    toast('Mot de passe mis a jour. Vous pouvez vous connecter.');
+  } catch(err) {
+    showLoginError(err.message || 'Impossible de mettre a jour le mot de passe');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = 'Mettre a jour le mot de passe'; }
   }
 }
 async function doLogout() {
@@ -22662,18 +22731,27 @@ function saveAdmission() {
     if (!c?.auth) return;
     const cleanUrl = `${window.location.origin}${window.location.pathname}`;
     try {
-      if (hasCode && c.auth.exchangeCodeForSession) {
-        const code = new URLSearchParams(window.location.search).get('code');
-        if (code) {
-          try { await c.auth.exchangeCodeForSession(code); } catch(e) {}
-        }
-      }
+      // Check for password-recovery flow
       if (hasTokenHash) {
         const params = new URLSearchParams(window.location.hash.slice(1));
+        const tokenType = params.get('type');
         const access_token = params.get('access_token');
         const refresh_token = params.get('refresh_token');
         if (access_token && refresh_token && c.auth.setSession) {
           try { await c.auth.setSession({ access_token, refresh_token }); } catch(e) {}
+        }
+        if (tokenType === 'recovery') {
+          // Show password reset form instead of dashboard
+          try { window.history.replaceState({}, document.title, cleanUrl); } catch(e) {}
+          ensureAuthEnhancements();
+          showAuthMode('reset');
+          return;
+        }
+      }
+      if (hasCode && c.auth.exchangeCodeForSession) {
+        const code = new URLSearchParams(window.location.search).get('code');
+        if (code) {
+          try { await c.auth.exchangeCodeForSession(code); } catch(e) {}
         }
       }
       const session = await waitForSession(8000);
