@@ -1412,15 +1412,32 @@ window.addEventListener('DOMContentLoaded', () => {
     <div>
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🐾 Patient</div>
+
+        <!-- Client selector — populated by JS, always visible -->
+        <div style="margin-bottom:14px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1.5px solid var(--brd)">
+          <label class="lbl" style="margin-bottom:6px;display:block">🔍 Client existant ou nouveau patient ?</label>
+          <select class="sel" id="case-patient-select" onchange="fillCaseFormFromPatient(this.value)" style="font-weight:600">
+            <option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>
+          </select>
+          <div id="case-selected-patient-badge" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid var(--brd);font-size:13px;flex-wrap:wrap"></div>
+        </div>
+
+        <!-- Name / owner / phone — always visible -->
+        <div class="row3" id="case-manual-fields-wrap" style="margin-bottom:12px">
+          <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
+          <div class="fg"><label class="lbl">Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
+          <div class="fg"><label class="lbl">Téléphone</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
+        </div>
+
         <div class="row3">
-          <div class="fg"><label class="lbl">Espèce *</label><select class="sel"><option>Chien</option><option>Chat</option></select></div>
-          <div class="fg"><label class="lbl">Race</label><input class="inp" placeholder="Ex: Berger allemand"/></div>
-          <div class="fg"><label class="lbl">Robe / Couleur</label><input class="inp" placeholder="Ex: fauve et noir"/></div>
+          <div class="fg"><label class="lbl">Espèce *</label><select class="sel" id="case-espece"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
+          <div class="fg"><label class="lbl">Race</label><input class="inp" id="case-race" placeholder="Ex: Berger allemand"/></div>
+          <div class="fg"><label class="lbl">Robe / Couleur</label><input class="inp" id="case-color" placeholder="Ex: fauve et noir"/></div>
         </div>
         <div class="row3">
-          <div class="fg"><label class="lbl">Âge</label><input class="inp" placeholder="Ex: 3 ans"/></div>
-          <div class="fg"><label class="lbl">Poids (kg)</label><input class="inp" type="number" step="0.1" placeholder="15"/></div>
-          <div class="fg"><label class="lbl">Sexe</label><select class="sel"><option>Mâle</option><option>Femelle</option><option>Castré</option><option>Stérilisée</option></select></div>
+          <div class="fg"><label class="lbl">Âge</label><input class="inp" id="case-age" placeholder="Ex: 3 ans"/></div>
+          <div class="fg"><label class="lbl">Poids (kg)</label><input class="inp" id="case-poids" type="number" step="0.1" placeholder="15"/></div>
+          <div class="fg"><label class="lbl">Sexe</label><select class="sel" id="case-sexe"><option>Mâle</option><option>Femelle</option><option>Castré</option><option>Stérilisée</option></select></div>
         </div>
       </div>
 
@@ -4054,7 +4071,7 @@ function fillCaseFormFromPatient(patientId) {
   const selectedBadge = document.getElementById('case-selected-patient-badge');
   if (!patientId || patientId === 'nouveau') {
     // New patient — show manual fields, clear them, hide badge
-    if (manualWrap) manualWrap.style.display = 'block';
+    if (manualWrap) { manualWrap.style.display = 'block'; manualWrap.style.opacity = '1'; }
     if (selectedBadge) selectedBadge.style.display = 'none';
     ['case-animal-name','case-client-name','case-client-phone',
      'case-race','case-age','case-poids','case-color'].forEach(id => {
@@ -4117,71 +4134,45 @@ function fillCaseFormFromPatient(patientId) {
 
 function ensureCaseFormEnhancements(){
   const refs = getCaseFormFields();
-  if (!refs || document.getElementById('case-animal-name')) return;
-  const host = refs.patientCard.querySelector('.card-title');
-  if (!host) return;
+  if (!refs) return;
 
-  // Build patient options from PATIENTS array
-  const patientOptions = (typeof PATIENTS !== 'undefined' ? PATIENTS : [])
-    .slice()
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .map(p => {
-      const emoji = p.species === 'Chat' ? '🐈' : p.species === 'NAC' ? '🐇' : '🐕';
-      return `<option value="${p.id}">${emoji} ${p.name} · ${p.race || p.species} (${p.owner})</option>`;
-    }).join('');
-
-  host.insertAdjacentHTML('afterend', `
-    <!-- ── Patient selector ── -->
-    <div style="margin-bottom:14px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1.5px solid var(--brd)">
-      <label class="lbl" style="margin-bottom:6px;display:block">🔍 Client existant ou nouveau patient ?</label>
-      <select class="sel" id="case-patient-select" onchange="fillCaseFormFromPatient(this.value)" style="font-weight:600">
-        <option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>
-        ${patientOptions}
-      </select>
-      <!-- Badge shown after selection -->
-      <div id="case-selected-patient-badge" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid var(--brd);font-size:13px;flex-wrap:wrap"></div>
-    </div>
-
-    <!-- ── Manual / pre-filled fields ── -->
-    <div class="row3" id="case-manual-fields-wrap" style="margin-bottom:12px">
-      <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
-      <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
-      <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
-    </div>
-  `);
-  const patientRows = refs.patientCard.querySelectorAll('.row3');
-  if (patientRows[0]) {
-    const inputs = patientRows[0].querySelectorAll('select, input');
-    if (inputs[0]) inputs[0].id = 'case-espece';
-    if (inputs[1]) inputs[1].id = 'case-race';
-    if (inputs[2]) inputs[2].id = 'case-color';
+  // Populate patient selector (always refresh options)
+  const sel = document.getElementById('case-patient-select');
+  if (sel) {
+    const currentVal = sel.value;
+    const patientOptions = (typeof PATIENTS !== 'undefined' ? PATIENTS : [])
+      .slice().sort((a, b) => a.name.localeCompare(b.name))
+      .map(p => {
+        const emoji = p.species === 'Chat' ? '🐈' : p.species === 'NAC' ? '🐇' : '🐕';
+        return `<option value="${p.id}">${emoji} ${p.name} · ${p.race || p.species} (${p.owner})</option>`;
+      }).join('');
+    sel.innerHTML = `<option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>${patientOptions}`;
+    if (currentVal && sel.querySelector(`option[value="${currentVal}"]`)) sel.value = currentVal;
   }
-  if (patientRows[1]) {
-    const inputs = patientRows[1].querySelectorAll('input, select');
-    if (inputs[0]) inputs[0].id = 'case-age';
-    if (inputs[1]) inputs[1].id = 'case-poids';
-    if (inputs[2]) inputs[2].id = 'case-sexe';
-  }
-  const historyChecks = refs.historyCard.querySelectorAll('input[type="checkbox"]');
-  if (historyChecks[0]) historyChecks[0].id = 'case-vaccins';
-  if (historyChecks[1]) historyChecks[1].id = 'case-vermifuge';
-  const historyInputs = refs.historyCard.querySelectorAll('.row2 select, .row2 input, textarea, .fg > select');
-  if (historyInputs[0]) historyInputs[0].id = 'case-mode-vie';
-  if (historyInputs[1]) historyInputs[1].id = 'case-duree-symptomes';
-  const appetite = refs.historyCard.querySelectorAll('.fg > select')[1];
+
+  // Bind remaining field IDs that live in the anamnèse and exam cards
+  const historyChecks = refs.historyCard?.querySelectorAll('input[type="checkbox"]');
+  if (historyChecks?.[0]) historyChecks[0].id = 'case-vaccins';
+  if (historyChecks?.[1]) historyChecks[1].id = 'case-vermifuge';
+  const historyInputs = refs.historyCard?.querySelectorAll('.row2 select, .row2 input, textarea, .fg > select');
+  if (historyInputs?.[0]) historyInputs[0].id = 'case-mode-vie';
+  if (historyInputs?.[1]) historyInputs[1].id = 'case-duree-symptomes';
+  const appetite = refs.historyCard?.querySelectorAll('.fg > select')?.[1];
   if (appetite) appetite.id = 'case-appetit';
-  const historyTexts = refs.historyCard.querySelectorAll('textarea');
-  if (historyTexts[0]) historyTexts[0].id = 'case-history';
-  if (historyTexts[1]) historyTexts[1].id = 'case-symptoms';
-  const examInputs = refs.examCard.querySelectorAll('input, select, textarea');
-  if (examInputs[2]) examInputs[2].id = 'case-fr';
-  if (examInputs[4]) examInputs[4].id = 'case-muqueuses';
-  if (examInputs[6]) examInputs[6].id = 'case-observations';
-  if (examInputs[8]) examInputs[8].id = 'case-exams';
-  if (examInputs[9]) examInputs[9].id = 'case-amount';
-  if (examInputs[10]) examInputs[10].id = 'case-paid';
-  if (examInputs[11]) examInputs[11].id = 'case-next-rdv';
-  if (examInputs[12]) examInputs[12].id = 'case-client-email';
+  const historyTexts = refs.historyCard?.querySelectorAll('textarea');
+  if (historyTexts?.[0]) historyTexts[0].id = 'case-history';
+  if (historyTexts?.[1]) historyTexts[1].id = 'case-symptoms';
+  const examInputs = refs.examCard?.querySelectorAll('input, select, textarea');
+  if (examInputs?.[2]) examInputs[2].id = 'case-fr';
+  if (examInputs?.[4]) examInputs[4].id = 'case-muqueuses';
+  if (examInputs?.[6]) examInputs[6].id = 'case-observations';
+  if (examInputs?.[8]) examInputs[8].id = 'case-exams';
+  if (examInputs?.[9]) examInputs[9].id = 'case-amount';
+  if (examInputs?.[10]) examInputs[10].id = 'case-paid';
+  if (examInputs?.[11]) examInputs[11].id = 'case-next-rdv';
+  if (examInputs?.[12]) examInputs[12].id = 'case-client-email';
+
+  // Bind save button
   const saveButton = document.querySelector('#page-cas .btn.btn-p.btn-full.btn-lg');
   if (saveButton) saveButton.onclick = saveNewCase;
 }
@@ -13916,8 +13907,7 @@ function saveAdmission() {
       }
     });
     const title = patientCard.querySelector('.card-title');
-    if (title && !patientCard.querySelector('#case-extra-fields')) {
-      title.insertAdjacentHTML('afterend', `
+    if (title && !patientCard.querySelector('#case-extra-fields') && !title.dataset.enhanced) {      title.insertAdjacentHTML('afterend', `
         <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
           <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
           <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
@@ -14274,7 +14264,7 @@ function saveAdmission() {
       }
     });
     const title = card.querySelector('.card-title');
-    if (title) {
+    if (title && !card.querySelector('#case-extra-fields') && !title.dataset.enhanced) {
       title.insertAdjacentHTML('afterend', `
         <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
           <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
@@ -23023,6 +23013,370 @@ function saveAdmission() {
   schedule('initial');
   setTimeout(() => schedule('initial-late'), 800);
   setTimeout(() => schedule('initial-later'), 1800);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE: LIVE DASHBOARD STATS + ALERTS
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  function repaintDashboardStats(){
+    const today = new Date().toISOString().slice(0,10);
+    const thisMonth = today.slice(0,7);
+
+    // Stat 1 — Cas ce mois
+    const casMonth = (window.HISTORIQUE_DATA||[]).filter(h => (h.date||'').includes(thisMonth.split('-')[1]+'/'+thisMonth.split('-')[0]) || (h.date||'').slice(0,7) === thisMonth).length;
+    const casEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(1) .stat-val');
+    const casTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(1) .stat-trend');
+    if (casEl) casEl.textContent = casMonth || (window.HISTORIQUE_DATA||[]).length;
+
+    // Stat 2 — Cages occupées
+    const occ = (window.CAGES||[]).filter(c => c.statut === 'occupée').length;
+    const cageEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(2) .stat-val');
+    const cageTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(2) .stat-trend');
+    if (cageEl) cageEl.textContent = occ;
+    if (cageTrend) cageTrend.textContent = occ + ' cage' + (occ !== 1 ? 's' : '') + ' occupée' + (occ !== 1 ? 's' : '');
+
+    // Stat 3 — Recettes du mois
+    const revenue = (window.HISTORIQUE_DATA||[])
+      .filter(h => (h.date||'').includes('/'))
+      .reduce((s,h) => s + (parseInt(h.montant||h.amount||0,10)||0), 0);
+    const revEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(3) .stat-val');
+    const revTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(3) .stat-trend');
+    const unpaid = (window.HISTORIQUE_DATA||[]).filter(h => h.paiement === 'impaye' || h.paiement === 'partiel').length;
+    if (revEl) revEl.textContent = revenue >= 1000 ? Math.round(revenue/1000)+'K' : String(revenue);
+    if (revTrend) revTrend.textContent = unpaid + ' paiement' + (unpaid !== 1 ? 's' : '') + ' en attente';
+
+    // Stat 4 — Clients total
+    const clientCount = (window.CLIENTS||[]).length;
+    const clientEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-val');
+    const clientTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-trend');
+    if (clientEl) clientEl.textContent = clientCount;
+    if (clientTrend) clientTrend.textContent = (window.PATIENTS||[]).length + ' animaux enregistrés';
+
+    // Stat 4 label
+    const clientLbl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-lbl');
+    if (clientLbl) clientLbl.textContent = 'Clients';
+
+    // RDV du jour badge
+    const rdvToday = (window.APPOINTMENTS||[]).filter(a => a.date === today).length;
+    const rdvEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-trend');
+
+    // Inject or update vaccine alert banner
+    injectVaccineAlerts();
+
+    // Inject or update treatment tracker
+    injectTreatmentTracker();
+
+    // Update recent cases table from real data
+    updateRecentCasesTable();
+  }
+
+  function injectVaccineAlerts(){
+    const today = new Date().toISOString().slice(0,10);
+    const in7 = new Date(Date.now() + 7*86400000).toISOString().slice(0,10);
+    const overdue = (window.VACCINE_REMINDERS||[]).filter(r => r.reminderDate && r.reminderDate <= today);
+    const upcoming = (window.VACCINE_REMINDERS||[]).filter(r => r.reminderDate && r.reminderDate > today && r.reminderDate <= in7);
+    let banner = document.getElementById('dash-vacc-alert');
+    const hero = document.querySelector('#page-dashboard .page-hero');
+    if (!hero) return;
+    if (!overdue.length && !upcoming.length) { if (banner) banner.remove(); return; }
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'dash-vacc-alert';
+      hero.insertAdjacentElement('afterend', banner);
+    }
+    const lines = [
+      ...overdue.map(r => `<span style="color:var(--danger)">⚠️ <strong>${r.animal}</strong> — ${r.vaccine} (rappel dépassé : ${r.reminderDate})</span>`),
+      ...upcoming.map(r => `<span style="color:var(--warning)">🔔 <strong>${r.animal}</strong> — ${r.vaccine} dans 7j (${r.reminderDate})</span>`)
+    ];
+    banner.style.cssText = 'background:#fff8ee;border:1.5px solid #f59e0b;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;cursor:pointer';
+    banner.onclick = () => nav('vaccinations');
+    banner.innerHTML = `<div style="font-weight:700;color:#92400e;margin-bottom:4px">💉 Rappels vaccins ${overdue.length ? '— '+overdue.length+' dépassé'+(overdue.length>1?'s':'') : ''}</div>${lines.join('')}`;
+  }
+
+  function injectTreatmentTracker(){
+    let card = document.getElementById('dash-treatment-tracker');
+    const ongoing = (window.HISTORIQUE_DATA||[])
+      .filter(h => h.statutTraitement === 'en-cours' || h.resultat === 'stabilisation')
+      .slice(0, 5);
+    if (!ongoing.length) { if (card) card.remove(); return; }
+    const g2 = document.querySelector('#page-dashboard .g2');
+    if (!g2) return;
+    if (!card) {
+      card = document.createElement('div');
+      card.id = 'dash-treatment-tracker';
+      card.className = 'card';
+      card.style.marginBottom = '16px';
+      // Insert before the g2's first child
+      g2.insertAdjacentElement('beforebegin', card);
+    }
+    card.innerHTML = `
+      <div class="card-title">💊 Traitements en cours <span style="cursor:pointer;color:var(--sage)" onclick="nav('historique')">Voir tout →</span></div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${ongoing.map(h => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:10px;font-size:12.5px;cursor:pointer" onclick="nav('historique')">
+            <div>
+              <div style="font-weight:700">${h.animal||'?'} <span style="color:var(--muted);font-weight:400">· ${h.client||''}</span></div>
+              <div style="color:var(--muted);margin-top:2px">${(h.diagnostic||'').slice(0,50)}${h.traitement ? ' · <span style="color:var(--ink)">'+h.traitement.slice(0,40)+'…</span>' : ''}</div>
+            </div>
+            <span class="bdg bdg-b" style="flex-shrink:0">En cours</span>
+          </div>`).join('')}
+      </div>`;
+  }
+
+  function updateRecentCasesTable(){
+    const tbody = document.querySelector('#page-dashboard .card tbody');
+    if (!tbody) return;
+    const recent = (window.HISTORIQUE_DATA||[]).slice(0,5);
+    if (!recent.length) return;
+    tbody.innerHTML = recent.map(h => {
+      const urgClass = h.urgence === 'critique' ? 'bdg-c' : h.urgence === 'urgent' ? 'bdg-u' : 'bdg-n';
+      const urgLabel = h.urgence === 'critique' ? '🚨 Critique' : h.urgence === 'urgent' ? '⚠️ Urgent' : '✅ Normal';
+      const payEl = h.paiement === 'paye' ? '<span class="pay-ok">✅ Payé</span>' : h.paiement === 'partiel' ? '<span class="pay-pt">⚠ Partiel</span>' : '<span class="pay-no">❌ Impayé</span>';
+      return `<tr style="cursor:pointer" onclick="nav('historique')">
+        <td><strong>${h.animal||'?'}</strong><br/><small style="color:var(--muted)">${h.client||''}</small></td>
+        <td>${(h.diagnostic||'').slice(0,25)}</td>
+        <td><span class="bdg ${urgClass}">${urgLabel}</span></td>
+        <td>${payEl}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  // Hook into the existing repaint mechanism
+  const origRepaint = window.__vpRepaintDashboard;
+  window.__vpRepaintDashboard = function(){
+    if (origRepaint) origRepaint();
+    try { repaintDashboardStats(); } catch(e){ console.warn('[VetPro] Dashboard stats error:', e); }
+  };
+  // Run on load and after state changes
+  window.addEventListener('load', () => setTimeout(repaintDashboardStats, 600));
+  // Also run when navigating to dashboard
+  const origNav = window.nav;
+  if (typeof origNav === 'function') {
+    window.nav = function(id){
+      origNav(id);
+      if (id === 'dashboard') setTimeout(repaintDashboardStats, 100);
+    };
+  }
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE: STICKY CLINICAL NOTEPAD
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  const NOTEPAD_KEY = 'vetpro-notepad';
+  const style = document.createElement('style');
+  style.textContent = `
+    .notepad-fab{position:fixed;bottom:88px;right:20px;width:46px;height:46px;border-radius:14px;background:var(--ink);color:#fff;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:120;transition:transform .15s}
+    .notepad-fab:hover{transform:scale(1.1)}
+    .notepad-panel{position:fixed;bottom:142px;right:20px;width:320px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:121;display:none;flex-direction:column;overflow:hidden;border:1.5px solid var(--brd)}
+    .notepad-panel.open{display:flex}
+    .notepad-head{background:var(--ink);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700}
+    .notepad-body{flex:1}
+    .notepad-ta{width:100%;min-height:180px;max-height:320px;border:none;padding:12px 14px;font-size:12.5px;line-height:1.6;resize:vertical;font-family:inherit;color:var(--ink);background:#fafdf9;outline:none}
+    .notepad-foot{padding:8px 12px;border-top:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
+    .notepad-saved{color:var(--sage);font-weight:600}
+  `;
+  document.head.appendChild(style);
+
+  function buildNotepad(){
+    if (document.getElementById('notepad-fab')) return;
+    const fab = document.createElement('button');
+    fab.id = 'notepad-fab';
+    fab.className = 'notepad-fab';
+    fab.title = 'Mémo clinique';
+    fab.textContent = '📝';
+    const panel = document.createElement('div');
+    panel.id = 'notepad-panel';
+    panel.className = 'notepad-panel';
+    panel.innerHTML = `
+      <div class="notepad-head">
+        📝 Mémo clinique
+        <button onclick="document.getElementById('notepad-panel').classList.remove('open')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1">✕</button>
+      </div>
+      <div class="notepad-body">
+        <textarea class="notepad-ta" id="notepad-ta" placeholder="Notes rapides, rappels, TODO du jour…&#10;&#10;Ex: Appeler Benali pour résultats labo&#10;Commander Shotapen&#10;Vérifier cage C3 ce soir"></textarea>
+      </div>
+      <div class="notepad-foot">
+        <span id="notepad-status">—</span>
+        <button onclick="document.getElementById('notepad-ta').value='';saveNote()" style="background:none;border:1px solid var(--brd);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--muted)">Effacer</button>
+      </div>
+    `;
+    document.body.appendChild(fab);
+    document.body.appendChild(panel);
+
+    fab.addEventListener('click', () => panel.classList.toggle('open'));
+
+    const ta = document.getElementById('notepad-ta');
+    ta.value = localStorage.getItem(NOTEPAD_KEY) || '';
+    let saveTimer;
+    ta.addEventListener('input', () => {
+      clearTimeout(saveTimer);
+      document.getElementById('notepad-status').textContent = 'Saisie…';
+      saveTimer = setTimeout(saveNote, 800);
+    });
+  }
+
+  window.saveNote = function(){
+    const ta = document.getElementById('notepad-ta');
+    if (!ta) return;
+    localStorage.setItem(NOTEPAD_KEY, ta.value);
+    const status = document.getElementById('notepad-status');
+    if (status) {
+      status.textContent = '✅ Sauvegardé';
+      status.className = 'notepad-saved';
+      setTimeout(() => { status.textContent = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); status.className = ''; }, 2000);
+    }
+  };
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildNotepad);
+  else buildNotepad();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE: DRUG LOW-STOCK ALERT
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  function checkDrugStock(){
+    const lowStock = (window.DRUGS||[]).filter(d => {
+      const qty = parseInt(d.qty||d.quantity||d.stock||0, 10);
+      const min = parseInt(d.minStock||d.minQty||d.min||5, 10);
+      return qty <= min;
+    });
+    let banner = document.getElementById('dash-stock-alert');
+    const hero = document.querySelector('#page-dashboard .page-hero');
+    if (!hero) return;
+    if (!lowStock.length) { if (banner) banner.remove(); return; }
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'dash-stock-alert';
+      hero.insertAdjacentElement('afterend', banner);
+    }
+    banner.style.cssText = 'background:#fdf0ee;border:1.5px solid var(--danger);border-radius:14px;padding:12px 16px;margin-bottom:14px;cursor:pointer;font-size:12.5px';
+    banner.onclick = () => nav('meds');
+    banner.innerHTML = `<div style="font-weight:700;color:var(--danger);margin-bottom:6px">💊 Stock faible — ${lowStock.length} médicament${lowStock.length>1?'s':''}</div>` +
+      lowStock.slice(0,4).map(d => `<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;background:#fff;border-radius:20px;border:1px solid var(--danger);color:var(--danger);font-size:11px">⚠️ ${d.name||d.nom} (${d.qty||d.quantity||d.stock||0})</span>`).join('') +
+      (lowStock.length > 4 ? `<span style="color:var(--muted);font-size:11px"> +${lowStock.length-4} autres</span>` : '');
+  }
+  window.addEventListener('load', () => setTimeout(checkDrugStock, 800));
+  const _origPersist = window.persistAppState;
+  if (typeof _origPersist === 'function') {
+    window.persistAppState = function(){ _origPersist.apply(this, arguments); checkDrugStock(); };
+  }
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE: RDV DU JOUR — DASHBOARD CARD
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  function injectTodayRdvCard(){
+    if (document.getElementById('dash-today-rdv')) return;
+    const today = new Date().toISOString().slice(0,10);
+    const todayRdv = (window.APPOINTMENTS||[])
+      .filter(a => a.date === today)
+      .sort((a,b) => (a.time||'').localeCompare(b.time||''));
+    const statsRow = document.querySelector('#page-dashboard .g4');
+    if (!statsRow || !todayRdv.length) return;
+
+    const card = document.createElement('div');
+    card.id = 'dash-today-rdv';
+    card.className = 'card';
+    card.style.marginBottom = '16px';
+    card.innerHTML = `
+      <div class="card-title">📅 Rendez-vous du jour <span style="color:var(--sage);cursor:pointer" onclick="nav('rdv')">Voir planning →</span>
+        <span style="margin-left:auto;background:var(--forest);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">${todayRdv.length} RDV</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px">
+        ${todayRdv.map(a => {
+          const meta = typeof getStatusMeta === 'function' ? getStatusMeta(a.status) : {border:'var(--sage)',badge:'bdg-n',label:'RDV'};
+          return `<div style="display:flex;align-items:center;gap:12px;padding:9px 12px;background:var(--surface2);border-radius:10px;border-left:3px solid ${meta.border}">
+            <div style="font-weight:700;font-size:13px;min-width:42px">${a.time||'—'}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:12.5px;font-weight:600">${a.animal||'?'} <span style="color:var(--muted);font-weight:400">· ${a.owner||''}</span></div>
+              <div style="font-size:11px;color:var(--muted)">${a.motif||''}</div>
+            </div>
+            ${a.phone ? `<button class="btn btn-sm btn-ghost" style="flex-shrink:0" onclick="event.stopPropagation();sendWhatsApp('${a.phone}','${(a.owner||'').replace(/'/g,"\\'")}','${(a.animal||'').replace(/'/g,"\\'")}','${(a.motif||'').replace(/'/g,"\\'")}')">📱</button>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    statsRow.insertAdjacentElement('afterend', card);
+  }
+
+  function refreshTodayRdv(){
+    const existing = document.getElementById('dash-today-rdv');
+    if (existing) existing.remove();
+    injectTodayRdvCard();
+  }
+
+  window.addEventListener('load', () => setTimeout(refreshTodayRdv, 700));
+  const _origRepaint2 = window.__vpRepaintDashboard;
+  window.__vpRepaintDashboard = function(){
+    if (_origRepaint2) _origRepaint2();
+    try { refreshTodayRdv(); } catch(e){}
+  };
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FEATURE: PATIENT AGE CALCULATOR & ALERTS
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  // Adds a small age calculator to the cas form and shows geriatric/pediatric alert
+  function injectAgeCalc(){
+    const ageInp = document.getElementById('case-age');
+    if (!ageInp || ageInp.dataset.calcInjected) return;
+    ageInp.dataset.calcInjected = '1';
+    ageInp.addEventListener('blur', function(){
+      const val = this.value.toLowerCase().trim();
+      if (!val) return;
+      let months = 0;
+      if (val.includes('an')) months = parseFloat(val) * 12;
+      else if (val.includes('mois') || val.includes('m')) months = parseFloat(val);
+      else months = parseFloat(val) * 12;
+
+      const especeEl = document.getElementById('case-espece');
+      const espece = especeEl ? especeEl.value.toLowerCase() : 'chien';
+      let alert = '';
+      if (months < 4) alert = '🍼 Pédiatrique — Adapter les doses (×0.5 max)';
+      else if (months < 12) alert = '🐾 Jeune — Primo-vaccination à compléter';
+      else if (espece === 'chien' && months >= 84) alert = '🦷 Gériatrique (≥7 ans) — Bilan sanguin recommandé';
+      else if (espece === 'chat' && months >= 96) alert = '🦷 Gériatrique (≥8 ans) — Surveillance rénale IRC';
+
+      let tip = document.getElementById('case-age-tip');
+      if (!tip) {
+        tip = document.createElement('div');
+        tip.id = 'case-age-tip';
+        tip.style.cssText = 'font-size:11px;padding:4px 10px;border-radius:8px;margin-top:4px;font-weight:600';
+        this.parentNode.appendChild(tip);
+      }
+      if (alert) {
+        tip.textContent = alert;
+        tip.style.background = months < 12 ? '#e8f5f0' : '#fff8ee';
+        tip.style.color = months < 12 ? 'var(--forest)' : 'var(--warning)';
+      } else {
+        tip.textContent = '';
+      }
+    });
+  }
+
+  // Inject on cas page open
+  const _origNav3 = window.nav;
+  if (typeof _origNav3 === 'function') {
+    window.nav = function(id){
+      _origNav3(id);
+      if (id === 'cas') setTimeout(injectAgeCalc, 300);
+    };
+  }
+  window.addEventListener('load', () => setTimeout(injectAgeCalc, 1200));
 })();
 </script>
 </body>
