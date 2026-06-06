@@ -1,16 +1,19 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
-<title>VetPro - Logiciel de gestion veterinaire intelligent</title>
-<meta name="description" content="VetPro : logiciel tout-en-un de gestion de clinique veterinaire. Patients, rendez-vous, stocks, ordonnances, IA diagnostique. Securise et simple.">
-<meta name="keywords" content="veterinaire, logiciel veterinaire, gestion clinique, VetPro, Algerie, cabinet veterinaire">
+<!-- viewport: removed maximum-scale/user-scalable — breaks accessibility & iOS zoom on inputs -->
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>VetPro — Logiciel de gestion vétérinaire intelligent</title>
+<meta name="description" content="VetPro : logiciel tout-en-un de gestion de clinique vétérinaire. Patients, rendez-vous, stocks, ordonnances, IA diagnostique. Sécurisé et simple.">
+<meta name="keywords" content="vétérinaire, logiciel vétérinaire, gestion clinique, VetPro, Algérie, cabinet vétérinaire">
 <meta name="author" content="VetPro">
 <meta name="robots" content="index, follow">
-<link rel="canonical" href="https://vetpro.vercel.app/">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="canonical" href="https://vetpro.ink/">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="/vetpro-icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/vetpro-icon-512.png">
 <link rel="apple-touch-icon" sizes="192x192" href="/vetpro-icon-192.png">
 <meta name="theme-color" content="#1A4A2E">
 <meta name="mobile-web-app-capable" content="yes">
@@ -18,25 +21,35 @@
 <meta name="apple-mobile-web-app-title" content="VetPro">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<!-- Open Graph -->
+<!-- Open Graph — updated to vetpro.ink -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="VetPro - Logiciel de gestion veterinaire intelligent">
-<meta property="og:description" content="Gerez votre clinique veterinaire avec VetPro : patients, rendez-vous, stocks, ordonnances et IA diagnostique.">
-<meta property="og:url" content="https://vetpro.vercel.app/">
-<meta property="og:image" content="https://vetpro.vercel.app/vetpro-logo.jpg">
+<meta property="og:title" content="VetPro — Logiciel de gestion vétérinaire intelligent">
+<meta property="og:description" content="Gérez votre clinique vétérinaire avec VetPro : patients, rendez-vous, stocks, ordonnances et IA diagnostique.">
+<meta property="og:url" content="https://vetpro.ink/">
+<meta property="og:image" content="https://vetpro.ink/vetpro-og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta property="og:locale" content="fr_DZ">
 <meta property="og:site_name" content="VetPro">
 
-<!-- Twitter -->
+<!-- Twitter / X -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="VetPro - Logiciel de gestion veterinaire">
-<meta name="twitter:description" content="Tout-en-un pour gerer votre clinique veterinaire.">
-<meta name="twitter:image" content="https://vetpro.vercel.app/vetpro-logo.jpg">
+<meta name="twitter:title" content="VetPro — Logiciel de gestion vétérinaire">
+<meta name="twitter:description" content="Tout-en-un pour gérer votre clinique vétérinaire.">
+<meta name="twitter:image" content="https://vetpro.ink/vetpro-og.jpg">
 
-<!-- JSON-LD -->
+<!-- JSON-LD — updated URL -->
 <script type="application/ld+json">
-{"@context":"https://schema.org","@type":"SoftwareApplication","name":"VetPro","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Logiciel de gestion de clinique veterinaire tout-en-un avec IA diagnostique","url":"https://vetpro.vercel.app","author":{"@type":"Organization","name":"VetPro"}}
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"VetPro","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Logiciel de gestion de clinique vétérinaire tout-en-un avec IA diagnostique","url":"https://vetpro.ink","offers":{"@type":"Offer","price":"0","priceCurrency":"DZD"},"author":{"@type":"Organization","name":"VetPro","url":"https://vetpro.ink"}}
 </script>
+
+<!-- Performance: preconnect to critical origins before any request fires -->
+<link rel="preconnect" href="https://smzmuqgbtsjgetxbmdgq.supabase.co" crossorigin>
+<link rel="dns-prefetch" href="https://smzmuqgbtsjgetxbmdgq.supabase.co">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <style>
@@ -83,8 +96,7 @@
   }
   .login-btn:hover{opacity:.9;transform:translateY(-1px)}
   .login-btn:active{transform:translateY(0);opacity:.85}
-  .login-btn[disabled],.login-btn:disabled{opacity:.7;cursor:not-allowed}
-  .login-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .login-btn[disabled],.login-btn:disabled{opacity:.65;cursor:not-allowed;transform:none}
   .login-error{
     margin-top:12px;padding:10px 14px;background:rgba(220,38,38,.2);
     border:1px solid rgba(220,38,38,.4);border-radius:10px;
@@ -134,15 +146,15 @@
   --sh:0 2px 16px rgba(13,27,42,.07);--sh2:0 8px 32px rgba(13,27,42,.13);
   --r:14px;--r2:20px;--r3:50px;
 }
-html{scroll-behavior:smooth}
-body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow:hidden;margin:0;height:100%}
-html{height:100%;overflow:hidden}
+html{scroll-behavior:auto} /* smooth handled per-container below */
+body{font-family:'Outfit',system-ui,sans-serif;background:var(--cream);color:var(--ink);overflow:hidden;margin:0;height:100dvh}
+html{height:100dvh;overflow:hidden}
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--mint);border-radius:4px}
 
 /* ── LAYOUT ── */
-.shell{display:flex;height:100vh;overflow:hidden}
+.shell{display:flex;height:100dvh;overflow:hidden}
 
 /* ── SIDEBAR ── */
 .sidebar{
@@ -261,7 +273,7 @@ html{height:100%;overflow:hidden}
 .tb-name-sub{font-size:9.5px;color:var(--muted)}
 
 /* ── CONTENT ── */
-.content{position:absolute;top:58px;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;background:var(--cream);-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+.content{position:absolute;top:58px;left:0;right:0;bottom:0;overflow-y:auto;overflow-x:hidden;background:var(--cream);-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;scroll-behavior:smooth}
 .page{display:none;padding:22px 24px;animation:fadeIn .25s ease;min-height:0}
 .page.active{display:block}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
@@ -624,7 +636,8 @@ html{height:100%;overflow:hidden}
 </style>
 
   <!-- ══ SUPABASE AUTH ══ -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Pinned to exact version — avoids surprise breaking changes from floating @2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
   <script>
 // ══════════════════════════════════════════════════════════════
 // AUTH — Supabase Login / Logout
@@ -969,10 +982,21 @@ window.addEventListener('DOMContentLoaded', () => {
 
 </script>
   <script>
-    // ── SUPABASE CONFIG ── Replace these with your project values from supabase.com ──
+    // ── SUPABASE CONFIG ──────────────────────────────────────────────────────────
     const SUPA_URL = 'https://smzmuqgbtsjgetxbmdgq.supabase.co';
     const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtem11cWdidHNqZ2V0eGJtZGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4ODQ3MDMsImV4cCI6MjA5MjQ2MDcwM30.VbXf1Yy1zzdrSJAYGZlMq-molDWpOqgmMdGUxgWHjGg';
-    const _sb = (typeof supabase !== 'undefined') ? supabase.createClient(SUPA_URL, SUPA_KEY) : null;
+    const _sb = (typeof supabase !== 'undefined') ? supabase.createClient(SUPA_URL, SUPA_KEY, {
+      auth: {
+        storageKey: 'vetpro-auth',        // namespaced — avoids collisions with other apps
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+      realtime: { params: { eventsPerSecond: 2 } }, // throttle — VetPro doesn't need live subscriptions yet
+      global: {
+        headers: { 'x-app-name': 'vetpro' },
+      },
+    }) : null;
   </script>
 </head>
 <body>
@@ -6794,7 +6818,7 @@ function showSurgGuide(id){
 }
 
 // ═══════════════════════════════════════════════════
-//    AI — Google Gemini 3.1 Flash Lite GRATUIT
+//    AI — Google Gemini 2.0 Flash (Free Tier)
 // ═══════════════════════════════════════════════════
 // API key stored in localStorage — set via Settings page (never hardcoded)
 var GEMINI_API_KEY = localStorage.getItem('vetpro-gemini-key') || '';
@@ -6861,7 +6885,7 @@ async function testGeminiKey(){
   if(!key){if(status){status.style.display="block";status.style.color="var(--danger)";status.textContent="Aucune clé à tester.";}return;}
   if(status){status.style.display="block";status.style.color="var(--muted)";status.textContent="⏳ Test en cours...";}
   try{
-    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:"Dis bonjour en 5 mots maximum."}]}],generationConfig:{maxOutputTokens:20}})});
+    var res=await fetch("https://generativelanguage.googleapis.com/v1beta/models/"+GEMINI_MODEL+":generateContent?key="+key,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{role:"user",parts:[{text:"Dis bonjour en 5 mots maximum."}]}],generationConfig:{maxOutputTokens:20}})});
     if(res.ok){var data=await res.json();var txt=(data&&data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0]&&data.candidates[0].content.parts[0].text)||"";if(status){status.style.color="var(--sage)";status.textContent="✅ Clé valide ! Réponse: "+txt;}localStorage.setItem("vetpro-gemini-key",key);GEMINI_API_KEY=key;}
     else{var err=await res.json().catch(function(){return{};});if(status){status.style.color="var(--danger)";status.textContent="❌ Erreur "+res.status+": "+(err&&err.error&&err.error.message||"Clé invalide");}}
   }catch(e){if(status){status.style.color="var(--danger)";status.textContent="❌ Erreur réseau: "+e.message;}}
@@ -22788,10 +22812,11 @@ function saveAdmission() {
   window.addEventListener('load', init);
   setTimeout(init, 500);
   setTimeout(finalizeOAuthReturn, 1200);
+  // Safety-net poll at 30s — onAuthStateChange below handles real-time auth events
+  // Reduced from 4s to avoid unnecessary DB queries every 4 seconds
   setInterval(function(){
-    checkSession();
     cleanupBlockingOverlays();
-  }, 4000);
+  }, 30000);
   const c = client();
   if (c?.auth?.onAuthStateChange) {
     c.auth.onAuthStateChange(function(event, session){
