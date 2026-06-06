@@ -947,6 +947,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="sb-item" onclick="nav('cas')"><div class="sb-ico-wrap">📋</div><span>Cas cliniques</span></div>
     <div class="sb-item" onclick="nav('historique')"><div class="sb-ico-wrap">📜</div><span>Historique</span></div>
     <div class="sb-item" onclick="nav('rdv')"><div class="sb-ico-wrap">📅</div><span>Rendez-vous</span><span class="sb-badge" id="badge-rdv"></span></div>
+    <div class="sb-item" onclick="nav('vaccinations')"><div class="sb-ico-wrap">💉</div><span>Vaccinations</span></div>
     <div class="sb-item" onclick="nav('clients')"><div class="sb-ico-wrap">👥</div><span>Clients & Animaux</span></div>
     <div class="sb-item" onclick="nav('finances')"><div class="sb-ico-wrap">💰</div><span>Finances</span></div>
     <div class="sb-item" onclick="nav('statistics')"><div class="sb-ico-wrap">📊</div><span>Statistiques</span></div>
@@ -961,7 +962,6 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="sb-item" onclick="nav('anesthesie')"><div class="sb-ico-wrap">💉</div><span>Calc. Anesthésie</span></div>
     <div class="sb-item" onclick="nav('chirurgie')"><div class="sb-ico-wrap">🔪</div><span>Guides Chirurgie</span></div>
     <div class="sb-item" onclick="nav('references')"><div class="sb-ico-wrap">📚</div><span>Références</span></div>
-    <div class="sb-item" onclick="nav('vaccinations')"><div class="sb-ico-wrap">💉</div><span>Vaccinations</span></div>
     <div class="sb-item" onclick="nav('labo')"><div class="sb-ico-wrap">🔬</div><span>Examens Labo</span></div>
     <div class="sb-item" onclick="nav('urgences')"><div class="sb-ico-wrap">🚨</div><span>Protocoles Urgence</span></div>
     <div class="sb-item" onclick="nav('nutrition')"><div class="sb-ico-wrap">🥩</div><span>Nutrition</span></div>
@@ -1179,6 +1179,7 @@ window.addEventListener('DOMContentLoaded', () => {
         <div class="card-title">⚡ Actions rapides</div>
         <div style="display:flex;flex-direction:column;gap:7px">
           <button class="btn btn-p btn-full" onclick="openModal('modal-cage-new')">🏥 Admettre un animal</button>
+          <button class="btn btn-ghost btn-full" onclick="openQuickVacc()">💉 Enregistrer vaccination</button>
           <button class="btn btn-ghost btn-full" onclick="openAddSuivi()">📊 Saisir observation</button>
           <button class="btn btn-ghost btn-full" onclick="openLibererModal()">🔓 Libérer une cage</button>
           <button class="btn btn-ai btn-full" onclick="nav('ai')">🤖 Consulter l\'IA</button>
@@ -1259,6 +1260,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="ai-live">
         <div class="ai-live-dot"></div>
         <span style="color:#4ADE80;font-size:11px;font-weight:600">En ligne</span>
+        <span id="ai-usage-badge" style="margin-left:10px;font-size:10px;color:rgba(255,255,255,.5);font-weight:500"></span>
       </div>
       <button class="btn btn-ghost btn-sm" style="margin-left:10px;color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.1)" onclick="newConv()">🔄 Nouveau</button>
     </div>
@@ -2253,8 +2255,34 @@ window.addEventListener('DOMContentLoaded', () => {
           <input class="inp" type="password" placeholder="Répéter le mot de passe"/>
         </div>
         <div style="display:flex;gap:9px;margin-top:10px;flex-wrap:wrap">
-          <button class="btn btn-ghost" id="vp-settings-export-btn" onclick="window.vpExportData && window.vpExportData()">💾 Exporter données</button>
           <button class="btn btn-ghost" id="vp-settings-reset-btn" style="color:var(--danger);border-color:var(--danger)" onclick="window.vpResetToZero && window.vpResetToZero()">🗑️ Réinitialiser à 0</button>
+        </div>
+      </div>
+
+      <!-- Local Sync / Cross-device -->
+      <div class="settings-section" style="border:2px solid var(--sage);background:linear-gradient(135deg,#f0f9f4,#fff)">
+        <div class="settings-title" style="color:var(--forest)">📲 Sauvegarde & Synchronisation</div>
+        <p style="font-size:12.5px;color:var(--muted);margin-bottom:14px;line-height:1.6">Vos données sont sauvegardées <strong>localement</strong> sur cet appareil. Pour accéder à vos données sur un autre appareil, exportez une sauvegarde et importez-la.</p>
+
+        <div style="background:var(--surface2);border-radius:10px;padding:12px;margin-bottom:14px;font-size:12px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="color:var(--muted)">Dernière sauvegarde :</span>
+            <span id="sync-last-backup" style="font-weight:600;color:var(--forest)">Aucune</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+            <span style="color:var(--muted)">Données stockées :</span>
+            <span id="sync-data-size" style="font-weight:600;color:var(--ink)">—</span>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="btn btn-p" style="flex:1;justify-content:center;min-width:140px" onclick="vpLocalExport()">⬇️ Exporter sauvegarde</button>
+          <button class="btn btn-ghost" style="flex:1;justify-content:center;min-width:140px" onclick="document.getElementById('sync-import-file').click()">⬆️ Importer sauvegarde</button>
+          <input type="file" id="sync-import-file" accept=".vpb,.json" style="display:none" onchange="vpLocalImport(this)"/>
+        </div>
+
+        <div class="ibox ibox-a" style="margin-bottom:0;font-size:11.5px">
+          💡 <strong>Comment synchroniser un autre appareil :</strong> Exportez la sauvegarde → envoyez le fichier par <strong>WhatsApp, email ou Google Drive</strong> → ouvrez VetPro sur l'autre appareil → Importez le fichier.
         </div>
       </div>
     </div>
@@ -2265,10 +2293,13 @@ window.addEventListener('DOMContentLoaded', () => {
      PAGE: VACCINATIONS
 ══════════════════════════════════════════════════════════════ -->
 <div id="page-vaccinations" class="page">
-  <div class="page-hero">
-    <div class="tag">💉 Protocoles Officiels · Algérie 🇩🇿 · ENSV</div>
-    <h2>Vaccinations & Rappels</h2>
-    <p>Vaccins disponibles en Algérie · Calendriers · Suivi par patient · Alertes rappels</p>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+    <div class="page-hero" style="margin:0;padding:0;background:none;border:none">
+      <div class="tag">💉 Protocoles Officiels · Algérie 🇩🇿 · ENSV</div>
+      <h2 style="margin:4px 0 2px">Vaccinations & Rappels</h2>
+      <p style="margin:0">Vaccins disponibles en Algérie · Calendriers · Suivi par patient · Alertes rappels</p>
+    </div>
+    <button class="btn btn-p" style="white-space:nowrap;flex-shrink:0" onclick="openQuickVacc()">💉 Enregistrer vaccination</button>
   </div>
 
   <div class="fchips" style="margin-bottom:18px" id="vacc-chips">
@@ -2481,19 +2512,37 @@ Voici les données à convertir :
       <div class="fg"><label class="lbl">Vaccin administré *</label>
         <select class="sel" id="vacc-new-vaccine" onchange="document.getElementById('vacc-new-custom-wrap').style.display=this.value==='autre'?'block':'none'">
           <option value="">— Sélectionner —</option>
-          <optgroup label="🐕 Chien">
-            <option>CHPPi J1 (Canigen)</option>
-            <option>CHPPiL (Hexadog)</option>
-            <option>CHPPiL + Rage (Hexadog + Rabisin)</option>
-            <option>Rage seule (Rabisin)</option>
-            <option>Letifend (Leishmaniose)</option>
-            <option>Parvovirus seul</option>
+          <optgroup label="🐕 Chien — Polyvalents">
+            <option>Biocan DHPPI+L (J1)</option>
+            <option>Biocan DHPPI+L</option>
+            <option>Canigen DHPPI/L</option>
+            <option>Eurican DHPPI2-L</option>
+            <option>Hexadog (DHPPI + L4)</option>
+            <option>Hexadog + Rabisin (rappel annuel)</option>
           </optgroup>
-          <optgroup label="🐈 Chat">
-            <option>CHPCH (Feligen CRP)</option>
-            <option>CHPCH + Rage</option>
-            <option>FeLV (Leucogen)</option>
-            <option>Rage seule (Rabisin)</option>
+          <optgroup label="🐕 Chien — Rage">
+            <option>Rabisin (Rage)</option>
+            <option>Nobivac Rabies</option>
+          </optgroup>
+          <optgroup label="🐕 Chien — Autres">
+            <option>Letifend J1 (Leishmaniose)</option>
+            <option>Letifend J2 (Leishmaniose)</option>
+            <option>Letifend J3 (Leishmaniose)</option>
+            <option>Letifend (rappel annuel)</option>
+          </optgroup>
+          <optgroup label="🐈 Chat — Polyvalents">
+            <option>Feligen CRP (J1)</option>
+            <option>Feligen CRP</option>
+            <option>Nobivac Tricat</option>
+            <option>Feligen CRP + Rabisin</option>
+          </optgroup>
+          <optgroup label="🐈 Chat — Rage">
+            <option>Rabisin (Rage chat)</option>
+            <option>Nobivac Rabies (chat)</option>
+          </optgroup>
+          <optgroup label="🐈 Chat — Autres">
+            <option>Leucogen (FeLV)</option>
+            <option>Purevax FeLV</option>
           </optgroup>
           <option value="autre">Autre (saisie libre)</option>
         </select>
@@ -3494,6 +3543,32 @@ Voici les données à convertir :
   </div>
 </div>
 
+<!-- QR Code — Pet Portal -->
+<div class="overlay" id="modal-client-qr">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div class="modal-hdr" style="justify-content:space-between">
+      <div class="modal-title">📱 QR Code — Fiche Client</div>
+      <button class="btn-ico" onclick="closeModal('modal-client-qr')">✕</button>
+    </div>
+    <div style="padding:8px 0 0">
+      <p style="font-size:12.5px;color:var(--muted);margin-bottom:16px">Le client scanne ce QR pour voir la fiche de son animal : hospitalisations, historique, vaccins, rappels.</p>
+      <div id="qr-canvas-wrap" style="display:flex;justify-content:center;margin-bottom:16px">
+        <canvas id="qr-canvas" width="240" height="240" style="border-radius:12px;border:3px solid var(--brd)"></canvas>
+      </div>
+      <div id="qr-client-name" style="font-weight:700;font-size:14px;margin-bottom:4px"></div>
+      <div id="qr-client-animals" style="font-size:12px;color:var(--muted);margin-bottom:16px"></div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-p" onclick="downloadClientQR()">⬇️ Télécharger QR</button>
+        <button class="btn btn-ghost" onclick="printClientQR()">🖨️ Imprimer</button>
+        <button class="btn btn-ghost" onclick="copyPetPortalLink()">🔗 Copier lien</button>
+      </div>
+      <div class="ibox ibox-a" style="margin-top:14px;font-size:11.5px;text-align:left">
+        🔒 Données affichées : animaux · hospitalisations · vaccinations · rappels à venir.<br>Aucune information financière n'est partagée.
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════════════════════════════════════════════════
                          JAVASCRIPT
 ══════════════════════════════════════════════════════════════ -->
@@ -3539,6 +3614,7 @@ function nav(id){
   if(id==='chirurgie'&&!surgRendered){renderSurgeries();surgRendered=true;}
   if(id==='cages'&&!cagesRendered){renderCages();cagesRendered=true;}
   if(id==='ai'&&!aiInited){initAI();aiInited=true;}
+  if(id==='ai'){const b=document.getElementById('ai-usage-badge');if(b){const u=getAIUsageToday();b.textContent=`${u}/${AI_DAILY_LIMIT} req. aujourd'hui`;b.style.color=u>=AI_DAILY_LIMIT?'#f87171':u>35?'#fbbf24':'rgba(255,255,255,.5)';}}
   if(id==='statistics'&&!statsRendered){renderStatistics();statsRendered=true;}
   if(id==='maladies'&&!maladiesRendered){renderMaladies('','');maladiesRendered=true;}
   if(id==='clients'){renderClientsPage();}
@@ -3547,7 +3623,7 @@ function nav(id){
   if(id==='ordonnances'||id==='rdv'||id==='vaccinations'||id==='labo'||id==='cages'||id==='cas'){populatePatientSelects();}
   if(id==='ordonnances'&&!ordosRendered){renderOrdos();ordosRendered=true;}
   if(id==='historique'){renderHist('');}
-  if(id==='settings'){loadGeminiKeyToSettings();}
+  if(id==='settings'){loadGeminiKeyToSettings();if(typeof refreshSyncStats==='function')refreshSyncStats();}
   if(id==='preop'){renderChecklist();}
   if(id==='urgences'){setUrg(document.querySelector('#page-urgences .fchip'),'choc');}
 }
@@ -4716,7 +4792,11 @@ function showClientDetail(clientName){
             ${client.phone ? '📞 '+client.phone : ''} ${client.email ? '· 📧 '+client.email : ''} ${client.address ? '· 📍 '+client.address : ''}
           </div>
         </div>
-        <button class="btn btn-ghost" onclick="hideClientDetail()">✕ Fermer</button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-ghost" onclick="openClientQR('${client.fullName.replace(/'/g,"\\'")}')">📱 QR Code</button>
+          <button class="btn btn-ghost" onclick="sendWhatsApp('${(client.phone||'').replace(/'/g,"\\'")}','${client.fullName.replace(/'/g,"\\'")}','','Rappel suivi vétérinaire')">📲 WhatsApp</button>
+          <button class="btn btn-ghost" onclick="hideClientDetail()">✕ Fermer</button>
+        </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:16px">
@@ -4777,7 +4857,7 @@ function filterClients(q){
 }
 function persistAppState(){
   if (!persistentStateReady) return;
-  localStorage.setItem(getUserStateStorageKey(), JSON.stringify({
+  const state = {
     cages: CAGES,
     drugs: DRUGS,
     ordos: ORDOS,
@@ -4788,7 +4868,379 @@ function persistAppState(){
     vaccHistory: VACC_HISTORY,
     patients: PATIENTS,
     clients: CLIENTS,
-  }));
+  };
+  localStorage.setItem(getUserStateStorageKey(), JSON.stringify(state));
+  refreshSyncStats();
+}
+
+// ══════════════════════════════════════════════════════════
+// LOCAL BACKUP / CROSS-DEVICE SYNC
+// ══════════════════════════════════════════════════════════
+function getLocalBackupState() {
+  // Get current user email for account binding
+  let userEmail = '';
+  try {
+    const key = getUserStateStorageKey();
+    // key format: "veterinapp-state:user@email.com"
+    userEmail = key.replace('veterinapp-state:', '');
+    if (userEmail === 'guest') userEmail = '';
+  } catch(e) {}
+
+  return {
+    _vpb: true,
+    _version: 1,
+    _exportedAt: new Date().toISOString(),
+    _accountEmail: userEmail,
+    _device: navigator.userAgent.slice(0, 80),
+    cages: CAGES,
+    drugs: DRUGS,
+    ordos: ORDOS,
+    historique: HISTORIQUE_DATA,
+    suivi: SUIVI_HISTORY,
+    appointments: APPOINTMENTS,
+    vaccineReminders: VACCINE_REMINDERS,
+    vaccHistory: VACC_HISTORY,
+    patients: PATIENTS,
+    clients: CLIENTS,
+  };
+}
+
+function vpLocalExport() {
+  try {
+    const payload = getLocalBackupState();
+    const json = JSON.stringify(payload, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `vetpro-backup-${dateStr}.vpb`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    const ts = new Date().toLocaleString('fr-FR');
+    localStorage.setItem('vetpro-last-backup', ts);
+    refreshSyncStats();
+    toast('✅ Sauvegarde téléchargée — partagez le fichier .vpb pour synchroniser');
+  } catch(e) {
+    toast('❌ Erreur export : ' + e.message);
+  }
+}
+
+async function vpLocalImport(input) {
+  const file = input?.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data || (!data._vpb && !data.clients && !data.patients)) {
+        toast('❌ Fichier invalide — ce n\'est pas une sauvegarde VetPro');
+        input.value = '';
+        return;
+      }
+
+      // ── ABUSE PREVENTION ──────────────────────────────────────
+      // If the backup has an account email, verify it's still active
+      const backupEmail = data._accountEmail;
+      const exportedAt = data._exportedAt ? new Date(data._exportedAt) : null;
+
+      if (backupEmail && typeof fetchApprovalRow === 'function') {
+        try {
+          const row = await fetchApprovalRow(backupEmail);
+          const status = typeof effectiveStatusOf === 'function' ? effectiveStatusOf(row) : row?.status;
+
+          if (status === 'expired') {
+            toast('❌ Accès expiré — renouvelez votre abonnement VetPro pour importer vos données');
+            input.value = '';
+            return;
+          }
+          if (status === 'rejected' || status === 'pending') {
+            toast('❌ Compte non autorisé — cette sauvegarde ne peut pas être importée');
+            input.value = '';
+            return;
+          }
+        } catch(netErr) {
+          // Offline — allow import but record pending verification
+          console.warn('[VetPro] Import: offline, deferred account check');
+          localStorage.setItem('vetpro-pending-import-verify', JSON.stringify({
+            email: backupEmail,
+            exportedAt: data._exportedAt,
+            importedAt: new Date().toISOString()
+          }));
+        }
+      }
+      // ── END ABUSE PREVENTION ───────────────────────────────────
+
+      const count = {
+        clients: (data.clients||[]).length,
+        patients: (data.patients||[]).length,
+        rdv: (data.appointments||[]).length,
+        cas: (data.historique||[]).length,
+      };
+      const msg = `Importer cette sauvegarde ?\n\n• ${count.clients} clients\n• ${count.patients} animaux\n• ${count.rdv} rendez-vous\n• ${count.cas} cas cliniques\n\n⚠️ Les données actuelles seront remplacées.`;
+      if (!confirm(msg)) { input.value = ''; return; }
+
+      if (Array.isArray(data.cages))           replaceArrayContents(CAGES, data.cages);
+      if (Array.isArray(data.drugs))           replaceArrayContents(DRUGS, data.drugs);
+      if (Array.isArray(data.ordos))           replaceArrayContents(ORDOS, data.ordos);
+      if (Array.isArray(data.historique))      replaceArrayContents(HISTORIQUE_DATA, data.historique);
+      if (Array.isArray(data.appointments))    replaceArrayContents(APPOINTMENTS, data.appointments);
+      if (Array.isArray(data.vaccineReminders))replaceArrayContents(VACCINE_REMINDERS, data.vaccineReminders);
+      if (Array.isArray(data.vaccHistory))     replaceArrayContents(VACC_HISTORY, data.vaccHistory);
+      if (data.suivi && typeof data.suivi === 'object') replaceObjectContents(SUIVI_HISTORY, data.suivi);
+      if (Array.isArray(data.patients)) PATIENTS = deepClone(data.patients);
+      if (Array.isArray(data.clients))  CLIENTS  = deepClone(data.clients);
+
+      window.PATIENTS = PATIENTS;
+      window.CLIENTS  = CLIENTS;
+
+      persistAppState();
+      refreshPersistentViews();
+      input.value = '';
+      const src = data._exportedAt ? ' (sauvegardé le ' + new Date(data._exportedAt).toLocaleString('fr-FR') + ')' : '';
+      toast('✅ Données importées avec succès' + src);
+    } catch(err) {
+      toast('❌ Erreur lecture fichier : ' + err.message);
+      input.value = '';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// Check deferred import verification on login
+async function checkDeferredImportVerification() {
+  try {
+    const pending = localStorage.getItem('vetpro-pending-import-verify');
+    if (!pending) return;
+    const { email } = JSON.parse(pending);
+    if (!email || typeof fetchApprovalRow !== 'function') return;
+    const row = await fetchApprovalRow(email);
+    const status = typeof effectiveStatusOf === 'function' ? effectiveStatusOf(row) : row?.status;
+    if (status === 'expired' || status === 'rejected') {
+      // Wipe imported data — revert to defaults
+      localStorage.removeItem('vetpro-pending-import-verify');
+      if (typeof initializePersistentState === 'function') {
+        localStorage.removeItem(getUserStateStorageKey());
+        initializePersistentState();
+      }
+      alert('⚠️ Les données importées provenaient d\'un compte VetPro expiré et ont été supprimées. Renouvelez votre abonnement.');
+    } else {
+      localStorage.removeItem('vetpro-pending-import-verify');
+    }
+  } catch(e) {}
+}
+
+function refreshSyncStats() {
+  const lastEl = document.getElementById('sync-last-backup');
+  const sizeEl = document.getElementById('sync-data-size');
+  if (lastEl) {
+    const last = localStorage.getItem('vetpro-last-backup');
+    lastEl.textContent = last || 'Aucune';
+    lastEl.style.color = last ? 'var(--forest)' : 'var(--warning)';
+  }
+  if (sizeEl) {
+    try {
+      const raw = localStorage.getItem(getUserStateStorageKey()) || '';
+      const kb = (raw.length / 1024).toFixed(1);
+      sizeEl.textContent = kb + ' Ko';
+    } catch(e) { sizeEl.textContent = '—'; }
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// QR CODE — PET PORTAL
+// ══════════════════════════════════════════════════════════
+let _qrCurrentClient = null;
+let _qrPortalUrl = '';
+
+function buildPetPortalHTML(clientName) {
+  const client  = CLIENTS.find(c => c.fullName === clientName) || { fullName: clientName };
+  const animals = PATIENTS.filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
+  const history = HISTORIQUE_DATA.filter(h => (h.client||'').toLowerCase() === clientName.toLowerCase()).slice(0,20);
+  const vaccs   = VACC_HISTORY.filter(v => (v.owner||'').toLowerCase() === clientName.toLowerCase()).slice(0,20);
+  const reminders = VACCINE_REMINDERS.filter(r => (r.owner||'').toLowerCase() === clientName.toLowerCase())
+    .filter(r => r.reminderDate >= new Date().toISOString().slice(0,10)).slice(0,10);
+  const hospAnimal = CAGES.find(c => c.animal && (c.patient||c.owner||'').toLowerCase() === clientName.toLowerCase() && c.statut === 'occupée');
+
+  const animalsHTML = animals.map(a => `
+    <div class="pet-card">
+      <div class="pet-ico">${(a.species||'').toLowerCase()==='chat'?'🐈':'🐕'}</div>
+      <div>
+        <div class="pet-name">${a.name||'?'}</div>
+        <div class="pet-meta">${[a.species,a.race,a.age,a.weight,a.sexe].filter(Boolean).join(' · ')}</div>
+      </div>
+    </div>`).join('') || '<p class="empty">Aucun animal enregistré</p>';
+
+  const hospHTML = hospAnimal ? `
+    <div class="alert-hosp">
+      🏥 <strong>${hospAnimal.animal}</strong> est actuellement hospitalisé — Cage ${hospAnimal.id}${hospAnimal.diagnostic ? ' · ' + hospAnimal.diagnostic : ''}
+    </div>` : '';
+
+  const histHTML = history.length ? history.map(h => `
+    <div class="row-item">
+      <div class="row-left">
+        <div class="row-title">${h.animal||'?'} — ${h.diagnostic||'Consultation'}</div>
+        <div class="row-meta">${h.traitement ? 'Traitement : ' + h.traitement.slice(0,80) : ''}</div>
+      </div>
+      <div class="row-date">${h.date||''}</div>
+    </div>`).join('') : '<p class="empty">Aucun historique</p>';
+
+  const vaccHTML = vaccs.length ? vaccs.map(v => `
+    <div class="row-item">
+      <div class="row-left">
+        <div class="row-title">💉 ${v.animal||'?'} — ${v.vaccine||''}</div>
+        ${v.rappel ? '<div class="row-meta rappel">⏰ Prochain rappel : ' + v.rappel + '</div>' : ''}
+      </div>
+      <div class="row-date">${v.date||''}</div>
+    </div>`).join('') : '<p class="empty">Aucune vaccination enregistrée</p>';
+
+  const remHTML = reminders.length ? reminders.map(r => `
+    <div class="row-item remind">
+      <div class="row-left">
+        <div class="row-title">🔔 ${r.animal||'?'} — ${r.vaccine||''}</div>
+      </div>
+      <div class="row-date remind-date">${r.reminderDate||''}</div>
+    </div>`).join('') : '<p class="empty">Aucun rappel à venir</p>';
+
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fiche Vétérinaire — ${client.fullName}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f9f4;color:#1a2e23;min-height:100vh}
+.header{background:linear-gradient(135deg,#1A4A2E,#2d7a4a);color:#fff;padding:20px 16px 24px;text-align:center}
+.logo{font-size:36px;margin-bottom:6px}
+.clinic{font-size:11px;opacity:.7;margin-top:2px}
+.owner{font-size:20px;font-weight:800;margin:4px 0 0}
+.phone{font-size:12px;opacity:.75;margin-top:3px}
+.badge-hosp{display:inline-block;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:8px}
+.content{padding:16px}
+.section{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.section-title{font-size:13px;font-weight:700;color:#1A4A2E;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.pet-card{display:flex;align-items:center;gap:12px;padding:10px;background:#f0f9f4;border-radius:10px;margin-bottom:8px}
+.pet-ico{font-size:28px}
+.pet-name{font-weight:700;font-size:14px}
+.pet-meta{font-size:11px;color:#5a7a65;margin-top:2px}
+.alert-hosp{background:#fdf0ee;border:1.5px solid #e74c3c;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#c0392b;margin-bottom:14px}
+.row-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #eaf3ee;gap:10px}
+.row-item:last-child{border-bottom:none}
+.row-title{font-size:12.5px;font-weight:600}
+.row-meta{font-size:11px;color:#5a7a65;margin-top:3px}
+.rappel{color:#d4813a!important}
+.row-date{font-size:11px;color:#8aab95;white-space:nowrap;padding-top:2px}
+.remind{background:#fff8ee;margin:0 -2px;padding:10px 2px;border-radius:6px}
+.remind-date{color:#d4813a;font-weight:700}
+.empty{font-size:12px;color:#8aab95;padding:8px 0}
+.footer{text-align:center;padding:20px 16px;font-size:11px;color:#8aab95}
+.footer strong{color:#1A4A2E}
+</style></head><body>
+<div class="header">
+  <div class="logo">🐾</div>
+  <div class="owner">${client.fullName}</div>
+  ${client.phone ? `<div class="phone">📞 ${client.phone}</div>` : ''}
+  <div class="clinic">VetPro · Fiche Patient · Dr. Kherbache Wail · ENSV Algérie</div>
+  ${hospAnimal ? `<div class="badge-hosp">🏥 Animal hospitalisé</div>` : ''}
+</div>
+<div class="content">
+  ${hospHTML}
+  <div class="section">
+    <div class="section-title">🐾 Mes animaux</div>
+    ${animalsHTML}
+  </div>
+  <div class="section">
+    <div class="section-title">📋 Historique clinique</div>
+    ${histHTML}
+  </div>
+  <div class="section">
+    <div class="section-title">💉 Vaccinations</div>
+    ${vaccHTML}
+  </div>
+  ${reminders.length ? `<div class="section">
+    <div class="section-title">🔔 Rappels à venir</div>
+    ${remHTML}
+  </div>` : ''}
+</div>
+<div class="footer">
+  Généré le ${new Date().toLocaleDateString('fr-FR')} · <strong>VetPro</strong> — Confidentiel
+</div>
+</body></html>`;
+}
+
+async function loadQRLib() {
+  if (window.QRCode) return;
+  return new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+async function openClientQR(clientName) {
+  _qrCurrentClient = clientName;
+  const client  = CLIENTS.find(c => c.fullName === clientName) || { fullName: clientName };
+  const animals = PATIENTS.filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
+
+  document.getElementById('qr-client-name').textContent = '👤 ' + clientName;
+  document.getElementById('qr-client-animals').textContent = animals.map(a => (a.species==='chat'?'🐈':'🐕') + ' ' + a.name).join('  ') || 'Aucun animal';
+
+  // Build portal HTML and create blob URL
+  const html  = buildPetPortalHTML(clientName);
+  const blob  = new Blob([html], { type: 'text/html' });
+  _qrPortalUrl = URL.createObjectURL(blob);
+
+  openModal('modal-client-qr');
+
+  // Draw QR
+  await loadQRLib();
+  const wrap = document.getElementById('qr-canvas-wrap');
+  wrap.innerHTML = '<div id="qr-render"></div>';
+  new QRCode(document.getElementById('qr-render'), {
+    text: _qrPortalUrl,
+    width: 240,
+    height: 240,
+    colorDark: '#1A4A2E',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
+}
+
+function downloadClientQR() {
+  const img = document.querySelector('#qr-render img') || document.querySelector('#qr-render canvas');
+  if (!img) { toast('QR non encore généré'); return; }
+  const a = document.createElement('a');
+  if (img.tagName === 'IMG') {
+    a.href = img.src;
+  } else {
+    a.href = img.toDataURL('image/png');
+  }
+  a.download = `vetpro-qr-${(_qrCurrentClient||'client').replace(/\s+/g,'-')}.png`;
+  a.click();
+  toast('✅ QR téléchargé');
+}
+
+function printClientQR() {
+  const img = document.querySelector('#qr-render img') || document.querySelector('#qr-render canvas');
+  if (!img) { toast('QR non encore généré'); return; }
+  const src = img.tagName === 'IMG' ? img.src : img.toDataURL('image/png');
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>QR — ${_qrCurrentClient}</title>
+  <style>body{font-family:sans-serif;text-align:center;padding:40px}h2{color:#1A4A2E;margin-bottom:8px}p{color:#666;font-size:12px;margin-bottom:20px}img{width:260px;height:260px;border:3px solid #1A4A2E;border-radius:12px}@media print{button{display:none}}</style></head>
+  <body><h2>🐾 VetPro — Fiche Vétérinaire</h2>
+  <p>📱 ${_qrCurrentClient} — Scannez pour consulter la fiche de votre animal</p>
+  <img src="${src}"/><br><br>
+  <p style="font-size:11px;color:#aaa">VetPro · Dr. Kherbache Wail · ENSV Algérie</p>
+  <button onclick="window.print()" style="margin-top:16px;padding:10px 24px;background:#1A4A2E;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">🖨️ Imprimer</button>
+  </body></html>`);
+  w.document.close();
+  setTimeout(() => w.print(), 500);
+}
+
+function copyPetPortalLink() {
+  if (!_qrPortalUrl) { toast('QR non encore généré'); return; }
+  navigator.clipboard.writeText(_qrPortalUrl).then(() => toast('🔗 Lien copié dans le presse-papier'));
 }
 function refreshPersistentViews(){
   ensureCaseFormEnhancements();
@@ -6277,7 +6729,45 @@ function showSurgGuide(id){
 // ═══════════════════════════════════════════════════
 // API key stored in localStorage — set via Settings page (never hardcoded)
 var GEMINI_API_KEY = localStorage.getItem('vetpro-gemini-key') || '';
-var GEMINI_MODEL = 'gemini-3.1-flash-lite';
+var GEMINI_MODEL = 'gemini-2.0-flash';
+
+// ── AI USAGE LIMITER ─────────────────────────────────────────────────────────
+// Gemini Flash free tier: 1500 req/day total. ~10 users → 50 req/day per user.
+const AI_DAILY_LIMIT = 50;
+
+function getAIUsageKey() {
+  const today = new Date().toISOString().slice(0,10);
+  return 'vetpro-ai-usage:' + today;
+}
+function getAIUsageToday() {
+  try { return parseInt(localStorage.getItem(getAIUsageKey()) || '0', 10); } catch(e) { return 0; }
+}
+function incrementAIUsage() {
+  try {
+    const key = getAIUsageKey();
+    const n = getAIUsageToday() + 1;
+    localStorage.setItem(key, String(n));
+    // Clean up yesterday's key
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    localStorage.removeItem('vetpro-ai-usage:' + yesterday);
+    return n;
+  } catch(e) { return 0; }
+}
+function checkAILimit() {
+  const used = getAIUsageToday();
+  if (used >= AI_DAILY_LIMIT) {
+    appendAIMsg('bot', `⚠️ <strong>Limite journalière atteinte</strong> (${AI_DAILY_LIMIT} requêtes/jour).<br><br>La limite est partagée pour assurer un accès équitable à tous les utilisateurs. Réessayez demain ou contactez l'administrateur.`);
+    return false;
+  }
+  return true;
+}
+// ── END AI LIMITER ──────────────────────────────────────────────────────────
+
+function openQuickVacc() {
+  populatePatientSelects();
+  document.getElementById('vacc-new-date').value = new Date().toISOString().slice(0,10);
+  openModal('modal-vacc-new');
+}
 let chatHist=[],aiLoading=false; // aiInited declared above
 const SYS=`Assistant veterinaire expert. Reponds en francais, concis et actionnable.
 Diagnostics differentiels, posologie (mg/kg, frequence, duree, voie, CI), chirurgie, ophtalmo, perfusion, anesthesie.
@@ -6327,12 +6817,14 @@ async function sendAI(){
 if(aiLoading)return;
 var ta=document.getElementById("ai-ta");
 var msg=ta.value.trim();if(!msg)return;
+if(!checkAILimit())return;
 var espece=document.getElementById("ctx-espece");espece=espece?espece.value:"";
 var poids=document.getElementById("ctx-poids");poids=poids?poids.value:"";
 var age=document.getElementById("ctx-age");age=age?age.value:"";
 var race=document.getElementById("ctx-race");race=race?race.value:"";
 ta.value="";appendAIMsg("user",msg);chatHist.push({role:"user",content:msg});
 appendTyping();aiLoading=true;
+incrementAIUsage();
 var btn=document.getElementById("ai-btn");btn.disabled=true;btn.textContent="⏳";
 try{
   var ctxParts=[];
@@ -21480,6 +21972,7 @@ function saveAdmission() {
       <div class="vp-fab-item" data-action="cas"><div class="vp-fab-item-icon">📁</div>Nouveau cas</div>
       <div class="vp-fab-item" data-action="clients"><div class="vp-fab-item-icon">🐾</div>Nouveau client</div>
       <div class="vp-fab-item" data-action="rdv"><div class="vp-fab-item-icon">📅</div>Nouveau RDV</div>
+      <div class="vp-fab-item" data-action="vaccination"><div class="vp-fab-item-icon">💉</div>Ajouter vaccination</div>
       <div class="vp-fab-item" data-action="ordonnances"><div class="vp-fab-item-icon">💊</div>Nouvelle ordonnance</div>
     </div>`;
   document.body.appendChild(fab);
@@ -21490,6 +21983,7 @@ function saveAdmission() {
     item.addEventListener('click',function(){
       fab.classList.remove('open');
       const action=this.dataset.action;
+      if(action==='vaccination'){if(typeof openQuickVacc==='function')openQuickVacc();return;}
       if(typeof window.nav==='function')window.nav(action);
     });
   });
