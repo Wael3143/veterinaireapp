@@ -4049,13 +4049,101 @@ function getCaseFormFields(){
     examCard: cards[2],
   };
 }
+function fillCaseFormFromPatient(patientId) {
+  const manualWrap = document.getElementById('case-manual-fields-wrap');
+  const selectedBadge = document.getElementById('case-selected-patient-badge');
+  if (!patientId || patientId === 'nouveau') {
+    // New patient — show manual fields, clear them, hide badge
+    if (manualWrap) manualWrap.style.display = 'block';
+    if (selectedBadge) selectedBadge.style.display = 'none';
+    ['case-animal-name','case-client-name','case-client-phone',
+     'case-race','case-age','case-poids','case-color'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+    const espece = document.getElementById('case-espece');
+    if (espece) espece.value = 'Chien';
+    const sexe = document.getElementById('case-sexe');
+    if (sexe) sexe.value = 'Mâle';
+    return;
+  }
+  const patient = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).find(p => p.id === patientId);
+  if (!patient) return;
+
+  // Show manual fields pre-filled (so vet can still edit)
+  if (manualWrap) manualWrap.style.display = 'block';
+
+  // Show selected badge
+  if (selectedBadge) {
+    selectedBadge.style.display = 'flex';
+    selectedBadge.innerHTML = `
+      <span style="font-size:16px">${patient.species === 'Chat' ? '🐈' : patient.species === 'NAC' ? '🐇' : '🐕'}</span>
+      <span style="font-weight:700;color:var(--forest)">${patient.name}</span>
+      <span style="color:var(--muted)">·</span>
+      <span style="color:var(--muted)">${patient.owner}</span>
+      <span style="font-size:10px;background:var(--surface2);padding:2px 8px;border-radius:20px;color:var(--sage);font-weight:700">Patient existant</span>
+    `;
+  }
+
+  // Fill all fields
+  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  set('case-animal-name', patient.name);
+  set('case-client-name', patient.owner);
+  set('case-client-phone', patient.phone);
+  set('case-race', patient.race);
+  set('case-age', patient.age);
+  set('case-color', patient.color || '');
+
+  // Weight — strip 'kg' if present
+  const weightRaw = (patient.weight || '').toString().replace(/[^0-9.]/g, '');
+  set('case-poids', weightRaw);
+
+  // Species select
+  const espece = document.getElementById('case-espece');
+  if (espece && patient.species) {
+    const match = Array.from(espece.options).find(o => o.value.toLowerCase() === patient.species.toLowerCase());
+    if (match) espece.value = match.value;
+  }
+  // Sex select
+  const sexe = document.getElementById('case-sexe');
+  if (sexe && patient.sexe) {
+    const match = Array.from(sexe.options).find(o => o.value.toLowerCase() === patient.sexe.toLowerCase());
+    if (match) sexe.value = match.value;
+  }
+  // Pre-fill history from patient notes
+  const historyField = document.getElementById('case-history');
+  if (historyField && !historyField.value && patient.notes) historyField.value = patient.notes;
+}
+
 function ensureCaseFormEnhancements(){
   const refs = getCaseFormFields();
   if (!refs || document.getElementById('case-animal-name')) return;
   const host = refs.patientCard.querySelector('.card-title');
   if (!host) return;
+
+  // Build patient options from PATIENTS array
+  const patientOptions = (typeof PATIENTS !== 'undefined' ? PATIENTS : [])
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(p => {
+      const emoji = p.species === 'Chat' ? '🐈' : p.species === 'NAC' ? '🐇' : '🐕';
+      return `<option value="${p.id}">${emoji} ${p.name} · ${p.race || p.species} (${p.owner})</option>`;
+    }).join('');
+
   host.insertAdjacentHTML('afterend', `
-    <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
+    <!-- ── Patient selector ── -->
+    <div style="margin-bottom:14px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1.5px solid var(--brd)">
+      <label class="lbl" style="margin-bottom:6px;display:block">🔍 Client existant ou nouveau patient ?</label>
+      <select class="sel" id="case-patient-select" onchange="fillCaseFormFromPatient(this.value)" style="font-weight:600">
+        <option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>
+        ${patientOptions}
+      </select>
+      <!-- Badge shown after selection -->
+      <div id="case-selected-patient-badge" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid var(--brd);font-size:13px;flex-wrap:wrap"></div>
+    </div>
+
+    <!-- ── Manual / pre-filled fields ── -->
+    <div class="row3" id="case-manual-fields-wrap" style="margin-bottom:12px">
       <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
       <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
       <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
@@ -4455,6 +4543,22 @@ function populatePatientSelects(){
       .map(c => `<option value="${c.id}">${c.id}</option>`)
       .join('') || '<option value="">Aucune cage libre</option>';
     if (current && quickCageSelect.querySelector(`option[value="${current}"]`)) quickCageSelect.value = current;
+  }
+  // ── Refresh case form patient selector ──
+  const casePatientSelect = document.getElementById('case-patient-select');
+  if (casePatientSelect) {
+    const currentVal = casePatientSelect.value;
+    const casePatientOptions = (typeof PATIENTS !== 'undefined' ? PATIENTS : [])
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(p => {
+        const emoji = p.species === 'Chat' ? '🐈' : p.species === 'NAC' ? '🐇' : '🐕';
+        return `<option value="${p.id}">${emoji} ${p.name} · ${p.race || p.species} (${p.owner})</option>`;
+      }).join('');
+    casePatientSelect.innerHTML = `<option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>${casePatientOptions}`;
+    if (currentVal && casePatientSelect.querySelector(`option[value="${currentVal}"]`)) {
+      casePatientSelect.value = currentVal;
+    }
   }
   renderVaccineReminders();
   updateSidebarBadges();
@@ -6857,6 +6961,7 @@ function checkAILimit() {
 // ── END AI LIMITER ──────────────────────────────────────────────────────────
 
 function openQuickVacc() {
+  populateVaccPatientSelect();
   populatePatientSelects();
   document.getElementById('vacc-new-date').value = new Date().toISOString().slice(0,10);
   openModal('modal-vacc-new');
@@ -9257,7 +9362,7 @@ function showHistDetail(id) {
     </div>
     <div style="display:flex;gap:9px;flex-wrap:wrap">
       <button class="btn btn-p" onclick="toast('Fiche PDF générée ✅')">📄 Exporter fiche</button>
-      <button class="btn btn-ghost" onclick="sendWhatsApp('${(client.phone||'').replace(/'/g,"\\'")}','${(client.fullName||'').replace(/'/g,"\\'")}','${(h.animal||'').replace(/'/g,"\\'")}','Rappel RDV')">📱 WhatsApp rappel</button>
+      <button class="btn btn-ghost" onclick="sendWhatsApp('${(h.tel||'').replace(/'/g,"\\'")}','${(h.client||'').replace(/'/g,"\\'")}','${(h.animal||'').replace(/'/g,"\\'")}','Rappel RDV')">📱 WhatsApp rappel</button>
       ${h.ordonnance ? `<button class="btn btn-ghost" onclick="showOrdo('${h.ordonnance}');nav('ordonnances')">📝 Voir ordonnance</button>` : ''}
       <button class="btn btn-ghost" onclick="document.getElementById('hist-detail').style.display='none'">✕ Fermer</button>
     </div>`;
