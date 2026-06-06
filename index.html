@@ -1478,34 +1478,36 @@ window.addEventListener('DOMContentLoaded', () => {
      PAGE: CLIENTS
 ══════════════════════════════════════════════════════════════ -->
 <div id="page-clients" class="page">
-  <div style="display:flex;gap:12px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
-    <div class="search-wrap" style="flex:1;min-width:220px"><span style="color:var(--muted)">🔍</span><input placeholder="Rechercher un client…"/></div>
-    <button class="btn btn-ghost" onclick="openImportModal()">📥 Importer Excel/IA</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)">👥 Clients & Animaux</h2>
+      <p id="clients-count-sub" style="color:var(--muted);font-size:12.5px;margin-top:3px">0 clients enregistrés</p>
+    </div>
     <button class="btn btn-p" onclick="openModal('modal-client')">➕ Nouveau client</button>
   </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+    <div class="search-wrap" style="flex:1;min-width:220px"><span style="color:var(--muted)">🔍</span><input placeholder="Rechercher un client, animal, téléphone…" oninput="clientSearch=this.value;renderClientsPage()"/></div>
+    <button class="btn btn-ghost" onclick="openImportModal()">📥 Importer Excel/IA</button>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-title" id="clients-table-title">👥 Clients <span>Liste complète</span></div>
+    <table class="tbl">
+      <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Animaux</th><th>Prochain RDV</th><th></th></tr></thead>
+      <tbody id="clients-tbody"></tbody>
+    </table>
+    <div class="ibox ibox-b" style="margin-top:12px;margin-bottom:0">📧 Clients avec email → rappel automatique 48h avant le RDV</div>
+  </div>
+
   <div class="g2">
-    <div class="card">
-      <div class="card-title">👥 Clients (87) <span>Actifs ce mois</span></div>
-      <table class="tbl">
-        <thead><tr><th>Nom</th><th>Téléphone</th><th>Email</th><th>Animaux</th><th>Prochain RDV</th><th></th></tr></thead>
-        <tbody>
-          <tr><td><strong>Benali Ahmed</strong></td><td>0550 123 456</td><td style="font-size:10.5px">benali@mail.com 📧</td><td>🐕 Rex</td><td>15/04 <span style="color:var(--warning);font-size:10px">📧 J-2</span></td><td><button class="btn-ico">›</button></td></tr>
-          <tr><td><strong>Kaci Fatima</strong></td><td>0661 789 012</td><td style="font-size:10.5px;color:var(--muted)">—</td><td>🐈 Misty</td><td style="color:var(--danger)">05/04 ⚠️</td><td><button class="btn-ico">›</button></td></tr>
-          <tr><td><strong>Hamdi Karim</strong></td><td>0770 345 678</td><td style="font-size:10.5px">hamdi@mail.dz 📧</td><td>🐕 Fido · 🐈 Luna</td><td>28/04</td><td><button class="btn-ico">›</button></td></tr>
-          <tr><td><strong>Meziane Ali</strong></td><td>0550 987 654</td><td style="font-size:10.5px;color:var(--muted)">—</td><td>🐕 Bruno</td><td>20/04</td><td><button class="btn-ico">›</button></td></tr>
-        </tbody>
-      </table>
-      <div class="ibox ibox-b" style="margin-top:12px;margin-bottom:0">📧 Clients avec email → rappel automatique 48h avant le RDV</div>
+    <div class="card" id="clients-payment-card">
+      <div class="card-title">💰 Suivi paiements</div>
+      <div id="clients-payment-body" style="display:flex;flex-direction:column;gap:9px"></div>
     </div>
-    <div>
-      <div class="card" style="margin-bottom:16px" id="clients-payment-card">
-        <div class="card-title">💰 Suivi paiements</div>
-        <div id="clients-payment-body" style="display:flex;flex-direction:column;gap:9px"></div>
-      </div>
-      <div class="card" id="clients-species-card">
-        <div class="card-title">📊 Répartition espèces</div>
-        <div id="clients-species-body" style="display:flex;flex-direction:column;gap:10px"></div>
-      </div>
+    <div class="card" id="clients-species-card">
+      <div class="card-title">📊 Répartition espèces</div>
+      <div id="clients-species-body" style="display:flex;flex-direction:column;gap:10px"></div>
     </div>
   </div>
 </div>
@@ -1556,7 +1558,7 @@ window.addEventListener('DOMContentLoaded', () => {
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
               <span class="bdg bdg-c">🚨 Urgent</span>
-              <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();toast('SMS envoyé à Benali Ahmed ✅')">📱 SMS</button>
+              <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();sendWhatsApp('0550123456','Benali Ahmed','Rex','Contrôle parvovirose')">📱 WhatsApp</button>
             </div>
           </div>
         </div>
@@ -1608,7 +1610,7 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
       <div class="ibox ibox-b" style="margin-top:12px">📧 Les clients avec email reçoivent un rappel automatique 48h avant leur RDV</div>
       <div style="display:flex;gap:9px;margin-top:12px">
-        <button class="btn btn-ghost btn-full" onclick="toast('Rappels envoyés à tous les clients ✅')">📱 Envoyer tous rappels</button>
+        <button class="btn btn-ghost btn-full" onclick="CLIENTS.filter(c=>c.phone).forEach((c,i)=>setTimeout(()=>sendWhatsApp(c.phone,c.fullName,'','Rappel RDV'),i*800))">📱 Envoyer tous rappels WhatsApp</button>
         <button class="btn btn-ghost btn-full" onclick="toast('Planning exporté ✅')">📄 Exporter PDF</button>
       </div>
     </div>
@@ -3657,6 +3659,21 @@ function toast(msg,dur=3200){
   setTimeout(()=>t.classList.remove('show'),dur);
 }
 
+function sendWhatsApp(phone, clientName, animal, motif) {
+  // Normalize Algerian phone to international format
+  let num = (phone || '').replace(/\s+/g, '').replace(/[^0-9+]/g, '');
+  if (num.startsWith('0')) num = '213' + num.slice(1);
+  else if (num.startsWith('+')) num = num.slice(1);
+  if (!num) { toast('⚠️ Numéro de téléphone manquant pour ce client'); return; }
+
+  const animalStr = animal ? ` concernant ${animal}` : '';
+  const motifStr = motif ? ` (${motif})` : '';
+  const msg = encodeURIComponent(
+    `Bonjour ${clientName || ''},\n\nCeci est un rappel de la part de votre vétérinaire VétérinApp Pro pour votre rendez-vous${animalStr}${motifStr}.\n\nMerci de confirmer votre présence ou de nous contacter pour reporter.\n\nCordialement,\nDr. Kherbache Wail`
+  );
+  window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
+}
+
 let currentUserStorageKey = 'guest';
 let persistentStateReady = false;
 let PATIENTS = [];
@@ -4429,6 +4446,7 @@ function renderRdvPage(){
           </div>
           <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
             <span class="bdg ${meta.badge}">${meta.label}</span>
+            ${item.phone ? `<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();sendWhatsApp('${item.phone}','${(item.owner||'').replace(/'/g,"\\'")}','${(item.animal||'').replace(/'/g,"\\'")}','${(item.motif||'').replace(/'/g,"\\'")}')">📱 WhatsApp</button>` : ''}
           </div>
         </div>
       </div>`;
@@ -4517,15 +4535,17 @@ function exportRdvPdf(){
   setTimeout(() => printWin.print(), 250);
 }
 function renderClientsPage(){
-  const container = document.querySelector('#page-clients tbody');
-  const title = document.querySelector('#page-clients .card-title');
-  if (!container || !title) return;
+  const container = document.getElementById('clients-tbody') || document.querySelector('#page-clients tbody');
+  const title = document.getElementById('clients-table-title') || document.querySelector('#page-clients .card-title');
+  const sub = document.getElementById('clients-count-sub');
+  if (!container) return;
   const q = (clientSearch || '').toLowerCase();
   const filtered = CLIENTS.filter(client => {
     const animals = (client.animals || []).join(' ').toLowerCase();
     return !q || client.fullName.toLowerCase().includes(q) || (client.phone || '').toLowerCase().includes(q) || (client.email || '').toLowerCase().includes(q) || animals.includes(q);
   });
-  title.innerHTML = `👥 Clients (${CLIENTS.length}) <span>Actifs ce mois</span>`;
+  if (title) title.innerHTML = `👥 Clients (${filtered.length}${q ? ' trouvés' : ''}) <span>Liste complète</span>`;
+  if (sub) sub.textContent = `${CLIENTS.length} client${CLIENTS.length !== 1 ? 's' : ''} enregistré${CLIENTS.length !== 1 ? 's' : ''}`;
   container.innerHTML = filtered.map((client, idx) => `
     <tr style="cursor:pointer" onclick="showClientDetail('${(client.fullName||'').replace(/'/g,"\\'")}')">
       <td><strong>${client.fullName}</strong></td>
@@ -8643,7 +8663,7 @@ function showHistDetail(id) {
     </div>
     <div style="display:flex;gap:9px;flex-wrap:wrap">
       <button class="btn btn-p" onclick="toast('Fiche PDF générée ✅')">📄 Exporter fiche</button>
-      <button class="btn btn-ghost" onclick="toast('Rappel SMS envoyé ✅')">📱 SMS rappel</button>
+      <button class="btn btn-ghost" onclick="sendWhatsApp('${(client.phone||'').replace(/'/g,"\\'")}','${(client.fullName||'').replace(/'/g,"\\'")}','${(h.animal||'').replace(/'/g,"\\'")}','Rappel RDV')">📱 WhatsApp rappel</button>
       ${h.ordonnance ? `<button class="btn btn-ghost" onclick="showOrdo('${h.ordonnance}');nav('ordonnances')">📝 Voir ordonnance</button>` : ''}
       <button class="btn btn-ghost" onclick="document.getElementById('hist-detail').style.display='none'">✕ Fermer</button>
     </div>`;
@@ -15618,7 +15638,7 @@ function saveAdmission() {
   // inside clinic-data sections and replace them with an empty state.
   function decorateEmptyTables(){
     const map = [
-      ['#page-clients table tbody', '👥', 'Aucun client',           'Ajoutez votre premier client pour commencer le suivi.', 'Nouveau client', "openModal('modal-client')"],
+      ['#clients-tbody', '👥', 'Aucun client',           'Ajoutez votre premier client pour commencer le suivi.', 'Nouveau client', "openModal('modal-client')"],
       ['#page-rdv table tbody',     '📅', 'Aucun rendez-vous',      'Planifiez votre premier rendez-vous.',                    'Nouveau RDV',    "openModal('modal-rdv')"],
       ['#page-finances table tbody','💰', 'Aucune transaction',     'Enregistrez votre première recette ou dépense.',           'Nouvelle entrée', "openFinanceModal()"],
       ['#page-cas table tbody',     '📋', 'Aucun cas clinique',     'Créez votre premier cas pour commencer.',                 'Nouveau cas',     "openModal('modal-cas')"],
