@@ -2126,6 +2126,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink)">👁 Aperçu</div>
         <div style="display:flex;gap:8px">
+          <button class="btn btn-sm btn-ghost" onclick="openEditOrdo()">✏️ Modifier</button>
           <button class="btn btn-sm btn-p" onclick="printOrdo()">🖨️ Imprimer</button>
           <button class="btn btn-sm btn-ghost" onclick="exportOrdoPDF()">📄 PDF</button>
         </div>
@@ -3489,6 +3490,62 @@ Voici les données à convertir :
     <div style="display:flex;gap:10px">
       <button class="btn btn-p" style="flex:1;justify-content:center" onclick="saveNewOrdo()">✅ Créer l'ordonnance</button>
       <button class="btn btn-ghost" onclick="closeModal('modal-ordo-new')">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- Ordonnance Edit -->
+<div class="overlay" id="modal-ordo-edit">
+  <div class="modal" style="max-width:680px;max-height:92vh;overflow-y:auto">
+    <div class="modal-hdr" style="position:sticky;top:0;background:#fff;z-index:2;padding-bottom:12px;border-bottom:1px solid var(--brd)">
+      <div class="modal-title">✏️ Modifier l'ordonnance <span id="edit-ordo-num" style="font-size:13px;color:var(--muted);font-weight:400"></span></div>
+      <button class="btn-ico" onclick="closeModal('modal-ordo-edit')">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+      <div class="fg"><label class="lbl">Animal *</label>
+        <input class="inp" id="eo-animal" placeholder="Nom de l'animal"/>
+      </div>
+      <div class="fg"><label class="lbl">Date *</label>
+        <input class="inp" type="date" id="eo-date"/>
+      </div>
+      <div class="fg"><label class="lbl">Propriétaire</label>
+        <input class="inp" id="eo-proprietaire" placeholder="Nom du propriétaire"/>
+      </div>
+      <div class="fg"><label class="lbl">Poids</label>
+        <input class="inp" id="eo-poids" placeholder="Ex: 15 kg"/>
+      </div>
+      <div class="fg"><label class="lbl">Espèce / Race / Âge</label>
+        <input class="inp" id="eo-espece" placeholder="Ex: Chien · Labrador · 3 ans"/>
+      </div>
+      <div class="fg"><label class="lbl">Statut</label>
+        <select class="sel" id="eo-statut">
+          <option value="En cours">En cours</option>
+          <option value="Délivrée">Délivrée</option>
+          <option value="Long terme">Long terme</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="fg" style="margin-bottom:12px"><label class="lbl">Diagnostic / Motif *</label>
+      <input class="inp" id="eo-diag" placeholder="Ex: Parvovirose — phase de récupération"/>
+    </div>
+
+    <div style="border:2px solid var(--brd);border-radius:14px;padding:16px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:10.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px">MÉDICAMENTS PRESCRITS</div>
+        <button class="btn btn-ghost btn-sm" onclick="addEditOrdoLine()">+ Ajouter médicament</button>
+      </div>
+      <div id="eo-lines" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
+    <div class="fg" style="margin-bottom:12px"><label class="lbl">Contrôle / Instructions propriétaire</label>
+      <textarea class="tex" rows="2" id="eo-controle" placeholder="Ex: Contrôle dans 7 jours · Revenir si fièvre…"></textarea>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-p" style="flex:1;justify-content:center" onclick="saveEditOrdo()">💾 Enregistrer les modifications</button>
+      <button class="btn btn-ghost" onclick="closeModal('modal-ordo-edit')">Annuler</button>
     </div>
   </div>
 </div>
@@ -6953,6 +7010,96 @@ function printOrdo() {
 function exportOrdoPDF() {
   printOrdo(); // same — opens print dialog which allows Save as PDF
   toast('Utilisez "Enregistrer en PDF" dans la boîte d\'impression 📄');
+}
+
+function openEditOrdo() {
+  if (!currentOrdoNum) { toast('Sélectionnez une ordonnance à modifier'); return; }
+  const o = ORDOS.find(x => x.num === currentOrdoNum);
+  if (!o) return;
+
+  document.getElementById('edit-ordo-num').textContent = '— ' + o.num;
+  document.getElementById('eo-animal').value = o.animal || '';
+  document.getElementById('eo-proprietaire').value = o.proprietaire || '';
+  document.getElementById('eo-poids').value = o.poids || '';
+  document.getElementById('eo-diag').value = o.diagnostic || '';
+  document.getElementById('eo-controle').value = o.controle || '';
+  document.getElementById('eo-statut').value = o.statut || 'En cours';
+
+  // Parse race/age from combined fields
+  const raceAge = [o.race, o.age].filter(Boolean).join(' · ');
+  document.getElementById('eo-espece').value = raceAge;
+
+  // Parse date back to yyyy-mm-dd for input[type=date]
+  const dateParts = (o.date || '').split('/');
+  if (dateParts.length === 3) {
+    document.getElementById('eo-date').value = `${dateParts[2]}-${dateParts[1]}-${dateParts[0]}`;
+  } else {
+    document.getElementById('eo-date').value = '';
+  }
+
+  // Render medication lines
+  const container = document.getElementById('eo-lines');
+  container.innerHTML = '';
+  (o.meds || []).forEach((m, i) => {
+    container.insertAdjacentHTML('beforeend', buildEditOrdoLine(i, m.n, m.d, m.q));
+  });
+
+  openModal('modal-ordo-edit');
+}
+
+function buildEditOrdoLine(i, name, details, qty) {
+  return `<div class="ordo-line" style="display:grid;grid-template-columns:1fr 1fr 80px 32px;gap:8px;align-items:center">
+    <input class="inp" placeholder="Médicament" value="${(name||'').replace(/"/g,'&quot;')}" style="font-size:12.5px"/>
+    <input class="inp" placeholder="Posologie / dose" value="${(details||'').replace(/"/g,'&quot;')}" style="font-size:12.5px"/>
+    <input class="inp" placeholder="Qté" value="${(qty||'').replace(/"/g,'&quot;')}" style="font-size:12.5px"/>
+    <button class="btn-ico" onclick="this.closest('.ordo-line').remove()" title="Supprimer">🗑️</button>
+  </div>`;
+}
+
+function addEditOrdoLine() {
+  const container = document.getElementById('eo-lines');
+  const i = container.children.length;
+  container.insertAdjacentHTML('beforeend', buildEditOrdoLine(i, '', '', ''));
+}
+
+function saveEditOrdo() {
+  const o = ORDOS.find(x => x.num === currentOrdoNum);
+  if (!o) { toast('Ordonnance introuvable'); return; }
+
+  const diag = document.getElementById('eo-diag')?.value?.trim();
+  if (!diag) { toast('⚠️ Le diagnostic est requis'); return; }
+
+  const lines = document.getElementById('eo-lines');
+  const meds = Array.from(lines.querySelectorAll('.ordo-line')).map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { n: inputs[0]?.value?.trim() || '', d: inputs[1]?.value?.trim() || '', q: inputs[2]?.value?.trim() || '-' };
+  }).filter(m => m.n);
+  if (!meds.length) { toast('⚠️ Ajoutez au moins un médicament'); return; }
+
+  o.animal = document.getElementById('eo-animal')?.value?.trim() || o.animal;
+  o.proprietaire = document.getElementById('eo-proprietaire')?.value?.trim() || o.proprietaire;
+  o.poids = document.getElementById('eo-poids')?.value?.trim() || o.poids;
+  o.diagnostic = diag;
+  o.controle = document.getElementById('eo-controle')?.value?.trim() || o.controle;
+  o.statut = document.getElementById('eo-statut')?.value || o.statut;
+  o.meds = meds;
+
+  const rawDate = document.getElementById('eo-date')?.value;
+  if (rawDate) {
+    const [y,m,d] = rawDate.split('-');
+    o.date = `${d}/${m}/${y}`;
+  }
+
+  const especeRaw = document.getElementById('eo-espece')?.value?.trim() || '';
+  const especeParts = especeRaw.split('·').map(s => s.trim());
+  o.race = especeParts[0] || o.race;
+  o.age = especeParts[1] || o.age;
+
+  persistAppState();
+  closeModal('modal-ordo-edit');
+  renderOrdos('', true);
+  showOrdo(currentOrdoNum);
+  toast('✅ Ordonnance ' + currentOrdoNum + ' mise à jour');
 }
 
 // ══════════════════════════════════════════════════════════════
