@@ -946,6 +946,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="sb-item" onclick="nav('cages')"><div class="sb-ico-wrap">🏥</div><span>Cages & Hospit.</span><span class="sb-badge new" id="badge-cages"></span></div>
     <div class="sb-item" onclick="nav('cas')"><div class="sb-ico-wrap">📋</div><span>Cas cliniques</span></div>
     <div class="sb-item" onclick="nav('historique')"><div class="sb-ico-wrap">📜</div><span>Historique</span></div>
+    <div class="sb-item" onclick="nav('rdv')"><div class="sb-ico-wrap">📅</div><span>Rendez-vous</span><span class="sb-badge" id="badge-rdv"></span></div>
     <div class="sb-item" onclick="nav('clients')"><div class="sb-ico-wrap">👥</div><span>Clients & Animaux</span></div>
     <div class="sb-item" onclick="nav('finances')"><div class="sb-ico-wrap">💰</div><span>Finances</span></div>
     <div class="sb-item" onclick="nav('statistics')"><div class="sb-ico-wrap">📊</div><span>Statistiques</span></div>
@@ -970,7 +971,6 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="sb-section">
     <div class="sb-label">Gestion</div>
     <div class="sb-item" onclick="nav('meds')"><div class="sb-ico-wrap">💊</div><span>Médicaments</span></div>
-    <div class="sb-item" onclick="nav('rdv')"><div class="sb-ico-wrap">📅</div><span>Rendez-vous</span><span class="sb-badge" id="badge-rdv"></span></div>
     <div class="sb-item" onclick="nav('settings')"><div class="sb-ico-wrap">⚙️</div><span>Paramètres</span></div>
     <div class="sb-item" onclick="nav('support')"><div class="sb-ico-wrap">✉️</div><span>Support</span></div>
   </div>
@@ -1516,105 +1516,45 @@ window.addEventListener('DOMContentLoaded', () => {
      PAGE: RDV
 ══════════════════════════════════════════════════════════════ -->
 <div id="page-rdv" class="page">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px">
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
     <div>
       <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)">📅 Rendez-vous</h2>
-      <p style="color:var(--muted);font-size:12.5px;margin-top:3px">Planning clinique · Gestion · Rappels automatiques</p>
+      <p style="color:var(--muted);font-size:12.5px;margin-top:3px">Planning clinique · Rappels WhatsApp · Suivi</p>
     </div>
     <button class="btn btn-p" onclick="openModal('modal-rdv')">➕ Nouveau RDV</button>
   </div>
 
-  <!-- Date + stats row -->
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-    <div class="card" style="text-align:center;padding:14px">
-      <div style="font-size:28px;font-weight:900;color:var(--forest)">3</div>
-      <div style="font-size:11px;color:var(--muted);font-weight:600">Aujourd'hui</div>
-    </div>
-    <div class="card" style="text-align:center;padding:14px">
-      <div style="font-size:28px;font-weight:900;color:var(--info)">8</div>
-      <div style="font-size:11px;color:var(--muted);font-weight:600">Cette semaine</div>
-    </div>
-    <div class="card" style="text-align:center;padding:14px">
-      <div style="font-size:28px;font-weight:900;color:var(--warning)">2</div>
-      <div style="font-size:11px;color:var(--muted);font-weight:600">En attente</div>
-    </div>
-    <div class="card" style="text-align:center;padding:14px">
-      <div style="font-size:28px;font-weight:900;color:var(--sage)">94%</div>
-      <div style="font-size:11px;color:var(--muted);font-weight:600">Taux présence</div>
-    </div>
+  <!-- Stats row -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px" id="rdv-stats-row">
+    <div class="card" style="text-align:center;padding:14px"><div id="rdv-stat-today" style="font-size:28px;font-weight:900;color:var(--forest)">0</div><div style="font-size:11px;color:var(--muted);font-weight:600">Aujourd'hui</div></div>
+    <div class="card" style="text-align:center;padding:14px"><div id="rdv-stat-week" style="font-size:28px;font-weight:900;color:var(--info)">0</div><div style="font-size:11px;color:var(--muted);font-weight:600">À venir</div></div>
+    <div class="card" style="text-align:center;padding:14px"><div id="rdv-stat-waiting" style="font-size:28px;font-weight:900;color:var(--warning)">0</div><div style="font-size:11px;color:var(--muted);font-weight:600">En attente</div></div>
+    <div class="card" style="text-align:center;padding:14px"><div id="rdv-stat-urgent" style="font-size:28px;font-weight:900;color:var(--danger)">0</div><div style="font-size:11px;color:var(--muted);font-weight:600">Urgents</div></div>
   </div>
 
-  <div class="g2">
-    <!-- Today's appointments -->
-    <div>
-      <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink);margin-bottom:12px">📋 Aujourd'hui — 21 Avril 2026</div>
-      <div style="display:flex;flex-direction:column;gap:10px">
-        <div class="card" style="border-left:4px solid var(--danger);cursor:pointer" onclick="toast('Rex — Contrôle parvovirose')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div style="font-weight:700;font-size:13px">10:00 — 🐕 Rex</div>
-              <div style="font-size:12px;color:var(--muted)">Benali Ahmed · 0550 123 456</div>
-              <div style="font-size:12px;margin-top:4px">Contrôle post-traitement parvovirose · Prise de sang</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-              <span class="bdg bdg-c">🚨 Urgent</span>
-              <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();sendWhatsApp('0550123456','Benali Ahmed','Rex','Contrôle parvovirose')">📱 WhatsApp</button>
-            </div>
-          </div>
-        </div>
-        <div class="card" style="border-left:4px solid var(--sage);cursor:pointer" onclick="toast('Titan — Vaccination')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div style="font-weight:700;font-size:13px">11:30 — 🐕 Titan</div>
-              <div style="font-size:12px;color:var(--muted)">Merzouk Rachid · 0661 234 567</div>
-              <div style="font-size:12px;margin-top:4px">Vaccination CHPPiL + Rage annuelle · Vermifugation</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-              <span class="bdg bdg-n">✅ Confirmé</span>
-              <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();toast('Rappel envoyé ✅')">🔔 Rappel</button>
-            </div>
-          </div>
-        </div>
-        <div class="card" style="border-left:4px solid var(--info);cursor:pointer" onclick="toast('Misty — Bilan IRC')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div>
-              <div style="font-weight:700;font-size:13px">15:00 — 🐈 Misty</div>
-              <div style="font-size:12px;color:var(--muted)">Kaci Fatima · 0699 567 890</div>
-              <div style="font-size:12px;margin-top:4px">Bilan IRC mensuel · SDMA + créatinine + UPC</div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-              <span class="bdg bdg-b">♾️ Suivi long terme</span>
-              <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();toast('Confirmé ✅')">✅ Confirmer</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Week view + upcoming -->
-    <div>
-      <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--ink);margin-bottom:12px">📆 Cette semaine</div>
-      <div class="card">
-        <table class="tbl">
-          <thead><tr><th>Date</th><th>Heure</th><th>Animal</th><th>Motif</th><th>Statut</th></tr></thead>
-          <tbody>
-            <tr style="cursor:pointer" onclick="toast('Rex — détail')"><td><strong>Lun 21/04</strong></td><td>10:00</td><td>🐕 Rex</td><td>Contrôle parvo</td><td><span class="bdg bdg-c">🚨</span></td></tr>
-            <tr style="cursor:pointer" onclick="toast('Titan — détail')"><td>Lun 21/04</td><td>11:30</td><td>🐕 Titan</td><td>Vaccination</td><td><span class="bdg bdg-n">✅</span></td></tr>
-            <tr style="cursor:pointer" onclick="toast('Misty — détail')"><td>Lun 21/04</td><td>15:00</td><td>🐈 Misty</td><td>Bilan IRC</td><td><span class="bdg bdg-b">♾️</span></td></tr>
-            <tr style="cursor:pointer" onclick="toast('Nala — détail')"><td>Mar 22/04</td><td>09:00</td><td>🐈 Nala</td><td>Retrait fils OVH</td><td><span class="bdg bdg-n">✅</span></td></tr>
-            <tr style="cursor:pointer" onclick="toast('Bruno — détail')"><td>Mar 22/04</td><td>10:30</td><td>🐕 Bruno</td><td>Contrôle post-torsion</td><td><span class="bdg bdg-u">⚠️</span></td></tr>
-            <tr style="cursor:pointer" onclick="toast('Luna — détail')"><td>Mer 23/04</td><td>14:00</td><td>🐈 Luna</td><td>CHPCH + Rage</td><td><span class="bdg bdg-n">✅</span></td></tr>
-            <tr style="cursor:pointer" onclick="toast('Fido — détail')"><td>Jeu 24/04</td><td>11:00</td><td>🐕 Fido</td><td>J14 Imidocarbe</td><td><span class="bdg bdg-u">⚠️ Attente</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="ibox ibox-b" style="margin-top:12px">📧 Les clients avec email reçoivent un rappel automatique 48h avant leur RDV</div>
-      <div style="display:flex;gap:9px;margin-top:12px">
-        <button class="btn btn-ghost btn-full" onclick="CLIENTS.filter(c=>c.phone).forEach((c,i)=>setTimeout(()=>sendWhatsApp(c.phone,c.fullName,'','Rappel RDV'),i*800))">📱 Envoyer tous rappels WhatsApp</button>
-        <button class="btn btn-ghost btn-full" onclick="toast('Planning exporté ✅')">📄 Exporter PDF</button>
-      </div>
-    </div>
+  <!-- Filter tabs -->
+  <div class="fchips" style="margin-bottom:16px" id="rdv-filter-chips">
+    <div class="fchip on" onclick="setRdvFilter(this,'all')">Tous</div>
+    <div class="fchip" onclick="setRdvFilter(this,'today')">📋 Aujourd'hui</div>
+    <div class="fchip" onclick="setRdvFilter(this,'upcoming')">📆 À venir</div>
+    <div class="fchip" onclick="setRdvFilter(this,'urgent')">🚨 Urgents</div>
+    <div class="fchip" onclick="setRdvFilter(this,'waiting')">⏳ En attente</div>
   </div>
+
+  <!-- Search + bulk action -->
+  <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+    <div class="search-wrap" style="flex:1;min-width:200px">
+      <span style="color:var(--muted)">🔍</span>
+      <input placeholder="Rechercher client, animal, motif…" oninput="rdvSearch=this.value;renderRdvPage()"/>
+    </div>
+    <button class="btn btn-ghost" onclick="rdvSendAllWhatsApp()">📱 Rappels WhatsApp groupés</button>
+    <button class="btn btn-ghost" onclick="toast('Planning exporté ✅')">📄 Exporter PDF</button>
+  </div>
+
+  <!-- RDV list (fully dynamic) -->
+  <div id="rdv-list" style="display:flex;flex-direction:column;gap:10px"></div>
+  <div class="ibox ibox-b" style="margin-top:14px">📱 Cliquez sur <strong>WhatsApp</strong> sur chaque RDV pour envoyer un rappel personnalisé au propriétaire</div>
 </div>
 <!-- ══════════════════════════════════════════════════════════
      PAGE: FINANCES
@@ -4425,43 +4365,112 @@ function saveNewBilan() {
   toast('Bilan enregistré ✅' + (amount ? ' — ' + amount + ' DA' : ''));
 }
 
+let rdvSearch = '';
+let rdvFilter = 'all';
+
+function setRdvFilter(el, filter) {
+  rdvFilter = filter;
+  document.querySelectorAll('#rdv-filter-chips .fchip').forEach(c => c.classList.remove('on'));
+  if (el) el.classList.add('on');
+  renderRdvPage();
+}
+
+function rdvSendAllWhatsApp() {
+  const visible = getRdvFiltered();
+  const withPhone = visible.filter(a => a.phone);
+  if (!withPhone.length) { toast('⚠️ Aucun RDV avec numéro de téléphone'); return; }
+  withPhone.forEach((a, i) => setTimeout(() => sendWhatsApp(a.phone, a.owner, a.animal, a.motif), i * 900));
+  toast(`📱 ${withPhone.length} rappels WhatsApp en cours d'envoi…`);
+}
+
+function getRdvFiltered() {
+  const today = new Date().toISOString().slice(0,10);
+  const q = (rdvSearch || '').toLowerCase();
+  return APPOINTMENTS.slice()
+    .sort((a,b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+    .filter(a => {
+      if (q && !`${a.animal} ${a.owner} ${a.motif} ${a.phone}`.toLowerCase().includes(q)) return false;
+      if (rdvFilter === 'today') return a.date === today;
+      if (rdvFilter === 'upcoming') return a.date >= today;
+      if (rdvFilter === 'urgent') return a.status === 'urgent';
+      if (rdvFilter === 'waiting') return a.status === 'waiting';
+      return true;
+    });
+}
+
 function renderRdvPage(){
   const page = document.getElementById('page-rdv');
   if (!page) return;
-  const upcoming = APPOINTMENTS.slice().sort((a,b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
-  const today = '2026-04-21';
-  const todayItems = upcoming.filter(a => a.date === today);
-  const weekBody = page.querySelector('.tbl tbody');
-  const todayColumn = page.querySelector('.g2 > div:first-child > div:last-child');
-  const statsCards = page.querySelectorAll('div[style*="grid-template-columns:repeat(4,1fr)"] .card');
-  if (todayColumn) {
-    todayColumn.innerHTML = todayItems.map(item => {
-      const meta = getStatusMeta(item.status);
-      return `<div class="card" style="border-left:4px solid ${meta.border};cursor:pointer" onclick="toast('${item.animal} - ${item.motif}')">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-weight:700;font-size:13px">${item.time} - ${item.animal}</div>
-            <div style="font-size:12px;color:var(--muted)">${item.owner} - ${item.phone || '-'}</div>
-            <div style="font-size:12px;margin-top:4px">${item.motif}</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-            <span class="bdg ${meta.badge}">${meta.label}</span>
-            ${item.phone ? `<button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();sendWhatsApp('${item.phone}','${(item.owner||'').replace(/'/g,"\\'")}','${(item.animal||'').replace(/'/g,"\\'")}','${(item.motif||'').replace(/'/g,"\\'")}')">📱 WhatsApp</button>` : ''}
-          </div>
-        </div>
-      </div>`;
-    }).join('') || '<div class="card" style="text-align:center;color:var(--muted)">Aucun rendez-vous aujourd hui</div>';
+  const today = new Date().toISOString().slice(0,10);
+  const all = APPOINTMENTS.slice().sort((a,b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`));
+
+  // Update stats
+  const s0 = document.getElementById('rdv-stat-today');
+  const s1 = document.getElementById('rdv-stat-week');
+  const s2 = document.getElementById('rdv-stat-waiting');
+  const s3 = document.getElementById('rdv-stat-urgent');
+  if (s0) s0.textContent = all.filter(a => a.date === today).length;
+  if (s1) s1.textContent = all.filter(a => a.date >= today).length;
+  if (s2) s2.textContent = all.filter(a => a.status === 'waiting').length;
+  if (s3) s3.textContent = all.filter(a => a.status === 'urgent').length;
+
+  // Render list
+  const list = document.getElementById('rdv-list');
+  if (!list) return;
+  const filtered = getRdvFiltered();
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="card" style="text-align:center;padding:32px;color:var(--muted)"><div style="font-size:32px;margin-bottom:10px">📅</div><div>Aucun rendez-vous trouvé</div></div>`;
+    return;
   }
-  if (weekBody) {
-    weekBody.innerHTML = upcoming.map(item => {
-      const meta = getStatusMeta(item.status);
-      return `<tr style="cursor:pointer" onclick="toast('${item.animal} - ${item.motif}')"><td>${shortFrDate(item.date)}</td><td>${item.time}</td><td>${item.animal}</td><td>${item.motif}</td><td><span class="bdg ${meta.badge}">${meta.label}</span></td></tr>`;
+
+  // Group by date
+  const groups = {};
+  filtered.forEach(a => { (groups[a.date] = groups[a.date] || []).push(a); });
+
+  list.innerHTML = Object.keys(groups).sort().map(date => {
+    const isToday = date === today;
+    const label = isToday ? `📋 Aujourd'hui — ${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})}` :
+      `📆 ${new Date(date + 'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}`;
+
+    const cards = groups[date].map(a => {
+      const meta = getStatusMeta(a.status);
+      const phoneBtn = a.phone
+        ? `<button class="btn btn-sm btn-ghost" style="white-space:nowrap" onclick="event.stopPropagation();sendWhatsApp('${a.phone.replace(/'/g,"\\'")}','${(a.owner||'').replace(/'/g,"\\'")}','${(a.animal||'').replace(/'/g,"\\'")}','${(a.motif||'').replace(/'/g,"\\'")}')">📱 WhatsApp</button>`
+        : `<span style="font-size:11px;color:var(--muted)">Pas de tél.</span>`;
+      return `
+        <div class="card" style="border-left:4px solid ${meta.border};margin-bottom:0">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <span style="font-weight:700;font-size:13.5px">${a.time}</span>
+                <span style="font-weight:700;font-size:13.5px">${a.animal}</span>
+                <span class="bdg ${meta.badge}" style="font-size:10px">${meta.label}</span>
+              </div>
+              <div style="font-size:12.5px;color:var(--ink);margin-bottom:2px">👤 ${a.owner || '—'}</div>
+              <div style="font-size:12px;color:var(--muted)">${a.phone || 'Aucun numéro'} · ${a.type || 'Consultation'}</div>
+              <div style="font-size:12px;color:var(--ink);margin-top:5px;line-height:1.5">${a.motif || '—'}</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+              ${phoneBtn}
+            </div>
+          </div>
+        </div>`;
     }).join('');
-  }
-  if (statsCards.length >= 4) {
-    statsCards[0].querySelector('div').textContent = String(todayItems.length);
-    statsCards[1].querySelector('div').textContent = String(upcoming.length);
-    statsCards[2].querySelector('div').textContent = String(upcoming.filter(a => a.status === 'waiting').length);
+
+    return `
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:15px;color:var(--ink);margin-bottom:8px;margin-top:4px;padding-bottom:6px;border-bottom:2px solid var(--brd)">${label}</div>
+        <div style="display:flex;flex-direction:column;gap:8px">${cards}</div>
+      </div>`;
+  }).join('');
+
+  // Update badge
+  const badge = document.getElementById('badge-rdv');
+  if (badge) {
+    const n = all.filter(a => a.date === today).length;
+    badge.textContent = n > 0 ? String(n) : '';
+    badge.style.display = n > 0 ? '' : 'none';
   }
 }
 function saveAppointment(){
