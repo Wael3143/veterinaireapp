@@ -637,7 +637,7 @@ html{height:100dvh;overflow:hidden}
 
   <!-- ══ SUPABASE AUTH ══ -->
   <!-- Pinned to exact version — avoids surprise breaking changes from floating @2 -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
 // ══════════════════════════════════════════════════════════════
 // AUTH — Supabase Login / Logout
@@ -983,20 +983,9 @@ window.addEventListener('DOMContentLoaded', () => {
 </script>
   <script>
     // ── SUPABASE CONFIG ──────────────────────────────────────────────────────────
-    const SUPA_URL = 'https://smzmuqgbtsjgetxbmdgq.supabase.co';
-    const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtem11cWdidHNqZ2V0eGJtZGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4ODQ3MDMsImV4cCI6MjA5MjQ2MDcwM30.VbXf1Yy1zzdrSJAYGZlMq-molDWpOqgmMdGUxgWHjGg';
-    const _sb = (typeof supabase !== 'undefined') ? supabase.createClient(SUPA_URL, SUPA_KEY, {
-      auth: {
-        storageKey: 'vetpro-auth',        // namespaced — avoids collisions with other apps
-        autoRefreshToken: true,
-        persistSession: true,
-        detectSessionInUrl: true,
-      },
-      realtime: { params: { eventsPerSecond: 2 } }, // throttle — VetPro doesn't need live subscriptions yet
-      global: {
-        headers: { 'x-app-name': 'vetpro' },
-      },
-    }) : null;
+    var SUPA_URL = 'https://smzmuqgbtsjgetxbmdgq.supabase.co';
+    var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtem11cWdidHNqZ2V0eGJtZGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4ODQ3MDMsImV4cCI6MjA5MjQ2MDcwM30.VbXf1Yy1zzdrSJAYGZlMq-molDWpOqgmMdGUxgWHjGg';
+    var _sb = (typeof supabase !== 'undefined') ? supabase.createClient(SUPA_URL, SUPA_KEY) : null;
   </script>
 </head>
 <body>
