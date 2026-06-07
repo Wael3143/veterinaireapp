@@ -3627,25 +3627,24 @@ Voici les données à convertir :
 
 <!-- QR Code — Pet Portal -->
 <div class="overlay" id="modal-client-qr">
-  <div class="modal" style="max-width:420px;text-align:center">
-    <div class="modal-hdr" style="justify-content:space-between">
-      <div class="modal-title">📱 QR Code — Fiche Client</div>
-      <button class="btn-ico" onclick="closeModal('modal-client-qr')">✕</button>
+  <div class="modal" style="max-width:440px;text-align:center;padding:0;overflow:hidden;border-radius:22px">
+    <div style="background:linear-gradient(135deg,#0d3322,#1A4A2E);padding:18px 20px 14px;position:relative">
+      <button class="btn-ico" onclick="closeModal('modal-client-qr')" style="position:absolute;top:12px;right:12px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.1);border-radius:8px;width:30px;height:30px">✕</button>
+      <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.5);text-transform:uppercase;margin-bottom:8px">📱 Fiche QR Partageable</div>
+      <div id="qr-client-name" style="margin-bottom:6px"></div>
+      <div id="qr-client-animals" style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;min-height:26px"></div>
     </div>
-    <div style="padding:8px 0 0">
-      <p style="font-size:12.5px;color:var(--muted);margin-bottom:16px">Le client scanne ce QR pour voir la fiche de son animal : hospitalisations, historique, vaccins, rappels.</p>
-      <div id="qr-canvas-wrap" style="display:flex;justify-content:center;margin-bottom:16px">
-        <canvas id="qr-canvas" width="240" height="240" style="border-radius:12px;border:3px solid var(--brd)"></canvas>
-      </div>
-      <div id="qr-client-name" style="font-weight:700;font-size:14px;margin-bottom:4px"></div>
-      <div id="qr-client-animals" style="font-size:12px;color:var(--muted);margin-bottom:16px"></div>
+    <div style="padding:20px 20px 16px">
+      <div id="qr-canvas-wrap" style="display:flex;justify-content:center;margin-bottom:18px"></div>
+      <p style="font-size:11.5px;color:var(--muted);margin:0 0 16px;line-height:1.6">Le client scanne ce code avec son téléphone pour accéder à sa fiche animale complète.</p>
       <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-        <button class="btn btn-p" onclick="downloadClientQR()">⬇️ Télécharger QR</button>
-        <button class="btn btn-ghost" onclick="printClientQR()">🖨️ Imprimer</button>
-        <button class="btn btn-ghost" onclick="copyPetPortalLink()">🔗 Copier lien</button>
+        <button class="btn btn-p" onclick="downloadClientQR()" style="flex:1;min-width:110px">⬇️ Télécharger</button>
+        <button class="btn btn-ghost" onclick="printClientQR()" style="flex:1;min-width:90px">🖨️ Imprimer</button>
+        <button class="btn btn-ghost" onclick="copyPetPortalLink()" style="flex:1;min-width:110px">🔗 Copier lien</button>
       </div>
-      <div class="ibox ibox-a" style="margin-top:14px;font-size:11.5px;text-align:left">
-        🔒 Données affichées : animaux · hospitalisations · vaccinations · rappels à venir.<br>Aucune information financière n'est partagée.
+      <div style="margin-top:14px;background:#f4f8f5;border-radius:10px;padding:10px 14px;font-size:11px;color:#6b8f73;text-align:left;line-height:1.7">
+        🔒 <strong>Données partagées :</strong> animaux · hospitalisations · vaccinations · rappels à venir<br>
+        🚫 <strong>Non partagées :</strong> informations financières · ordonnances
       </div>
     </div>
   </div>
@@ -13845,12 +13844,42 @@ function saveAdmission() {
     const title = patientCard.querySelector('.card-title');
     if (title && !patientCard.querySelector('#case-extra-fields')) {
       title.insertAdjacentHTML('afterend', `
-        <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
-          <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
-          <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
-          <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
+        <div id="case-extra-fields" style="margin-bottom:12px">
+          <div class="fg" style="margin-bottom:10px">
+            <label class="lbl" style="display:flex;align-items:center;gap:6px">
+              <span>👤 Client existant</span>
+              <span style="font-size:10px;background:#e8f5f0;color:#1A4A2E;border-radius:6px;padding:1px 7px;font-weight:700">Optionnel</span>
+            </label>
+            <select class="sel" id="case-existing-client-select" onchange="fillCaseFormFromExistingClient(this.value)" style="font-size:13px">
+              <option value="">— Nouveau client ou saisir manuellement —</option>
+            </select>
+            <div id="case-existing-animal-wrap" style="display:none;margin-top:8px">
+              <label class="lbl">🐾 Choisir l'animal</label>
+              <select class="sel" id="case-existing-animal-select" onchange="fillCaseAnimalFromExisting(this.value)" style="font-size:13px">
+                <option value="">— Choisir un animal —</option>
+              </select>
+            </div>
+          </div>
+          <div class="row3">
+            <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
+            <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
+            <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
+          </div>
         </div>
       `);
+      // Populate existing clients dropdown
+      setTimeout(function() {
+        const sel = document.getElementById('case-existing-client-select');
+        if (!sel) return;
+        const clients = (window.CLIENTS||[]).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
+        clients.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id || c.fullName;
+          const animals = (window.PATIENTS||[]).filter(p=>(p.owner||'').toLowerCase()===(c.fullName||'').toLowerCase());
+          opt.textContent = c.fullName + (animals.length ? ` (${animals.length} animal${animals.length>1?'s':''})` : '');
+          sel.appendChild(opt);
+        });
+      }, 100);
     }
     if (typeof ensureCaseFormEnhancements === 'function') ensureCaseFormEnhancements();
   }
@@ -23120,6 +23149,108 @@ function saveAdmission() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════
+     FEATURE: NOUVEAU CAS — EXISTING CLIENT AUTOFILL
+═══════════════════════════════════════════════════════════════ -->
+<script>
+window.fillCaseFormFromExistingClient = function(clientIdOrName) {
+  const animalWrap = document.getElementById('case-existing-animal-wrap');
+  const animalSel  = document.getElementById('case-existing-animal-select');
+  const nameInp    = document.getElementById('case-client-name');
+  const phoneInp   = document.getElementById('case-client-phone');
+
+  if (!clientIdOrName) {
+    // Reset
+    if (animalWrap) animalWrap.style.display = 'none';
+    if (nameInp)  nameInp.value  = '';
+    if (phoneInp) phoneInp.value = '';
+    return;
+  }
+
+  // Find client by id or fullName
+  const client = (window.CLIENTS||[]).find(c => c.id === clientIdOrName || c.fullName === clientIdOrName);
+  if (!client) return;
+
+  if (nameInp)  nameInp.value  = client.fullName || '';
+  if (phoneInp) phoneInp.value = client.phone || '';
+
+  // Populate animal selector
+  const animals = (window.PATIENTS||[]).filter(p => (p.owner||'').toLowerCase() === (client.fullName||'').toLowerCase());
+  if (animalSel && animalWrap) {
+    animalSel.innerHTML = '<option value="">— Nouveau / saisir manuellement —</option>';
+    animals.forEach(a => {
+      const icon = (a.species||'').toLowerCase()==='chat'?'🐈':'🐕';
+      const opt  = document.createElement('option');
+      opt.value  = a.id || a.name;
+      opt.textContent = icon + ' ' + a.name + (a.race ? ' · ' + a.race : '') + (a.age ? ' · ' + a.age : '');
+      animalSel.appendChild(opt);
+    });
+    animalWrap.style.display = animals.length ? 'block' : 'none';
+  }
+
+  if (typeof toast === 'function') toast('👤 Client chargé — choisissez un animal ou saisissez un nouveau');
+};
+
+window.fillCaseAnimalFromExisting = function(animalIdOrName) {
+  if (!animalIdOrName) {
+    const nameInp = document.getElementById('case-animal-name');
+    if (nameInp) nameInp.value = '';
+    return;
+  }
+  const animal = (window.PATIENTS||[]).find(p => p.id === animalIdOrName || p.name === animalIdOrName);
+  if (!animal) return;
+
+  const setVal = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  setVal('case-animal-name', animal.name);
+
+  // Fill species select (find it in the patient card)
+  const casePage = document.getElementById('page-cas');
+  if (casePage) {
+    const speciesSel = casePage.querySelector('select.sel');
+    if (speciesSel) {
+      const sp = (animal.species||animal.espece||'').toLowerCase();
+      Array.from(speciesSel.options).forEach(o => { if (o.value.toLowerCase()===sp || o.text.toLowerCase()===sp) speciesSel.value = o.value; });
+    }
+    // Fill race, age, weight, sex
+    const inputs = casePage.querySelectorAll('input.inp, select.sel');
+    inputs.forEach(el => {
+      const lbl = el.closest('.fg')?.querySelector('.lbl')?.textContent?.toLowerCase()||'';
+      if (lbl.includes('race') && animal.race)  el.value = animal.race;
+      if ((lbl.includes('âge')||lbl.includes('age')) && animal.age && el.id!=='case-animal-name')  el.value = animal.age;
+      if (lbl.includes('poids') && animal.weight) el.value = parseFloat(animal.weight)||'';
+      if (lbl.includes('sexe') && animal.sexe) {
+        Array.from(el.options||[]).forEach(o => { if (o.text.toLowerCase().includes(animal.sexe.toLowerCase())) el.value = o.value; });
+      }
+    });
+  }
+  if (typeof toast === 'function') toast('🐾 ' + animal.name + ' chargé — données pré-remplies');
+};
+
+// Re-populate the client selector whenever the nav goes to 'cas' (handles data loaded after init)
+(function(){
+  const _origNav4 = window.nav;
+  if (typeof _origNav4 === 'function') {
+    window.nav = function(id) {
+      _origNav4(id);
+      if (id === 'cas') {
+        setTimeout(function(){
+          const sel = document.getElementById('case-existing-client-select');
+          if (!sel || sel.options.length > 1) return; // already populated
+          const clients = (window.CLIENTS||[]).sort((a,b)=>(a.fullName||'').localeCompare(b.fullName||''));
+          clients.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id || c.fullName;
+            const animals = (window.PATIENTS||[]).filter(p=>(p.owner||'').toLowerCase()===(c.fullName||'').toLowerCase());
+            opt.textContent = c.fullName + (animals.length ? ` (${animals.length} animal${animals.length>1?'s':''})` : '');
+            sel.appendChild(opt);
+          });
+        }, 400);
+      }
+    };
+  }
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
      FEATURE: PATIENT AGE CALCULATOR & ALERTS
 ═══════════════════════════════════════════════════════════════ -->
 <script>
@@ -23154,40 +23285,56 @@ function saveAdmission() {
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════════
-     FEATURE: QR CODE — PET PORTAL (HASH-BASED)
+     FEATURE: QR CODE — PET PORTAL (HASH-BASED) v2
 ═══════════════════════════════════════════════════════════════ -->
 <script>
 (function(){
-  // Replace blob-URL QR with hash-URL QR that works on any device when scanned
-  const origOpenQR = window.openClientQR;
+  function matchOwner(val, clientName) {
+    const v = (val||'').toLowerCase().trim();
+    const c = (clientName||'').toLowerCase().trim();
+    return v === c || v.includes(c) || c.includes(v);
+  }
 
   function buildPetPortalData(clientName) {
-    const client    = (window.CLIENTS||[]).find(c => c.fullName === clientName) || { fullName: clientName };
-    const animals   = (window.PATIENTS||[]).filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
-    const history   = (window.HISTORIQUE_DATA||[]).filter(h => (h.client||'').toLowerCase() === clientName.toLowerCase()).slice(0,10);
-    const vaccs     = (window.VACC_HISTORY||[]).filter(v => (v.owner||'').toLowerCase() === clientName.toLowerCase()).slice(0,10);
-    const reminders = (window.VACCINE_REMINDERS||[]).filter(r => (r.owner||'').toLowerCase() === clientName.toLowerCase())
+    const client    = (window.CLIENTS||[]).find(c => matchOwner(c.fullName, clientName)) || { fullName: clientName };
+    const animals   = (window.PATIENTS||[]).filter(p => matchOwner(p.owner||p.ownerName||p.proprietaire||'', clientName));
+    const history   = (window.HISTORIQUE_DATA||[]).filter(h => matchOwner(h.client||h.owner||'', clientName)).slice(0,10);
+    const vaccs     = (window.VACC_HISTORY||[]).filter(v => matchOwner(v.owner||'', clientName)).slice(0,10);
+    const reminders = (window.VACCINE_REMINDERS||[])
+      .filter(r => matchOwner(r.owner||'', clientName))
       .filter(r => r.reminderDate >= new Date().toISOString().slice(0,10)).slice(0,6);
-    const hospCage  = (window.CAGES||[]).find(c => c.statut === 'occupée' && (c.animal||'').toLowerCase().includes(animals[0]?.name?.toLowerCase() || '____'));
+    const hospCage  = (window.CAGES||[]).find(c => c.statut === 'occupée' && animals.some(a => (c.animal||'').toLowerCase().includes((a.name||'').toLowerCase())));
     return {
       n: client.fullName, p: client.phone || '',
-      a: animals.map(a => ({ n: a.name, s: a.species, r: a.race, ag: a.age, w: a.weight })),
+      a: animals.map(a => ({ n: a.name, s: a.species||a.espece, r: a.race, ag: a.age, w: a.weight, sx: a.sexe })),
       h: history.map(h => ({ an: h.animal, d: h.diagnostic, t: h.traitement, dt: h.date })),
       v: vaccs.map(v => ({ an: v.animal, vc: v.vaccine, dt: v.date, rp: v.rappel })),
       rm: reminders.map(r => ({ an: r.animal, vc: r.vaccine, dt: r.reminderDate })),
       hosp: hospCage ? { cage: hospCage.id, an: hospCage.animal } : null,
-      ts: new Date().toLocaleDateString('fr-FR')
+      ts: new Date().toLocaleDateString('fr-FR'),
+      clinic: 'Cabinet Vétérinaire NESDA'
     };
   }
 
   window.openClientQR = async function(clientName) {
     window._qrCurrentClient = clientName;
-    const client  = (window.CLIENTS||[]).find(c => c.fullName === clientName) || { fullName: clientName };
-    const animals = (window.PATIENTS||[]).filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
+    const client  = (window.CLIENTS||[]).find(c => matchOwner(c.fullName, clientName)) || { fullName: clientName };
+    const animals = (window.PATIENTS||[]).filter(p => matchOwner(p.owner||p.ownerName||p.proprietaire||'', clientName));
+
+    // Update modal preview info
     const nameEl = document.getElementById('qr-client-name');
     const animEl = document.getElementById('qr-client-animals');
-    if (nameEl) nameEl.textContent = '👤 ' + clientName;
-    if (animEl) animEl.textContent = animals.map(a => (a.species==='chat'?'🐈':'🐕') + ' ' + a.name).join('  ') || 'Aucun animal';
+    if (nameEl) {
+      nameEl.innerHTML = `<span style="font-size:18px;font-weight:800;color:#1A4A2E">👤 ${clientName}</span>`;
+      if (client.phone) nameEl.innerHTML += `<br><span style="font-size:12px;color:#6b8f73;font-weight:500">📞 ${client.phone}</span>`;
+    }
+    if (animEl) {
+      const animalTags = animals.map(a => {
+        const icon = (a.species||a.espece||'').toLowerCase()==='chat'?'🐈':'🐕';
+        return `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5f0;color:#1A4A2E;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;margin:2px">${icon} ${a.name}</span>`;
+      }).join('');
+      animEl.innerHTML = animalTags || '<span style="color:#aaa;font-size:12px">Aucun animal enregistré</span>';
+    }
 
     const data  = buildPetPortalData(clientName);
     const b64   = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
@@ -23200,8 +23347,12 @@ function saveAdmission() {
     }
     const wrap = document.getElementById('qr-canvas-wrap');
     if (wrap) {
-      wrap.innerHTML = '<div id="qr-render"></div>';
-      new QRCode(document.getElementById('qr-render'), { text: window._qrPortalUrl, width: 240, height: 240, colorDark: '#1A4A2E', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.L });
+      wrap.innerHTML = `
+        <div style="background:linear-gradient(135deg,#1A4A2E,#2d7a4a);border-radius:20px;padding:16px;display:inline-block;box-shadow:0 8px 32px rgba(26,74,46,.3)">
+          <div id="qr-render" style="background:#fff;border-radius:12px;padding:8px;display:inline-block"></div>
+          <div style="color:rgba(255,255,255,.8);font-size:10px;text-align:center;margin-top:8px;font-weight:600;letter-spacing:.5px">SCANNER POUR VOIR MA FICHE</div>
+        </div>`;
+      new QRCode(document.getElementById('qr-render'), { text: window._qrPortalUrl, width: 220, height: 220, colorDark: '#1A4A2E', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.L });
     }
   };
 
@@ -23212,23 +23363,128 @@ function saveAdmission() {
       .catch(() => { window.open(window._qrPortalUrl, '_blank'); });
   };
 
-  // Hash router — renders pet portal when QR is scanned
+  // ── PET PORTAL PAGE (rendered when QR is scanned) ──────────────
   window.addEventListener('load', function() {
     const hash = window.location.hash || '';
     if (!hash.startsWith('#pet-portal/')) return;
     try {
       const d = JSON.parse(decodeURIComponent(escape(atob(hash.slice('#pet-portal/'.length)))));
       document.body.innerHTML = '';
-      document.body.style.cssText = 'margin:0;padding:0;font-family:-apple-system,sans-serif;background:#f0f9f4;color:#1a2e23';
-      const css = `*{box-sizing:border-box}.h{background:linear-gradient(135deg,#1A4A2E,#2d7a4a);color:#fff;padding:20px;text-align:center}.h h1{font-size:20px;margin:6px 0}.h p{font-size:12px;opacity:.75}.sec{background:#fff;margin:10px;border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}.st{font-size:12px;font-weight:700;color:#1A4A2E;margin-bottom:10px}.row{padding:9px 0;border-bottom:1px solid #eaf3ee;font-size:12.5px}.row:last-child{border-bottom:none}.r1{font-weight:600;margin-bottom:2px}.r2{color:#5a7a65;font-size:11px}.dt{float:right;color:#8aab95;font-size:11px;margin-left:8px}.warn{background:#fdf0ee;border:1.5px solid #e74c3c;border-radius:10px;padding:12px;margin:10px;font-size:12.5px;color:#c0392b}.rem{background:#fff8ee}.rdt{color:#d4813a;font-weight:700}.ft{text-align:center;padding:20px;font-size:11px;color:#8aab95}`;
+      document.head.innerHTML = '<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Ma Fiche Vétérinaire · VetPro</title><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">';
+      document.body.style.cssText = 'margin:0;padding:0;background:#f4f8f5;font-family:Outfit,system-ui,sans-serif;color:#1a2e23;min-height:100vh';
+
+      const css = `
+        *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
+        body{max-width:480px;margin:0 auto}
+        .hero{background:linear-gradient(160deg,#0d3322 0%,#1A4A2E 55%,#2d7a4a 100%);color:#fff;padding:36px 24px 80px;position:relative;overflow:hidden;text-align:center}
+        .hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");background-size:60px}
+        .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:18px;backdrop-filter:blur(6px)}
+        .hero-paw{font-size:52px;margin-bottom:10px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}
+        .hero-name{font-size:28px;font-weight:800;margin:0 0 6px;letter-spacing:-.3px}
+        .hero-phone{font-size:13px;opacity:.7;margin:0}
+        .hero-wave{position:absolute;bottom:-2px;left:0;right:0}
+        .content{margin-top:-40px;padding:0 12px 40px;position:relative;z-index:2}
+        .animal-row{display:flex;gap:10px;overflow-x:auto;padding:0 0 8px;scrollbar-width:none}
+        .animal-row::-webkit-scrollbar{display:none}
+        .animal-card{flex:0 0 auto;background:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 4px 20px rgba(26,74,46,.1);border:1.5px solid #e4f0e8;min-width:130px;text-align:center}
+        .animal-icon{font-size:32px;margin-bottom:6px}
+        .animal-name{font-size:14px;font-weight:800;color:#1A4A2E;margin-bottom:2px}
+        .animal-meta{font-size:11px;color:#6b8f73;line-height:1.5}
+        .sec{background:#fff;border-radius:18px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(26,74,46,.07);border:1px solid #e8f2eb}
+        .sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+        .sec-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+        .sec-title{font-size:13px;font-weight:800;color:#1A4A2E;text-transform:uppercase;letter-spacing:.6px}
+        .item{padding:11px 0;border-bottom:1px solid #f0f7f3;display:flex;align-items:flex-start;gap:10px}
+        .item:last-child{border-bottom:none;padding-bottom:0}
+        .item-dot{width:8px;height:8px;border-radius:50%;background:#2d7a4a;flex-shrink:0;margin-top:5px}
+        .item-body{flex:1;min-width:0}
+        .item-title{font-size:13px;font-weight:700;color:#1a2e23;margin-bottom:2px;line-height:1.3}
+        .item-sub{font-size:11.5px;color:#5a7a65;line-height:1.4}
+        .item-date{font-size:10.5px;color:#9ab8a3;font-weight:600;white-space:nowrap;flex-shrink:0;margin-top:2px}
+        .reminder-item{background:linear-gradient(135deg,#fffbf0,#fff8e6);border:1.5px solid #f5d67a;border-radius:12px;padding:12px;margin-bottom:8px}
+        .reminder-item:last-child{margin-bottom:0}
+        .reminder-date{font-size:11px;font-weight:800;color:#d4813a;display:inline-block;background:#fff3d4;border-radius:6px;padding:2px 8px;margin-bottom:4px}
+        .reminder-title{font-size:13px;font-weight:700;color:#8a5800}
+        .hosp-alert{background:linear-gradient(135deg,#fff0f0,#ffe8e8);border:2px solid #f4a4a4;border-radius:16px;padding:16px;margin-bottom:12px;text-align:center}
+        .hosp-icon{font-size:28px;margin-bottom:6px}
+        .hosp-text{font-size:13px;font-weight:700;color:#c0392b}
+        .hosp-sub{font-size:11.5px;color:#e07070;margin-top:3px}
+        .empty-state{text-align:center;padding:20px;color:#b0c8b8;font-size:12.5px}
+        .footer{text-align:center;padding:28px 20px 20px;background:#fff;margin:0 -12px;border-top:1px solid #eaf3ee}
+        .footer-logo{font-size:22px;font-weight:800;color:#1A4A2E;margin-bottom:4px}
+        .footer-sub{font-size:11px;color:#8aab95;line-height:1.6}
+        .pill{display:inline-block;background:#e8f5f0;color:#1A4A2E;border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;margin:1px}
+      `;
       const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
-      document.title = `Fiche — ${d.n}`;
-      const hosp = d.hosp ? `<div class="warn">🏥 <strong>${d.hosp.an}</strong> hospitalisé · Cage ${d.hosp.cage}</div>` : '';
-      const animRows = (d.a||[]).map(a => `<div class="row"><div class="r1">${a.s==='chat'?'🐈':'🐕'} ${a.n}</div><div class="r2">${[a.r,a.ag,a.w].filter(Boolean).join(' · ')}</div></div>`).join('') || '<div class="row" style="color:#aaa">—</div>';
-      const histRows = (d.h||[]).map(h => `<div class="row"><span class="dt">${h.dt||''}</span><div class="r1">${h.an} — ${(h.d||'').slice(0,70)}</div>${h.t?`<div class="r2">${h.t.slice(0,80)}</div>`:''}</div>`).join('') || '<div class="row" style="color:#aaa">Aucun historique</div>';
-      const vaccRows = (d.v||[]).map(v => `<div class="row"><span class="dt">${v.dt||''}</span><div class="r1">💉 ${v.an} — ${v.vc}</div>${v.rp?`<div class="r2" style="color:#d4813a">⏰ Rappel : ${v.rp}</div>`:''}</div>`).join('') || '<div class="row" style="color:#aaa">Aucune vaccination</div>';
-      const remRows = (d.rm||[]).map(r => `<div class="row rem"><span class="dt rdt">${r.dt}</span><div class="r1">🔔 ${r.an} — ${r.vc}</div></div>`).join('');
-      document.body.innerHTML = `<div class="h"><div style="font-size:36px">🐾</div><h1>${d.n}</h1><p>${d.p?'📞 '+d.p+' · ':''}VetPro · Dr. Kherbache Wail · ENSV Algérie</p></div>${hosp}<div class="sec"><div class="st">🐾 Mes animaux</div>${animRows}</div><div class="sec"><div class="st">📋 Historique clinique</div>${histRows}</div><div class="sec"><div class="st">💉 Vaccinations</div>${vaccRows}</div>${remRows?`<div class="sec"><div class="st">🔔 Rappels à venir</div>${remRows}</div>`:''}<div class="ft">Généré le ${d.ts} · <strong style="color:#1A4A2E">VetPro</strong> — Confidentiel</div>`;
+      document.title = `${d.n} — Fiche Vétérinaire · VetPro`;
+
+      const hospBlock = d.hosp ? `
+        <div class="hosp-alert">
+          <div class="hosp-icon">🏥</div>
+          <div class="hosp-text">${d.hosp.an} est actuellement hospitalisé</div>
+          <div class="hosp-sub">Cage ${d.hosp.cage} · ${d.clinic||'Cabinet Vétérinaire'}</div>
+        </div>` : '';
+
+      const animalCards = (d.a||[]).length ? (d.a||[]).map(a => {
+        const icon = (a.s||'').toLowerCase()==='chat'?'🐈':'🐕';
+        const meta = [a.r, a.ag, a.w, a.sx].filter(Boolean).join(' · ');
+        return `<div class="animal-card"><div class="animal-icon">${icon}</div><div class="animal-name">${a.n}</div><div class="animal-meta">${meta||'—'}</div></div>`;
+      }).join('') : `<div class="animal-card" style="min-width:100%;color:#aaa;font-size:12px;text-align:center;padding:18px">Aucun animal enregistré</div>`;
+
+      const histItems = (d.h||[]).length ? (d.h||[]).map(h => `
+        <div class="item">
+          <div class="item-dot" style="background:#2d7a4a"></div>
+          <div class="item-body">
+            <div class="item-title">${h.an||''} — ${(h.d||'Consultation').slice(0,60)}</div>
+            ${h.t?`<div class="item-sub">${h.t.slice(0,80)}</div>`:''}
+          </div>
+          <div class="item-date">${h.dt||''}</div>
+        </div>`).join('') : '<div class="empty-state">📋 Aucun historique disponible</div>';
+
+      const vaccItems = (d.v||[]).length ? (d.v||[]).map(v => `
+        <div class="item">
+          <div class="item-dot" style="background:#3a9a6a"></div>
+          <div class="item-body">
+            <div class="item-title">💉 ${v.an||''} — ${v.vc||''}</div>
+            ${v.rp?`<div class="item-sub" style="color:#d4813a;font-weight:600">⏰ Rappel : ${v.rp}</div>`:''}
+          </div>
+          <div class="item-date">${v.dt||''}</div>
+        </div>`).join('') : '<div class="empty-state">💉 Aucune vaccination enregistrée</div>';
+
+      const reminderBlock = (d.rm||[]).length ? `
+        <div class="sec">
+          <div class="sec-hdr"><div class="sec-icon" style="background:#fff3d4">🔔</div><div class="sec-title">Rappels à venir</div></div>
+          ${(d.rm||[]).map(r=>`<div class="reminder-item"><div class="reminder-date">📅 ${r.dt}</div><div class="reminder-title">🐾 ${r.an} — ${r.vc}</div></div>`).join('')}
+        </div>` : '';
+
+      document.body.innerHTML = `
+        <div class="hero">
+          <div class="hero-badge">🩺 VetPro · Fiche Patient</div>
+          <div class="hero-paw">🐾</div>
+          <div class="hero-name">${d.n}</div>
+          ${d.p?`<div class="hero-phone">📞 ${d.p}</div>`:''}
+          <svg class="hero-wave" viewBox="0 0 480 50" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" height="50"><path d="M0,0 C120,50 360,50 480,0 L480,50 L0,50 Z" fill="#f4f8f5"/></svg>
+        </div>
+        <div class="content">
+          ${hospBlock}
+          <div class="sec" style="padding:14px 14px 6px">
+            <div class="sec-hdr"><div class="sec-icon" style="background:#e8f5f0">🐾</div><div class="sec-title">Mes animaux (${(d.a||[]).length})</div></div>
+            <div class="animal-row">${animalCards}</div>
+          </div>
+          <div class="sec">
+            <div class="sec-hdr"><div class="sec-icon" style="background:#eef4ff">📋</div><div class="sec-title">Historique clinique</div></div>
+            ${histItems}
+          </div>
+          <div class="sec">
+            <div class="sec-hdr"><div class="sec-icon" style="background:#f0fff4">💉</div><div class="sec-title">Vaccinations</div></div>
+            ${vaccItems}
+          </div>
+          ${reminderBlock}
+          <div class="footer">
+            <div class="footer-logo">🐾 VetPro</div>
+            <div class="footer-sub">${d.clinic||'Cabinet Vétérinaire'}<br>Généré le ${d.ts} · <strong>Confidentiel</strong><br><span style="font-size:10px;opacity:.6">Ce document est à usage personnel — ne pas partager</span></div>
+          </div>
+        </div>`;
     } catch(e) { console.error('Pet portal decode error:', e); }
   });
 })();
