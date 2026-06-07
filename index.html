@@ -7016,14 +7016,14 @@ try{
   var sys=ctx?SYS+"\n\nCONTEXTE PATIENT : "+ctx:SYS;
   var messages=[{role:"system",content:sys}].concat(chatHist.slice(-8));
   var rep="";
-  var useEdge=(_sb && SUPA_URL !== "VOTRE_SUPABASE_URL");
+  var useEdge=(_sb && typeof SUPA_URL !== 'undefined' && SUPA_URL && SUPA_URL !== "VOTRE_SUPABASE_URL");
   if(useEdge){
     var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages}});
     var d=invRes.data;var e=invRes.error;
     removeTyping();
     if(e){appendAIMsg("bot","❌ Erreur: "+(e.message||"Erreur inconnue"));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
     if(d&&d.error){appendAIMsg("bot","❌ "+d.error+(d.hint?"\n\n"+d.hint:""));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
-    rep=d&&d.content||d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
+    rep=d&&d.content||"";
   }else{
     GEMINI_API_KEY=localStorage.getItem("vetpro-gemini-key")||"";
     if(!GEMINI_API_KEY){removeTyping();appendAIMsg("bot","⚠️ <strong>Clé API Gemini non configurée.</strong><br><br>Allez dans <strong>Paramètres</strong> et entrez votre clé Google AI Studio.");aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
@@ -15994,8 +15994,7 @@ function saveAdmission() {
   if (typeof window.sendAI === 'function' && !window.sendAI.__vpWrapped) {
     const originalSend = window.sendAI;
     const wrappedSend = async function(){
-      // The original sendAI uses `_sb.functions.invoke('vetpro-ai', …)`.
-      // Wrap appendAIMsg so we can detect error markers and prettify them.
+      // Wrap appendAIMsg to prettify error messages
       const originalAppend = window.appendAIMsg;
       if (originalAppend && !originalAppend.__vpWrapped) {
         const wrappedAppend = function(role, text){
@@ -17586,12 +17585,9 @@ function saveAdmission() {
   }, 300);
 
   /* ────────────────────────────────────────────────────────────────────
-   * 5) Better AI error display — when the Edge Function returns an
-   *    error in the body (200 status now), show a nice banner
+   * 5) Better AI error display — rich error banners
    * ──────────────────────────────────────────────────────────────────── */
-  // The Edge Function now always returns 200; sendAI in the existing code
-  // checks data?.error first, so it should already display correctly.
-  // We just intercept appendAIMsg to render hint + tried list when present.
+  // Intercept appendAIMsg to render friendly error banners when AI fails.
   function patchAppendForRichError(){
     const orig = window.appendAIMsg;
     if (typeof orig !== 'function' || orig.__vpRichErr) return false;
