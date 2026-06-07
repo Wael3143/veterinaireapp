@@ -1412,32 +1412,15 @@ window.addEventListener('DOMContentLoaded', () => {
     <div>
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🐾 Patient</div>
-
-        <!-- Client selector — populated by JS, always visible -->
-        <div style="margin-bottom:14px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1.5px solid var(--brd)">
-          <label class="lbl" style="margin-bottom:6px;display:block">🔍 Client existant ou nouveau patient ?</label>
-          <select class="sel" id="case-patient-select" onchange="fillCaseFormFromPatient(this.value)" style="font-weight:600">
-            <option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>
-          </select>
-          <div id="case-selected-patient-badge" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:8px 12px;background:#fff;border-radius:10px;border:1px solid var(--brd);font-size:13px;flex-wrap:wrap"></div>
-        </div>
-
-        <!-- Name / owner / phone — always visible -->
-        <div class="row3" id="case-manual-fields-wrap" style="margin-bottom:12px">
-          <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
-          <div class="fg"><label class="lbl">Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
-          <div class="fg"><label class="lbl">Téléphone</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
-        </div>
-
         <div class="row3">
-          <div class="fg"><label class="lbl">Espèce *</label><select class="sel" id="case-espece"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
-          <div class="fg"><label class="lbl">Race</label><input class="inp" id="case-race" placeholder="Ex: Berger allemand"/></div>
-          <div class="fg"><label class="lbl">Robe / Couleur</label><input class="inp" id="case-color" placeholder="Ex: fauve et noir"/></div>
+          <div class="fg"><label class="lbl">Espèce *</label><select class="sel"><option>Chien</option><option>Chat</option></select></div>
+          <div class="fg"><label class="lbl">Race</label><input class="inp" placeholder="Ex: Berger allemand"/></div>
+          <div class="fg"><label class="lbl">Robe / Couleur</label><input class="inp" placeholder="Ex: fauve et noir"/></div>
         </div>
         <div class="row3">
-          <div class="fg"><label class="lbl">Âge</label><input class="inp" id="case-age" placeholder="Ex: 3 ans"/></div>
-          <div class="fg"><label class="lbl">Poids (kg)</label><input class="inp" id="case-poids" type="number" step="0.1" placeholder="15"/></div>
-          <div class="fg"><label class="lbl">Sexe</label><select class="sel" id="case-sexe"><option>Mâle</option><option>Femelle</option><option>Castré</option><option>Stérilisée</option></select></div>
+          <div class="fg"><label class="lbl">Âge</label><input class="inp" placeholder="Ex: 3 ans"/></div>
+          <div class="fg"><label class="lbl">Poids (kg)</label><input class="inp" type="number" step="0.1" placeholder="15"/></div>
+          <div class="fg"><label class="lbl">Sexe</label><select class="sel"><option>Mâle</option><option>Femelle</option><option>Castré</option><option>Stérilisée</option></select></div>
         </div>
       </div>
 
@@ -4066,113 +4049,51 @@ function getCaseFormFields(){
     examCard: cards[2],
   };
 }
-function fillCaseFormFromPatient(patientId) {
-  const manualWrap = document.getElementById('case-manual-fields-wrap');
-  const selectedBadge = document.getElementById('case-selected-patient-badge');
-  if (!patientId || patientId === 'nouveau') {
-    // New patient — show manual fields, clear them, hide badge
-    if (manualWrap) { manualWrap.style.display = 'block'; manualWrap.style.opacity = '1'; }
-    if (selectedBadge) selectedBadge.style.display = 'none';
-    ['case-animal-name','case-client-name','case-client-phone',
-     'case-race','case-age','case-poids','case-color'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = '';
-    });
-    const espece = document.getElementById('case-espece');
-    if (espece) espece.value = 'Chien';
-    const sexe = document.getElementById('case-sexe');
-    if (sexe) sexe.value = 'Mâle';
-    return;
-  }
-  const patient = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).find(p => p.id === patientId);
-  if (!patient) return;
-
-  // Show manual fields pre-filled (so vet can still edit)
-  if (manualWrap) manualWrap.style.display = 'block';
-
-  // Show selected badge
-  if (selectedBadge) {
-    selectedBadge.style.display = 'flex';
-    selectedBadge.innerHTML = `
-      <span style="font-size:16px">${patient.species === 'Chat' ? '🐈' : patient.species === 'NAC' ? '🐇' : '🐕'}</span>
-      <span style="font-weight:700;color:var(--forest)">${patient.name}</span>
-      <span style="color:var(--muted)">·</span>
-      <span style="color:var(--muted)">${patient.owner}</span>
-      <span style="font-size:10px;background:var(--surface2);padding:2px 8px;border-radius:20px;color:var(--sage);font-weight:700">Patient existant</span>
-    `;
-  }
-
-  // Fill all fields
-  const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-  set('case-animal-name', patient.name);
-  set('case-client-name', patient.owner);
-  set('case-client-phone', patient.phone);
-  set('case-race', patient.race);
-  set('case-age', patient.age);
-  set('case-color', patient.color || '');
-
-  // Weight — strip 'kg' if present
-  const weightRaw = (patient.weight || '').toString().replace(/[^0-9.]/g, '');
-  set('case-poids', weightRaw);
-
-  // Species select
-  const espece = document.getElementById('case-espece');
-  if (espece && patient.species) {
-    const match = Array.from(espece.options).find(o => o.value.toLowerCase() === patient.species.toLowerCase());
-    if (match) espece.value = match.value;
-  }
-  // Sex select
-  const sexe = document.getElementById('case-sexe');
-  if (sexe && patient.sexe) {
-    const match = Array.from(sexe.options).find(o => o.value.toLowerCase() === patient.sexe.toLowerCase());
-    if (match) sexe.value = match.value;
-  }
-  // Pre-fill history from patient notes
-  const historyField = document.getElementById('case-history');
-  if (historyField && !historyField.value && patient.notes) historyField.value = patient.notes;
-}
-
 function ensureCaseFormEnhancements(){
   const refs = getCaseFormFields();
-  if (!refs) return;
-
-  // Populate patient selector (always refresh options)
-  const sel = document.getElementById('case-patient-select');
-  if (sel) {
-    const currentVal = sel.value;
-    const patientOptions = (typeof PATIENTS !== 'undefined' ? PATIENTS : [])
-      .slice().sort((a, b) => a.name.localeCompare(b.name))
-      .map(p => {
-        const emoji = p.species === 'Chat' ? '🐈' : p.species === 'NAC' ? '🐇' : '🐕';
-        return `<option value="${p.id}">${emoji} ${p.name} · ${p.race || p.species} (${p.owner})</option>`;
-      }).join('');
-    sel.innerHTML = `<option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>${patientOptions}`;
-    if (currentVal && sel.querySelector(`option[value="${currentVal}"]`)) sel.value = currentVal;
+  if (!refs || document.getElementById('case-animal-name')) return;
+  const host = refs.patientCard.querySelector('.card-title');
+  if (!host) return;
+  host.insertAdjacentHTML('afterend', `
+    <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
+      <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
+      <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
+      <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
+    </div>
+  `);
+  const patientRows = refs.patientCard.querySelectorAll('.row3');
+  if (patientRows[0]) {
+    const inputs = patientRows[0].querySelectorAll('select, input');
+    if (inputs[0]) inputs[0].id = 'case-espece';
+    if (inputs[1]) inputs[1].id = 'case-race';
+    if (inputs[2]) inputs[2].id = 'case-color';
   }
-
-  // Bind remaining field IDs that live in the anamnèse and exam cards
-  const historyChecks = refs.historyCard?.querySelectorAll('input[type="checkbox"]');
-  if (historyChecks?.[0]) historyChecks[0].id = 'case-vaccins';
-  if (historyChecks?.[1]) historyChecks[1].id = 'case-vermifuge';
-  const historyInputs = refs.historyCard?.querySelectorAll('.row2 select, .row2 input, textarea, .fg > select');
-  if (historyInputs?.[0]) historyInputs[0].id = 'case-mode-vie';
-  if (historyInputs?.[1]) historyInputs[1].id = 'case-duree-symptomes';
-  const appetite = refs.historyCard?.querySelectorAll('.fg > select')?.[1];
+  if (patientRows[1]) {
+    const inputs = patientRows[1].querySelectorAll('input, select');
+    if (inputs[0]) inputs[0].id = 'case-age';
+    if (inputs[1]) inputs[1].id = 'case-poids';
+    if (inputs[2]) inputs[2].id = 'case-sexe';
+  }
+  const historyChecks = refs.historyCard.querySelectorAll('input[type="checkbox"]');
+  if (historyChecks[0]) historyChecks[0].id = 'case-vaccins';
+  if (historyChecks[1]) historyChecks[1].id = 'case-vermifuge';
+  const historyInputs = refs.historyCard.querySelectorAll('.row2 select, .row2 input, textarea, .fg > select');
+  if (historyInputs[0]) historyInputs[0].id = 'case-mode-vie';
+  if (historyInputs[1]) historyInputs[1].id = 'case-duree-symptomes';
+  const appetite = refs.historyCard.querySelectorAll('.fg > select')[1];
   if (appetite) appetite.id = 'case-appetit';
-  const historyTexts = refs.historyCard?.querySelectorAll('textarea');
-  if (historyTexts?.[0]) historyTexts[0].id = 'case-history';
-  if (historyTexts?.[1]) historyTexts[1].id = 'case-symptoms';
-  const examInputs = refs.examCard?.querySelectorAll('input, select, textarea');
-  if (examInputs?.[2]) examInputs[2].id = 'case-fr';
-  if (examInputs?.[4]) examInputs[4].id = 'case-muqueuses';
-  if (examInputs?.[6]) examInputs[6].id = 'case-observations';
-  if (examInputs?.[8]) examInputs[8].id = 'case-exams';
-  if (examInputs?.[9]) examInputs[9].id = 'case-amount';
-  if (examInputs?.[10]) examInputs[10].id = 'case-paid';
-  if (examInputs?.[11]) examInputs[11].id = 'case-next-rdv';
-  if (examInputs?.[12]) examInputs[12].id = 'case-client-email';
-
-  // Bind save button
+  const historyTexts = refs.historyCard.querySelectorAll('textarea');
+  if (historyTexts[0]) historyTexts[0].id = 'case-history';
+  if (historyTexts[1]) historyTexts[1].id = 'case-symptoms';
+  const examInputs = refs.examCard.querySelectorAll('input, select, textarea');
+  if (examInputs[2]) examInputs[2].id = 'case-fr';
+  if (examInputs[4]) examInputs[4].id = 'case-muqueuses';
+  if (examInputs[6]) examInputs[6].id = 'case-observations';
+  if (examInputs[8]) examInputs[8].id = 'case-exams';
+  if (examInputs[9]) examInputs[9].id = 'case-amount';
+  if (examInputs[10]) examInputs[10].id = 'case-paid';
+  if (examInputs[11]) examInputs[11].id = 'case-next-rdv';
+  if (examInputs[12]) examInputs[12].id = 'case-client-email';
   const saveButton = document.querySelector('#page-cas .btn.btn-p.btn-full.btn-lg');
   if (saveButton) saveButton.onclick = saveNewCase;
 }
@@ -4534,22 +4455,6 @@ function populatePatientSelects(){
       .map(c => `<option value="${c.id}">${c.id}</option>`)
       .join('') || '<option value="">Aucune cage libre</option>';
     if (current && quickCageSelect.querySelector(`option[value="${current}"]`)) quickCageSelect.value = current;
-  }
-  // ── Refresh case form patient selector ──
-  const casePatientSelect = document.getElementById('case-patient-select');
-  if (casePatientSelect) {
-    const currentVal = casePatientSelect.value;
-    const casePatientOptions = (typeof PATIENTS !== 'undefined' ? PATIENTS : [])
-      .slice()
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .map(p => {
-        const emoji = p.species === 'Chat' ? '🐈' : p.species === 'NAC' ? '🐇' : '🐕';
-        return `<option value="${p.id}">${emoji} ${p.name} · ${p.race || p.species} (${p.owner})</option>`;
-      }).join('');
-    casePatientSelect.innerHTML = `<option value="nouveau">➕ Nouveau patient (saisie manuelle)</option>${casePatientOptions}`;
-    if (currentVal && casePatientSelect.querySelector(`option[value="${currentVal}"]`)) {
-      casePatientSelect.value = currentVal;
-    }
   }
   renderVaccineReminders();
   updateSidebarBadges();
@@ -5243,33 +5148,118 @@ function refreshSyncStats() {
 let _qrCurrentClient = null;
 let _qrPortalUrl = '';
 
-function buildPetPortalData(clientName) {
-  const client    = CLIENTS.find(c => c.fullName === clientName) || { fullName: clientName };
-  const animals   = PATIENTS.filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
-  const history   = HISTORIQUE_DATA.filter(h => (h.client||'').toLowerCase() === clientName.toLowerCase()).slice(0,10);
-  const vaccs     = VACC_HISTORY.filter(v => (v.owner||'').toLowerCase() === clientName.toLowerCase()).slice(0,10);
+function buildPetPortalHTML(clientName) {
+  const client  = CLIENTS.find(c => c.fullName === clientName) || { fullName: clientName };
+  const animals = PATIENTS.filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
+  const history = HISTORIQUE_DATA.filter(h => (h.client||'').toLowerCase() === clientName.toLowerCase()).slice(0,20);
+  const vaccs   = VACC_HISTORY.filter(v => (v.owner||'').toLowerCase() === clientName.toLowerCase()).slice(0,20);
   const reminders = VACCINE_REMINDERS.filter(r => (r.owner||'').toLowerCase() === clientName.toLowerCase())
-    .filter(r => r.reminderDate >= new Date().toISOString().slice(0,10)).slice(0,6);
-  const hospCage  = CAGES.find(c => c.statut === 'occupée' && (c.animal||'').toLowerCase().includes(
-    animals[0]?.name?.toLowerCase() || '____'
-  ));
-  return {
-    n: client.fullName,
-    p: client.phone || '',
-    a: animals.map(a => ({ n: a.name, s: a.species, r: a.race, ag: a.age, w: a.weight })),
-    h: history.map(h => ({ an: h.animal, d: h.diagnostic, t: h.traitement, dt: h.date })),
-    v: vaccs.map(v => ({ an: v.animal, vc: v.vaccine, dt: v.date, rp: v.rappel })),
-    rm: reminders.map(r => ({ an: r.animal, vc: r.vaccine, dt: r.reminderDate })),
-    hosp: hospCage ? { cage: hospCage.id, an: hospCage.animal } : null,
-    ts: new Date().toLocaleDateString('fr-FR')
-  };
+    .filter(r => r.reminderDate >= new Date().toISOString().slice(0,10)).slice(0,10);
+  const hospAnimal = CAGES.find(c => c.animal && (c.patient||c.owner||'').toLowerCase() === clientName.toLowerCase() && c.statut === 'occupée');
+
+  const animalsHTML = animals.map(a => `
+    <div class="pet-card">
+      <div class="pet-ico">${(a.species||'').toLowerCase()==='chat'?'🐈':'🐕'}</div>
+      <div>
+        <div class="pet-name">${a.name||'?'}</div>
+        <div class="pet-meta">${[a.species,a.race,a.age,a.weight,a.sexe].filter(Boolean).join(' · ')}</div>
+      </div>
+    </div>`).join('') || '<p class="empty">Aucun animal enregistré</p>';
+
+  const hospHTML = hospAnimal ? `
+    <div class="alert-hosp">
+      🏥 <strong>${hospAnimal.animal}</strong> est actuellement hospitalisé — Cage ${hospAnimal.id}${hospAnimal.diagnostic ? ' · ' + hospAnimal.diagnostic : ''}
+    </div>` : '';
+
+  const histHTML = history.length ? history.map(h => `
+    <div class="row-item">
+      <div class="row-left">
+        <div class="row-title">${h.animal||'?'} — ${h.diagnostic||'Consultation'}</div>
+        <div class="row-meta">${h.traitement ? 'Traitement : ' + h.traitement.slice(0,80) : ''}</div>
+      </div>
+      <div class="row-date">${h.date||''}</div>
+    </div>`).join('') : '<p class="empty">Aucun historique</p>';
+
+  const vaccHTML = vaccs.length ? vaccs.map(v => `
+    <div class="row-item">
+      <div class="row-left">
+        <div class="row-title">💉 ${v.animal||'?'} — ${v.vaccine||''}</div>
+        ${v.rappel ? '<div class="row-meta rappel">⏰ Prochain rappel : ' + v.rappel + '</div>' : ''}
+      </div>
+      <div class="row-date">${v.date||''}</div>
+    </div>`).join('') : '<p class="empty">Aucune vaccination enregistrée</p>';
+
+  const remHTML = reminders.length ? reminders.map(r => `
+    <div class="row-item remind">
+      <div class="row-left">
+        <div class="row-title">🔔 ${r.animal||'?'} — ${r.vaccine||''}</div>
+      </div>
+      <div class="row-date remind-date">${r.reminderDate||''}</div>
+    </div>`).join('') : '<p class="empty">Aucun rappel à venir</p>';
+
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Fiche Vétérinaire — ${client.fullName}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f9f4;color:#1a2e23;min-height:100vh}
+.header{background:linear-gradient(135deg,#1A4A2E,#2d7a4a);color:#fff;padding:20px 16px 24px;text-align:center}
+.logo{font-size:36px;margin-bottom:6px}
+.clinic{font-size:11px;opacity:.7;margin-top:2px}
+.owner{font-size:20px;font-weight:800;margin:4px 0 0}
+.phone{font-size:12px;opacity:.75;margin-top:3px}
+.badge-hosp{display:inline-block;background:#e74c3c;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:8px}
+.content{padding:16px}
+.section{background:#fff;border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.section-title{font-size:13px;font-weight:700;color:#1A4A2E;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.pet-card{display:flex;align-items:center;gap:12px;padding:10px;background:#f0f9f4;border-radius:10px;margin-bottom:8px}
+.pet-ico{font-size:28px}
+.pet-name{font-weight:700;font-size:14px}
+.pet-meta{font-size:11px;color:#5a7a65;margin-top:2px}
+.alert-hosp{background:#fdf0ee;border:1.5px solid #e74c3c;border-radius:10px;padding:12px 14px;font-size:12.5px;color:#c0392b;margin-bottom:14px}
+.row-item{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 0;border-bottom:1px solid #eaf3ee;gap:10px}
+.row-item:last-child{border-bottom:none}
+.row-title{font-size:12.5px;font-weight:600}
+.row-meta{font-size:11px;color:#5a7a65;margin-top:3px}
+.rappel{color:#d4813a!important}
+.row-date{font-size:11px;color:#8aab95;white-space:nowrap;padding-top:2px}
+.remind{background:#fff8ee;margin:0 -2px;padding:10px 2px;border-radius:6px}
+.remind-date{color:#d4813a;font-weight:700}
+.empty{font-size:12px;color:#8aab95;padding:8px 0}
+.footer{text-align:center;padding:20px 16px;font-size:11px;color:#8aab95}
+.footer strong{color:#1A4A2E}
+</style></head><body>
+<div class="header">
+  <div class="logo">🐾</div>
+  <div class="owner">${client.fullName}</div>
+  ${client.phone ? `<div class="phone">📞 ${client.phone}</div>` : ''}
+  <div class="clinic">VetPro · Fiche Patient · Dr. Kherbache Wail · ENSV Algérie</div>
+  ${hospAnimal ? `<div class="badge-hosp">🏥 Animal hospitalisé</div>` : ''}
+</div>
+<div class="content">
+  ${hospHTML}
+  <div class="section">
+    <div class="section-title">🐾 Mes animaux</div>
+    ${animalsHTML}
+  </div>
+  <div class="section">
+    <div class="section-title">📋 Historique clinique</div>
+    ${histHTML}
+  </div>
+  <div class="section">
+    <div class="section-title">💉 Vaccinations</div>
+    ${vaccHTML}
+  </div>
+  ${reminders.length ? `<div class="section">
+    <div class="section-title">🔔 Rappels à venir</div>
+    ${remHTML}
+  </div>` : ''}
+</div>
+<div class="footer">
+  Généré le ${new Date().toLocaleDateString('fr-FR')} · <strong>VetPro</strong> — Confidentiel
+</div>
+</body></html>`;
 }
-
-// kept as stub — actual QR uses hash URL
-function buildPetPortalHTML(clientName) { return ''; }
-
-// ══════════════════════════════════════════════════════════
-
 
 async function loadQRLib() {
   if (window.QRCode) return;
@@ -5289,15 +5279,14 @@ async function openClientQR(clientName) {
   document.getElementById('qr-client-name').textContent = '👤 ' + clientName;
   document.getElementById('qr-client-animals').textContent = animals.map(a => (a.species==='chat'?'🐈':'🐕') + ' ' + a.name).join('  ') || 'Aucun animal';
 
-  // Encode compact data as base64 hash — works on any device when scanned
-  const data   = buildPetPortalData(clientName);
-  const json   = JSON.stringify(data);
-  const b64    = btoa(unescape(encodeURIComponent(json)));
-  const baseUrl = window.location.href.split('#')[0];
-  _qrPortalUrl  = baseUrl + '#pet-portal/' + b64;
+  // Build portal HTML and create blob URL
+  const html  = buildPetPortalHTML(clientName);
+  const blob  = new Blob([html], { type: 'text/html' });
+  _qrPortalUrl = URL.createObjectURL(blob);
 
   openModal('modal-client-qr');
 
+  // Draw QR
   await loadQRLib();
   const wrap = document.getElementById('qr-canvas-wrap');
   wrap.innerHTML = '<div id="qr-render"></div>';
@@ -5307,7 +5296,7 @@ async function openClientQR(clientName) {
     height: 240,
     colorDark: '#1A4A2E',
     colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.L
+    correctLevel: QRCode.CorrectLevel.M
   });
 }
 
@@ -5315,7 +5304,11 @@ function downloadClientQR() {
   const img = document.querySelector('#qr-render img') || document.querySelector('#qr-render canvas');
   if (!img) { toast('QR non encore généré'); return; }
   const a = document.createElement('a');
-  a.href = img.tagName === 'IMG' ? img.src : img.toDataURL('image/png');
+  if (img.tagName === 'IMG') {
+    a.href = img.src;
+  } else {
+    a.href = img.toDataURL('image/png');
+  }
   a.download = `vetpro-qr-${(_qrCurrentClient||'client').replace(/\s+/g,'-')}.png`;
   a.click();
   toast('✅ QR téléchargé');
@@ -5340,52 +5333,7 @@ function printClientQR() {
 
 function copyPetPortalLink() {
   if (!_qrPortalUrl) { toast('QR non encore généré'); return; }
-  navigator.clipboard?.writeText(_qrPortalUrl)
-    .then(() => toast('🔗 Lien copié — partageable par WhatsApp ou email'))
-    .catch(() => { window.open(_qrPortalUrl, '_blank'); toast('✅ Fiche ouverte dans un nouvel onglet'); });
-}
-
-// ══════════════════════════════════════════════════════════
-// PET PORTAL HASH ROUTER — renders when QR is scanned
-// Only activates if URL hash starts with #pet-portal/
-// ══════════════════════════════════════════════════════════
-window.addEventListener('load', function initPetPortalRouter() {
-  const hash = window.location.hash || '';
-  if (!hash.startsWith('#pet-portal/')) return;
-  try {
-    const b64  = hash.slice('#pet-portal/'.length);
-    const json = decodeURIComponent(escape(atob(b64)));
-    const d    = JSON.parse(json);
-    renderPetPortal(d);
-  } catch(e) {
-    console.error('Pet portal decode error:', e);
-  }
-});
-
-function renderPetPortal(d) {
-  document.body.innerHTML = '';
-  document.body.style.cssText = 'margin:0;padding:0;font-family:-apple-system,sans-serif;background:#f0f9f4;color:#1a2e23';
-  const css = `*{box-sizing:border-box}.h{background:linear-gradient(135deg,#1A4A2E,#2d7a4a);color:#fff;padding:20px;text-align:center}.h h1{font-size:20px;margin:6px 0}.h p{font-size:12px;opacity:.75}.sec{background:#fff;margin:10px;border-radius:12px;padding:14px;box-shadow:0 2px 6px rgba(0,0,0,.06)}.st{font-size:12px;font-weight:700;color:#1A4A2E;margin-bottom:10px}.row{padding:9px 0;border-bottom:1px solid #eaf3ee;font-size:12.5px}.row:last-child{border-bottom:none}.r1{font-weight:600;margin-bottom:2px}.r2{color:#5a7a65;font-size:11px}.dt{float:right;color:#8aab95;font-size:11px;margin-left:8px}.warn{background:#fdf0ee;border:1.5px solid #e74c3c;border-radius:10px;padding:12px;margin:10px;font-size:12.5px;color:#c0392b}.rem{background:#fff8ee}.rdt{color:#d4813a;font-weight:700}.ft{text-align:center;padding:20px;font-size:11px;color:#8aab95}`;
-  const style = document.createElement('style');
-  style.textContent = css;
-  document.head.appendChild(style);
-  document.title = `Fiche — ${d.n}`;
-
-  const hosp = d.hosp ? `<div class="warn">🏥 <strong>${d.hosp.an}</strong> est actuellement hospitalisé · Cage ${d.hosp.cage}</div>` : '';
-  const animRows = (d.a||[]).map(a => `<div class="row"><div class="r1">${a.s==='chat'?'🐈':'🐕'} ${a.n}</div><div class="r2">${[a.r,a.ag,a.w].filter(Boolean).join(' · ')}</div></div>`).join('') || '<div class="row" style="color:#aaa">—</div>';
-  const histRows = (d.h||[]).map(h => `<div class="row"><span class="dt">${h.dt||''}</span><div class="r1">${h.an} — ${(h.d||'').slice(0,70)}</div>${h.t?`<div class="r2">${h.t.slice(0,80)}</div>`:''}</div>`).join('') || '<div class="row" style="color:#aaa">Aucun historique</div>';
-  const vaccRows = (d.v||[]).map(v => `<div class="row"><span class="dt">${v.dt||''}</span><div class="r1">💉 ${v.an} — ${v.vc}</div>${v.rp?`<div class="r2" style="color:#d4813a">⏰ Rappel : ${v.rp}</div>`:''}</div>`).join('') || '<div class="row" style="color:#aaa">Aucune vaccination</div>';
-  const remRows = (d.rm||[]).map(r => `<div class="row rem"><span class="dt rdt">${r.dt}</span><div class="r1">🔔 ${r.an} — ${r.vc}</div></div>`).join('');
-
-  document.body.innerHTML = `
-    <div class="h"><div style="font-size:36px">🐾</div><h1>${d.n}</h1><p>${d.p?'📞 '+d.p+' · ':''}VetPro · Dr. Kherbache Wail · ENSV Algérie</p></div>
-    ${hosp}
-    <div class="sec"><div class="st">🐾 Mes animaux</div>${animRows}</div>
-    <div class="sec"><div class="st">📋 Historique clinique</div>${histRows}</div>
-    <div class="sec"><div class="st">💉 Vaccinations</div>${vaccRows}</div>
-    ${remRows?`<div class="sec"><div class="st">🔔 Rappels à venir</div>${remRows}</div>`:''}
-    <div class="ft">Généré le ${d.ts} · <strong style="color:#1A4A2E">VetPro</strong> — Confidentiel</div>
-  `;
+  navigator.clipboard.writeText(_qrPortalUrl).then(() => toast('🔗 Lien copié dans le presse-papier'));
 }
 function refreshPersistentViews(){
   ensureCaseFormEnhancements();
@@ -6874,7 +6822,7 @@ function showSurgGuide(id){
 // ═══════════════════════════════════════════════════
 // API key stored in localStorage — set via Settings page (never hardcoded)
 var GEMINI_API_KEY = localStorage.getItem('vetpro-gemini-key') || '';
-var GEMINI_MODEL = 'gemini-3.1-flash-lite';
+var GEMINI_MODEL = 'gemini-2.0-flash';
 
 // ── AI USAGE LIMITER ─────────────────────────────────────────────────────────
 // Gemini Flash free tier: 1500 req/day total. ~10 users → 50 req/day per user.
@@ -6909,7 +6857,6 @@ function checkAILimit() {
 // ── END AI LIMITER ──────────────────────────────────────────────────────────
 
 function openQuickVacc() {
-  populateVaccPatientSelect();
   populatePatientSelects();
   document.getElementById('vacc-new-date').value = new Date().toISOString().slice(0,10);
   openModal('modal-vacc-new');
@@ -7016,23 +6963,15 @@ try{
   var sys=ctx?SYS+"\n\nCONTEXTE PATIENT : "+ctx:SYS;
   var messages=[{role:"system",content:sys}].concat(chatHist.slice(-8));
   var rep="";
-  var useEdge=(_sb && typeof SUPA_URL !== 'undefined' && SUPA_URL && SUPA_URL !== "VOTRE_SUPABASE_URL");
+  var useEdge=(_sb && SUPA_URL !== "VOTRE_SUPABASE_URL");
   if(useEdge){
-    try{
-      var localKey=localStorage.getItem("vetpro-gemini-key")||"";
-      var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages,gemini_api_key:localKey}});
-      var d=invRes.data;var e=invRes.error;
-      removeTyping();
-      if(e) throw new Error(e.message||"Edge Function error");
-      if(d&&d.error) throw new Error(d.error);
-      rep=d&&d.content||"";
-    }catch(edgeErr){
-      // Edge Function failed — fall back to direct Gemini API
-      console.warn("[VetPro] Edge Function failed, falling back to direct API:", edgeErr.message);
-      useEdge=false;
-    }
-  }
-  if(!useEdge){
+    var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages}});
+    var d=invRes.data;var e=invRes.error;
+    removeTyping();
+    if(e){appendAIMsg("bot","❌ Erreur: "+(e.message||"Erreur inconnue"));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
+    if(d&&d.error){appendAIMsg("bot","❌ "+d.error+(d.hint?"\n\n"+d.hint:""));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
+    rep=d&&d.content||d&&d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content||"";
+  }else{
     GEMINI_API_KEY=localStorage.getItem("vetpro-gemini-key")||"";
     if(!GEMINI_API_KEY){removeTyping();appendAIMsg("bot","⚠️ <strong>Clé API Gemini non configurée.</strong><br><br>Allez dans <strong>Paramètres</strong> et entrez votre clé Google AI Studio.");aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
     var geminiContents=chatHist.slice(-8).map(function(m){return{role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]};});
@@ -9318,7 +9257,7 @@ function showHistDetail(id) {
     </div>
     <div style="display:flex;gap:9px;flex-wrap:wrap">
       <button class="btn btn-p" onclick="toast('Fiche PDF générée ✅')">📄 Exporter fiche</button>
-      <button class="btn btn-ghost" onclick="sendWhatsApp('${(h.tel||'').replace(/'/g,"\\'")}','${(h.client||'').replace(/'/g,"\\'")}','${(h.animal||'').replace(/'/g,"\\'")}','Rappel RDV')">📱 WhatsApp rappel</button>
+      <button class="btn btn-ghost" onclick="sendWhatsApp('${(client.phone||'').replace(/'/g,"\\'")}','${(client.fullName||'').replace(/'/g,"\\'")}','${(h.animal||'').replace(/'/g,"\\'")}','Rappel RDV')">📱 WhatsApp rappel</button>
       ${h.ordonnance ? `<button class="btn btn-ghost" onclick="showOrdo('${h.ordonnance}');nav('ordonnances')">📝 Voir ordonnance</button>` : ''}
       <button class="btn btn-ghost" onclick="document.getElementById('hist-detail').style.display='none'">✕ Fermer</button>
     </div>`;
@@ -13915,7 +13854,8 @@ function saveAdmission() {
       }
     });
     const title = patientCard.querySelector('.card-title');
-    if (title && !patientCard.querySelector('#case-extra-fields') && !title.dataset.enhanced) {      title.insertAdjacentHTML('afterend', `
+    if (title && !patientCard.querySelector('#case-extra-fields')) {
+      title.insertAdjacentHTML('afterend', `
         <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
           <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
           <div class="fg"><label class="lbl">Client / Propriétaire *</label><input class="inp" id="case-client-name" placeholder="Ex: Benali Ahmed"/></div>
@@ -14272,7 +14212,7 @@ function saveAdmission() {
       }
     });
     const title = card.querySelector('.card-title');
-    if (title && !card.querySelector('#case-extra-fields') && !title.dataset.enhanced) {
+    if (title) {
       title.insertAdjacentHTML('afterend', `
         <div class="row3" id="case-extra-fields" style="margin-bottom:12px">
           <div class="fg"><label class="lbl">Nom de l'animal *</label><input class="inp" id="case-animal-name" placeholder="Ex: Bella"/></div>
@@ -16002,7 +15942,8 @@ function saveAdmission() {
   if (typeof window.sendAI === 'function' && !window.sendAI.__vpWrapped) {
     const originalSend = window.sendAI;
     const wrappedSend = async function(){
-      // Wrap appendAIMsg to prettify error messages
+      // The original sendAI uses `_sb.functions.invoke('vetpro-ai', …)`.
+      // Wrap appendAIMsg so we can detect error markers and prettify them.
       const originalAppend = window.appendAIMsg;
       if (originalAppend && !originalAppend.__vpWrapped) {
         const wrappedAppend = function(role, text){
@@ -17593,9 +17534,12 @@ function saveAdmission() {
   }, 300);
 
   /* ────────────────────────────────────────────────────────────────────
-   * 5) Better AI error display — rich error banners
+   * 5) Better AI error display — when the Edge Function returns an
+   *    error in the body (200 status now), show a nice banner
    * ──────────────────────────────────────────────────────────────────── */
-  // Intercept appendAIMsg to render friendly error banners when AI fails.
+  // The Edge Function now always returns 200; sendAI in the existing code
+  // checks data?.error first, so it should already display correctly.
+  // We just intercept appendAIMsg to render hint + tried list when present.
   function patchAppendForRichError(){
     const orig = window.appendAIMsg;
     if (typeof orig !== 'function' || orig.__vpRichErr) return false;
@@ -23017,374 +22961,6 @@ function saveAdmission() {
   schedule('initial');
   setTimeout(() => schedule('initial-late'), 800);
   setTimeout(() => schedule('initial-later'), 1800);
-})();
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     FEATURE: LIVE DASHBOARD STATS + ALERTS
-═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-  function repaintDashboardStats(){
-    const today = new Date().toISOString().slice(0,10);
-    const thisMonth = today.slice(0,7);
-
-    // Stat 1 — Cas ce mois
-    const casMonth = (window.HISTORIQUE_DATA||[]).filter(h => (h.date||'').includes(thisMonth.split('-')[1]+'/'+thisMonth.split('-')[0]) || (h.date||'').slice(0,7) === thisMonth).length;
-    const casEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(1) .stat-val');
-    const casTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(1) .stat-trend');
-    if (casEl) casEl.textContent = casMonth || (window.HISTORIQUE_DATA||[]).length;
-
-    // Stat 2 — Cages occupées
-    const occ = (window.CAGES||[]).filter(c => c.statut === 'occupée').length;
-    const cageEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(2) .stat-val');
-    const cageTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(2) .stat-trend');
-    if (cageEl) cageEl.textContent = occ;
-    if (cageTrend) cageTrend.textContent = occ + ' cage' + (occ !== 1 ? 's' : '') + ' occupée' + (occ !== 1 ? 's' : '');
-
-    // Stat 3 — Recettes du mois
-    const revenue = (window.HISTORIQUE_DATA||[])
-      .filter(h => (h.date||'').includes('/'))
-      .reduce((s,h) => s + (parseInt(h.montant||h.amount||0,10)||0), 0);
-    const revEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(3) .stat-val');
-    const revTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(3) .stat-trend');
-    const unpaid = (window.HISTORIQUE_DATA||[]).filter(h => h.paiement === 'impaye' || h.paiement === 'partiel').length;
-    if (revEl) revEl.textContent = revenue >= 1000 ? Math.round(revenue/1000)+'K' : String(revenue);
-    if (revTrend) revTrend.textContent = unpaid + ' paiement' + (unpaid !== 1 ? 's' : '') + ' en attente';
-
-    // Stat 4 — Clients total
-    const clientCount = (window.CLIENTS||[]).length;
-    const clientEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-val');
-    const clientTrend = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-trend');
-    if (clientEl) clientEl.textContent = clientCount;
-    if (clientTrend) clientTrend.textContent = (window.PATIENTS||[]).length + ' animaux enregistrés';
-
-    // Stat 4 label
-    const clientLbl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-lbl');
-    if (clientLbl) clientLbl.textContent = 'Clients';
-
-    // RDV du jour badge
-    const rdvToday = (window.APPOINTMENTS||[]).filter(a => a.date === today).length;
-    const rdvEl = document.querySelector('#page-dashboard .g4 .stat-card:nth-child(4) .stat-trend');
-
-    // Inject or update vaccine alert banner
-    injectVaccineAlerts();
-
-    // Inject or update treatment tracker
-    injectTreatmentTracker();
-
-    // Update recent cases table from real data
-    updateRecentCasesTable();
-  }
-
-  function injectVaccineAlerts(){
-    const today = new Date().toISOString().slice(0,10);
-    const in7 = new Date(Date.now() + 7*86400000).toISOString().slice(0,10);
-    const overdue = (window.VACCINE_REMINDERS||[]).filter(r => r.reminderDate && r.reminderDate <= today);
-    const upcoming = (window.VACCINE_REMINDERS||[]).filter(r => r.reminderDate && r.reminderDate > today && r.reminderDate <= in7);
-    let banner = document.getElementById('dash-vacc-alert');
-    const hero = document.querySelector('#page-dashboard .page-hero');
-    if (!hero) return;
-    if (!overdue.length && !upcoming.length) { if (banner) banner.remove(); return; }
-    if (!banner) {
-      banner = document.createElement('div');
-      banner.id = 'dash-vacc-alert';
-      hero.insertAdjacentElement('afterend', banner);
-    }
-    const lines = [
-      ...overdue.map(r => `<span style="color:var(--danger)">⚠️ <strong>${r.animal}</strong> — ${r.vaccine} (rappel dépassé : ${r.reminderDate})</span>`),
-      ...upcoming.map(r => `<span style="color:var(--warning)">🔔 <strong>${r.animal}</strong> — ${r.vaccine} dans 7j (${r.reminderDate})</span>`)
-    ];
-    banner.style.cssText = 'background:#fff8ee;border:1.5px solid #f59e0b;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;cursor:pointer';
-    banner.onclick = () => nav('vaccinations');
-    banner.innerHTML = `<div style="font-weight:700;color:#92400e;margin-bottom:4px">💉 Rappels vaccins ${overdue.length ? '— '+overdue.length+' dépassé'+(overdue.length>1?'s':'') : ''}</div>${lines.join('')}`;
-  }
-
-  function injectTreatmentTracker(){
-    let card = document.getElementById('dash-treatment-tracker');
-    const ongoing = (window.HISTORIQUE_DATA||[])
-      .filter(h => h.statutTraitement === 'en-cours' || h.resultat === 'stabilisation')
-      .slice(0, 5);
-    if (!ongoing.length) { if (card) card.remove(); return; }
-    const g2 = document.querySelector('#page-dashboard .g2');
-    if (!g2) return;
-    if (!card) {
-      card = document.createElement('div');
-      card.id = 'dash-treatment-tracker';
-      card.className = 'card';
-      card.style.marginBottom = '16px';
-      // Insert before the g2's first child
-      g2.insertAdjacentElement('beforebegin', card);
-    }
-    card.innerHTML = `
-      <div class="card-title">💊 Traitements en cours <span style="cursor:pointer;color:var(--sage)" onclick="nav('historique')">Voir tout →</span></div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        ${ongoing.map(h => `
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:10px;font-size:12.5px;cursor:pointer" onclick="nav('historique')">
-            <div>
-              <div style="font-weight:700">${h.animal||'?'} <span style="color:var(--muted);font-weight:400">· ${h.client||''}</span></div>
-              <div style="color:var(--muted);margin-top:2px">${(h.diagnostic||'').slice(0,50)}${h.traitement ? ' · <span style="color:var(--ink)">'+h.traitement.slice(0,40)+'…</span>' : ''}</div>
-            </div>
-            <span class="bdg bdg-b" style="flex-shrink:0">En cours</span>
-          </div>`).join('')}
-      </div>`;
-  }
-
-  function updateRecentCasesTable(){
-    const tbody = document.querySelector('#page-dashboard .card tbody');
-    if (!tbody) return;
-    const recent = (window.HISTORIQUE_DATA||[]).slice(0,5);
-    if (!recent.length) return;
-    tbody.innerHTML = recent.map(h => {
-      const urgClass = h.urgence === 'critique' ? 'bdg-c' : h.urgence === 'urgent' ? 'bdg-u' : 'bdg-n';
-      const urgLabel = h.urgence === 'critique' ? '🚨 Critique' : h.urgence === 'urgent' ? '⚠️ Urgent' : '✅ Normal';
-      const payEl = h.paiement === 'paye' ? '<span class="pay-ok">✅ Payé</span>' : h.paiement === 'partiel' ? '<span class="pay-pt">⚠ Partiel</span>' : '<span class="pay-no">❌ Impayé</span>';
-      return `<tr style="cursor:pointer" onclick="nav('historique')">
-        <td><strong>${h.animal||'?'}</strong><br/><small style="color:var(--muted)">${h.client||''}</small></td>
-        <td>${(h.diagnostic||'').slice(0,25)}</td>
-        <td><span class="bdg ${urgClass}">${urgLabel}</span></td>
-        <td>${payEl}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  // Hook into the existing repaint mechanism
-  const origRepaint = window.__vpRepaintDashboard;
-  window.__vpRepaintDashboard = function(){
-    if (origRepaint) origRepaint();
-    try { repaintDashboardStats(); } catch(e){ console.warn('[VetPro] Dashboard stats error:', e); }
-  };
-  // Run on load and after state changes
-  window.addEventListener('load', () => setTimeout(repaintDashboardStats, 600));
-  // Also run when navigating to dashboard
-  const origNav = window.nav;
-  if (typeof origNav === 'function') {
-    window.nav = function(id){
-      origNav(id);
-      if (id === 'dashboard') setTimeout(repaintDashboardStats, 100);
-    };
-  }
-})();
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     FEATURE: STICKY CLINICAL NOTEPAD
-═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-  const NOTEPAD_KEY = 'vetpro-notepad';
-  const style = document.createElement('style');
-  style.textContent = `
-    .notepad-fab{position:fixed;bottom:24px;left:24px;width:46px;height:46px;border-radius:14px;background:var(--ink);color:#fff;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:54;transition:transform .15s}
-    .notepad-fab:hover{transform:scale(1.1)}
-    .notepad-panel{position:fixed;bottom:82px;left:24px;width:320px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:54;display:none;flex-direction:column;overflow:hidden;border:1.5px solid var(--brd)}
-    @media(max-width:768px){
-      .notepad-fab{bottom:80px;left:16px;width:42px;height:42px;font-size:18px;}
-      .notepad-panel{bottom:132px;left:12px;right:12px;width:auto;}
-    }
-    .notepad-panel.open{display:flex}
-    .notepad-head{background:var(--ink);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700}
-    .notepad-body{flex:1}
-    .notepad-ta{width:100%;min-height:180px;max-height:320px;border:none;padding:12px 14px;font-size:12.5px;line-height:1.6;resize:vertical;font-family:inherit;color:var(--ink);background:#fafdf9;outline:none}
-    .notepad-foot{padding:8px 12px;border-top:1px solid var(--brd);display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--muted)}
-    .notepad-saved{color:var(--sage);font-weight:600}
-  `;
-  document.head.appendChild(style);
-
-  function buildNotepad(){
-    if (document.getElementById('notepad-fab')) return;
-    const fab = document.createElement('button');
-    fab.id = 'notepad-fab';
-    fab.className = 'notepad-fab';
-    fab.title = 'Mémo clinique';
-    fab.textContent = '📝';
-    const panel = document.createElement('div');
-    panel.id = 'notepad-panel';
-    panel.className = 'notepad-panel';
-    panel.innerHTML = `
-      <div class="notepad-head">
-        📝 Mémo clinique
-        <button onclick="document.getElementById('notepad-panel').classList.remove('open')" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1">✕</button>
-      </div>
-      <div class="notepad-body">
-        <textarea class="notepad-ta" id="notepad-ta" placeholder="Notes rapides, rappels, TODO du jour…&#10;&#10;Ex: Appeler Benali pour résultats labo&#10;Commander Shotapen&#10;Vérifier cage C3 ce soir"></textarea>
-      </div>
-      <div class="notepad-foot">
-        <span id="notepad-status">—</span>
-        <button onclick="document.getElementById('notepad-ta').value='';saveNote()" style="background:none;border:1px solid var(--brd);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;color:var(--muted)">Effacer</button>
-      </div>
-    `;
-    document.body.appendChild(fab);
-    document.body.appendChild(panel);
-
-    fab.addEventListener('click', () => panel.classList.toggle('open'));
-
-    const ta = document.getElementById('notepad-ta');
-    ta.value = localStorage.getItem(NOTEPAD_KEY) || '';
-    let saveTimer;
-    ta.addEventListener('input', () => {
-      clearTimeout(saveTimer);
-      document.getElementById('notepad-status').textContent = 'Saisie…';
-      saveTimer = setTimeout(saveNote, 800);
-    });
-  }
-
-  window.saveNote = function(){
-    const ta = document.getElementById('notepad-ta');
-    if (!ta) return;
-    localStorage.setItem(NOTEPAD_KEY, ta.value);
-    const status = document.getElementById('notepad-status');
-    if (status) {
-      status.textContent = '✅ Sauvegardé';
-      status.className = 'notepad-saved';
-      setTimeout(() => { status.textContent = new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); status.className = ''; }, 2000);
-    }
-  };
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildNotepad);
-  else buildNotepad();
-})();
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     FEATURE: DRUG LOW-STOCK ALERT
-═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-  function checkDrugStock(){
-    const lowStock = (window.DRUGS||[]).filter(d => {
-      const qty = parseInt(d.qty||d.quantity||d.stock||0, 10);
-      const min = parseInt(d.minStock||d.minQty||d.min||5, 10);
-      return qty <= min;
-    });
-    let banner = document.getElementById('dash-stock-alert');
-    const hero = document.querySelector('#page-dashboard .page-hero');
-    if (!hero) return;
-    if (!lowStock.length) { if (banner) banner.remove(); return; }
-    if (!banner) {
-      banner = document.createElement('div');
-      banner.id = 'dash-stock-alert';
-      hero.insertAdjacentElement('afterend', banner);
-    }
-    banner.style.cssText = 'background:#fdf0ee;border:1.5px solid var(--danger);border-radius:14px;padding:12px 16px;margin-bottom:14px;cursor:pointer;font-size:12.5px';
-    banner.onclick = () => nav('meds');
-    banner.innerHTML = `<div style="font-weight:700;color:var(--danger);margin-bottom:6px">💊 Stock faible — ${lowStock.length} médicament${lowStock.length>1?'s':''}</div>` +
-      lowStock.slice(0,4).map(d => `<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 8px;background:#fff;border-radius:20px;border:1px solid var(--danger);color:var(--danger);font-size:11px">⚠️ ${d.name||d.nom} (${d.qty||d.quantity||d.stock||0})</span>`).join('') +
-      (lowStock.length > 4 ? `<span style="color:var(--muted);font-size:11px"> +${lowStock.length-4} autres</span>` : '');
-  }
-  window.addEventListener('load', () => setTimeout(checkDrugStock, 800));
-  const _origPersist = window.persistAppState;
-  if (typeof _origPersist === 'function') {
-    window.persistAppState = function(){ _origPersist.apply(this, arguments); checkDrugStock(); };
-  }
-})();
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     FEATURE: RDV DU JOUR — DASHBOARD CARD
-═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-  function injectTodayRdvCard(){
-    if (document.getElementById('dash-today-rdv')) return;
-    const today = new Date().toISOString().slice(0,10);
-    const todayRdv = (window.APPOINTMENTS||[])
-      .filter(a => a.date === today)
-      .sort((a,b) => (a.time||'').localeCompare(b.time||''));
-    const statsRow = document.querySelector('#page-dashboard .g4');
-    if (!statsRow || !todayRdv.length) return;
-
-    const card = document.createElement('div');
-    card.id = 'dash-today-rdv';
-    card.className = 'card';
-    card.style.marginBottom = '16px';
-    card.innerHTML = `
-      <div class="card-title">📅 Rendez-vous du jour <span style="color:var(--sage);cursor:pointer" onclick="nav('rdv')">Voir planning →</span>
-        <span style="margin-left:auto;background:var(--forest);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px">${todayRdv.length} RDV</span>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:7px">
-        ${todayRdv.map(a => {
-          const meta = typeof getStatusMeta === 'function' ? getStatusMeta(a.status) : {border:'var(--sage)',badge:'bdg-n',label:'RDV'};
-          return `<div style="display:flex;align-items:center;gap:12px;padding:9px 12px;background:var(--surface2);border-radius:10px;border-left:3px solid ${meta.border}">
-            <div style="font-weight:700;font-size:13px;min-width:42px">${a.time||'—'}</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:12.5px;font-weight:600">${a.animal||'?'} <span style="color:var(--muted);font-weight:400">· ${a.owner||''}</span></div>
-              <div style="font-size:11px;color:var(--muted)">${a.motif||''}</div>
-            </div>
-            ${a.phone ? `<button class="btn btn-sm btn-ghost" style="flex-shrink:0" onclick="event.stopPropagation();sendWhatsApp('${a.phone}','${(a.owner||'').replace(/'/g,"\\'")}','${(a.animal||'').replace(/'/g,"\\'")}','${(a.motif||'').replace(/'/g,"\\'")}')">📱</button>` : ''}
-          </div>`;
-        }).join('')}
-      </div>`;
-    statsRow.insertAdjacentElement('afterend', card);
-  }
-
-  function refreshTodayRdv(){
-    const existing = document.getElementById('dash-today-rdv');
-    if (existing) existing.remove();
-    injectTodayRdvCard();
-  }
-
-  window.addEventListener('load', () => setTimeout(refreshTodayRdv, 700));
-  const _origRepaint2 = window.__vpRepaintDashboard;
-  window.__vpRepaintDashboard = function(){
-    if (_origRepaint2) _origRepaint2();
-    try { refreshTodayRdv(); } catch(e){}
-  };
-})();
-</script>
-
-<!-- ═══════════════════════════════════════════════════════════════
-     FEATURE: PATIENT AGE CALCULATOR & ALERTS
-═══════════════════════════════════════════════════════════════ -->
-<script>
-(function(){
-  // Adds a small age calculator to the cas form and shows geriatric/pediatric alert
-  function injectAgeCalc(){
-    const ageInp = document.getElementById('case-age');
-    if (!ageInp || ageInp.dataset.calcInjected) return;
-    ageInp.dataset.calcInjected = '1';
-    ageInp.addEventListener('blur', function(){
-      const val = this.value.toLowerCase().trim();
-      if (!val) return;
-      let months = 0;
-      if (val.includes('an')) months = parseFloat(val) * 12;
-      else if (val.includes('mois') || val.includes('m')) months = parseFloat(val);
-      else months = parseFloat(val) * 12;
-
-      const especeEl = document.getElementById('case-espece');
-      const espece = especeEl ? especeEl.value.toLowerCase() : 'chien';
-      let alert = '';
-      if (months < 4) alert = '🍼 Pédiatrique — Adapter les doses (×0.5 max)';
-      else if (months < 12) alert = '🐾 Jeune — Primo-vaccination à compléter';
-      else if (espece === 'chien' && months >= 84) alert = '🦷 Gériatrique (≥7 ans) — Bilan sanguin recommandé';
-      else if (espece === 'chat' && months >= 96) alert = '🦷 Gériatrique (≥8 ans) — Surveillance rénale IRC';
-
-      let tip = document.getElementById('case-age-tip');
-      if (!tip) {
-        tip = document.createElement('div');
-        tip.id = 'case-age-tip';
-        tip.style.cssText = 'font-size:11px;padding:4px 10px;border-radius:8px;margin-top:4px;font-weight:600';
-        this.parentNode.appendChild(tip);
-      }
-      if (alert) {
-        tip.textContent = alert;
-        tip.style.background = months < 12 ? '#e8f5f0' : '#fff8ee';
-        tip.style.color = months < 12 ? 'var(--forest)' : 'var(--warning)';
-      } else {
-        tip.textContent = '';
-      }
-    });
-  }
-
-  // Inject on cas page open
-  const _origNav3 = window.nav;
-  if (typeof _origNav3 === 'function') {
-    window.nav = function(id){
-      _origNav3(id);
-      if (id === 'cas') setTimeout(injectAgeCalc, 300);
-    };
-  }
-  window.addEventListener('load', () => setTimeout(injectAgeCalc, 1200));
 })();
 </script>
 </body>
