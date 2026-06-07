@@ -1350,7 +1350,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <button class="btn btn-ghost btn-sm" style="margin-left:10px;color:rgba(255,255,255,.7);border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.1)" onclick="newConv()">🔄 Nouveau</button>
     </div>
     <div class="ai-ctx">
-      <select id="ctx-espece"><option value="">Espèce —</option><option value="chien">🐕 Chien</option><option value="chat">🐈 Chat</option></select>
+      <select id="ctx-espece"><option value="">Espèce —</option><option value="chien">🐕 Chien</option><option value="chat">🐈 Chat</option><option value="bovin">🐄 Bovin/Vache</option><option value="ovin">🐑 Ovin/Mouton</option><option value="caprin">🐐 Caprin/Chèvre</option><option value="cheval">🐴 Cheval/Équin</option><option value="oiseau">🦜 Oiseau/Psittacidé</option><option value="volaille">🐓 Volaille</option><option value="lapin">🐇 Lapin</option><option value="porc">🐷 Porc</option></select>
       <input id="ctx-poids" placeholder="Poids (kg)"/>
       <input id="ctx-age" placeholder="Âge"/>
       <input id="ctx-race" placeholder="Race"/>
@@ -1416,7 +1416,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🐾 Patient</div>
         <div class="row3">
-          <div class="fg"><label class="lbl">Espèce *</label><select class="sel"><option>Chien</option><option>Chat</option></select></div>
+          <div class="fg"><label class="lbl">Espèce *</label><select class="sel"><option>Chien</option><option>Chat</option><option>Bovin</option><option>Ovin</option><option>Caprin</option><option>Cheval</option><option>Oiseau</option><option>Volaille</option><option>Lapin</option><option>Porc</option><option>Reptile</option><option>Hamster/Cobaye</option><option>Autre</option></select></div>
           <div class="fg"><label class="lbl">Race</label><input class="inp" placeholder="Ex: Berger allemand"/></div>
           <div class="fg"><label class="lbl">Robe / Couleur</label><input class="inp" placeholder="Ex: fauve et noir"/></div>
         </div>
@@ -1529,6 +1529,14 @@ window.addEventListener('DOMContentLoaded', () => {
         <option value="">Toutes espèces</option>
         <option value="chien">🐕 Chiens</option>
         <option value="chat">🐈 Chats</option>
+        <option value="bovin">🐄 Bovins</option>
+        <option value="ovin">🐑 Ovins</option>
+        <option value="caprin">🐐 Caprins</option>
+        <option value="cheval">🐴 Équins</option>
+        <option value="oiseau">🦜 Oiseaux</option>
+        <option value="volaille">🐓 Volaille</option>
+        <option value="lapin">🐇 Lapins</option>
+        <option value="porc">🐷 Porcs</option>
       </select>
       <select class="sel" id="hist-statut-trait" onchange="filterHist(document.getElementById('hist-search').value)" style="width:150px">
         <option value="">Tous statuts traitement</option>
@@ -1673,7 +1681,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="card">
       <div class="card-title">🐾 Paramètres patient</div>
       <div class="row2">
-        <div class="fg"><label class="lbl">Espèce *</label><select class="sel" id="pf-e" onchange="calcPf()"><option value="chien">🐕 Chien (60 mL/kg/j)</option><option value="chat">🐈 Chat (50 mL/kg/j)</option></select></div>
+        <div class="fg"><label class="lbl">Espèce *</label><select class="sel" id="pf-e" onchange="calcPf()"><option value="chien">🐕 Chien (60 mL/kg/j)</option><option value="chat">🐈 Chat (50 mL/kg/j)</option><option value="cheval">🐴 Cheval (60 mL/kg/j)</option><option value="bovin">🐄 Bovin (50 mL/kg/j)</option><option value="ovin">🐑 Ovin/Caprin (40 mL/kg/j)</option><option value="porc">🐷 Porc (50 mL/kg/j)</option><option value="lapin">🐇 Lapin (100 mL/kg/j)</option><option value="oiseau">🦜 Oiseau (50 mL/kg/j)</option></select></div>
         <div class="fg"><label class="lbl">Poids (kg) *</label><input class="inp" id="pf-p" type="number" step="0.1" placeholder="15" oninput="calcPf()"/></div>
       </div>
       <div class="fg"><label class="lbl">Déshydratation estimée</label>
@@ -1713,7 +1721,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="card">
       <div class="card-title">💉 Patient & Protocole</div>
       <div class="row2">
-        <div class="fg"><label class="lbl">Espèce *</label><select class="sel" id="an-e" onchange="calcAn()"><option value="chien">🐕 Chien</option><option value="chat">🐈 Chat</option></select></div>
+        <div class="fg"><label class="lbl">Espèce *</label><select class="sel" id="an-e" onchange="calcAn()"><option value="chien">🐕 Chien</option><option value="chat">🐈 Chat</option><option value="cheval">🐴 Cheval/Équin</option><option value="bovin">🐄 Bovin/Vache</option><option value="ovin">🐑 Ovin/Caprin</option><option value="porc">🐷 Porc</option><option value="lapin">🐇 Lapin</option><option value="oiseau">🦜 Oiseau</option></select></div>
         <div class="fg"><label class="lbl">Poids (kg) *</label><input class="inp" id="an-p" type="number" step="0.1" placeholder="20" oninput="calcAn()"/></div>
       </div>
       <div class="fg"><label class="lbl">Statut ASA</label><select class="sel" id="an-asa" onchange="calcAn()"><option value="1">ASA I — Animal sain</option><option value="2">ASA II — Maladie légère</option><option value="3">ASA III — Systémique</option><option value="4">ASA IV — Menace vitale</option></select></div>
@@ -2204,8 +2212,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
   <div class="fchips" id="mal-filters">
     <div class="fchip on" onclick="setMalFilter(this,'')">Toutes</div>
-    <div class="fchip" onclick="setMalFilter(this,'chien')">🐕 Chiens seulement</div>
-    <div class="fchip" onclick="setMalFilter(this,'chat')">🐈 Chats seulement</div>
+    <div class="fchip" onclick="setMalFilter(this,'chien')">🐕 Chiens</div>
+    <div class="fchip" onclick="setMalFilter(this,'chat')">🐈 Chats</div>
+    <div class="fchip" onclick="setMalFilter(this,'bovin')">🐄 Bovins</div>
+    <div class="fchip" onclick="setMalFilter(this,'ovin')">🐑 Ovins</div>
+    <div class="fchip" onclick="setMalFilter(this,'caprin')">🐐 Caprins</div>
+    <div class="fchip" onclick="setMalFilter(this,'cheval')">🐴 Équins</div>
+    <div class="fchip" onclick="setMalFilter(this,'oiseau')">🦜 Oiseaux</div>
+    <div class="fchip" onclick="setMalFilter(this,'volaille')">🐓 Volaille</div>
+    <div class="fchip" onclick="setMalFilter(this,'lapin')">🐇 Lapins</div>
+    <div class="fchip" onclick="setMalFilter(this,'porc')">🐷 Porcs</div>
     <div class="fchip" onclick="setMalFilter(this,'both')">🐾 Chiens & Chats</div>
     <div class="fchip" onclick="setMalFilter(this,'urgent')">🚨 Urgences</div>
     <div class="fchip" onclick="setMalFilter(this,'parasitaire')">🦟 Parasitaires</div>
@@ -2401,6 +2417,10 @@ window.addEventListener('DOMContentLoaded', () => {
   <div class="fchips" style="margin-bottom:18px" id="vacc-chips">
     <div class="fchip on" onclick="setVaccTab(this,'chien')">🐕 Chien</div>
     <div class="fchip"    onclick="setVaccTab(this,'chat')">🐈 Chat</div>
+    <div class="fchip"    onclick="setVaccTab(this,'bovin')">🐄 Bovin</div>
+    <div class="fchip"    onclick="setVaccTab(this,'ovin')">🐑 Ovin/Caprin</div>
+    <div class="fchip"    onclick="setVaccTab(this,'cheval')">🐴 Équin</div>
+    <div class="fchip"    onclick="setVaccTab(this,'volaille')">🐓 Volaille</div>
     <div class="fchip"    onclick="setVaccTab(this,'rappels')">🔔 Rappels à venir</div>
     <div class="fchip"    onclick="setVaccTab(this,'historique')">📜 Historique patients</div>
   </div>
@@ -2495,6 +2515,174 @@ window.addEventListener('DOMContentLoaded', () => {
             <tr><td><strong>Nobivac Rabies</strong></td><td>Rage seule</td><td>MSD (NL)</td></tr>
             <tr><td><strong>Rabisin</strong></td><td>Rage seule</td><td>Boehringer (DE)</td></tr>
             <tr style="background:var(--surface2)"><td colspan="3" style="font-size:11px;color:var(--muted);font-style:italic">⚠️ FIV et Purevax Rabies (canarypox) : disponibilité très limitée en Algérie en 2026.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Bovin -->
+  <div id="vacc-bovin" style="display:none">
+    <div class="ibox ibox-b" style="margin-bottom:16px">🐄 <strong>Bovins — Algérie :</strong> FMD et CBPP sont maladies à déclaration obligatoire. Brucellose bovine = zoonose à déclaration obligatoire.</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">📋 Calendrier vaccinal — Bovin</div>
+        <table class="tbl">
+          <thead><tr><th>Vaccin</th><th>Maladies</th><th>Fréquence DZ</th><th>Voie</th></tr></thead>
+          <tbody>
+            <tr><td><span class="bdg bdg-b">Fièvre Aphteuse (FMD)</span></td><td>Aphtovirus O, A, SAT</td><td>Tous les 6 mois (zones endémiques)</td><td>SC ou IM</td></tr>
+            <tr><td><span class="bdg bdg-b">CBPP (Péripneumonie)</span></td><td>Mycoplasma mycoides</td><td>Annuel — zones à risque</td><td>SC</td></tr>
+            <tr><td><span class="bdg bdg-u">Charbon bactéridien</span></td><td>Bacillus anthracis</td><td>Annuel (zones enzootiques)</td><td>SC</td></tr>
+            <tr><td><span class="bdg bdg-u">Brucellose bovine (RB51)</span></td><td>Brucella abortus</td><td>Femelles 3–8 mois (1 fois vie)</td><td>SC</td></tr>
+            <tr><td><span class="bdg bdg-n">Pasteurellose</span></td><td>Pasteurella multocida / haemolytica</td><td>Annuel + rappel 3 semaines</td><td>SC ou IM</td></tr>
+            <tr><td><span class="bdg bdg-n">Clostridies (polyvalent)</span></td><td>C. perfringens, C. tetani, C. chauvoei</td><td>Primo + rappel annuel</td><td>SC</td></tr>
+            <tr style="background:var(--surface2)"><td colspan="4" style="font-size:11px;color:var(--muted);font-style:italic">⚠️ FMD et CBPP — déclaration OBLIGATOIRE à la DSV. Isolement immédiat tout animal suspect.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Constantes physiologiques — Bovin adulte</div>
+        <table class="tbl">
+          <thead><tr><th>Paramètre</th><th>Valeur normale</th><th>Note</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Température rectale</strong></td><td>38.0 – 39.5 °C</td><td>Veau : jusqu'à 39.8</td></tr>
+            <tr><td><strong>Fréquence cardiaque</strong></td><td>40 – 80 bpm</td><td>Veau : 80–120</td></tr>
+            <tr><td><strong>Fréquence respiratoire</strong></td><td>12 – 36 /min</td><td>Augmentée par le stress</td></tr>
+            <tr><td><strong>Motilité ruminale</strong></td><td>2–3 contractions / 2 min</td><td>Absence = atonie ruminale</td></tr>
+            <tr><td><strong>Durée gestation</strong></td><td>270 – 285 jours</td><td>~9 mois</td></tr>
+            <tr><td><strong>Entretien hydrique</strong></td><td>50 – 100 mL/kg/j</td><td>Lactation : ×2–3</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">💊 Traitements courants — Bovin (médicaments DZ)</div>
+      <table class="tbl">
+        <thead><tr><th>Indication</th><th>Traitement</th><th>Dose indicative</th></tr></thead>
+        <tbody>
+          <tr><td>Infection bactérienne</td><td>Pénicilline G procaïne</td><td>20 000 UI/kg IM × 5 jours</td></tr>
+          <tr><td>Pneumonie (pasteurellose)</td><td>Florfénicol</td><td>20 mg/kg SC × 2 (48h entre doses)</td></tr>
+          <tr><td>Diarrhée néonatale veau</td><td>Réhydratation IV + Ampicilline</td><td>Ringer Lactate 50 mL/kg/h IV</td></tr>
+          <tr><td>Métrite post-partum</td><td>Ceftiofur SC</td><td>2.2 mg/kg × 5j</td></tr>
+          <tr><td>Tympanisme spumeux</td><td>Huile de paraffine PO</td><td>500 mL + massage flanc gauche</td></tr>
+          <tr><td>Parasitisme</td><td>Ivermectine</td><td>0.2 mg/kg SC</td></tr>
+          <tr style="background:var(--surface2)"><td colspan="3" style="font-size:11px;color:var(--muted);font-style:italic">⏱ Respecter les délais d'attente viande/lait selon AMM — noter dans le registre d'élevage.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Ovin/Caprin -->
+  <div id="vacc-ovin" style="display:none">
+    <div class="ibox ibox-b" style="margin-bottom:16px">🐑 <strong>Ovins & Caprins — Algérie :</strong> Clavelée et Brucellose sont les priorités. La PPR est endémique en Algérie — vaccination systématique recommandée par l'ONVSA.</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">📋 Calendrier vaccinal — Ovin / Caprin</div>
+        <table class="tbl">
+          <thead><tr><th>Vaccin</th><th>Maladies</th><th>Fréquence DZ</th><th>Voie</th></tr></thead>
+          <tbody>
+            <tr><td><span class="bdg bdg-b">Clavelée / Variole ovine</span></td><td>Capripoxvirus</td><td>Annuel (1 injection suffit)</td><td>SC</td></tr>
+            <tr><td><span class="bdg bdg-b">PPR (Peste Petits Ruminants)</span></td><td>Morbillivirus</td><td>Annuel — zones enzootiques DZ</td><td>SC</td></tr>
+            <tr><td><span class="bdg bdg-u">Brucellose caprine (REV.1)</span></td><td>Brucella melitensis</td><td>Agnelles 3–6 mois (1 fois vie)</td><td>SC ou conjonctivale</td></tr>
+            <tr><td><span class="bdg bdg-u">Fièvre Aphteuse</span></td><td>Aphtovirus</td><td>Tous les 6 mois (zones endémiques)</td><td>SC ou IM</td></tr>
+            <tr><td><span class="bdg bdg-n">Entérotoxémie</span></td><td>C. perfringens types B, C, D</td><td>Avant mise-bas + rappel annuel</td><td>SC</td></tr>
+            <tr><td><span class="bdg bdg-n">Pasteurellose ovine</span></td><td>Pasteurella multocida / haemolytica</td><td>Annuel (automne de préférence)</td><td>SC</td></tr>
+            <tr style="background:var(--surface2)"><td colspan="4" style="font-size:11px;color:var(--muted);font-style:italic">⚠️ Brucellose caprine = ZOONOSE MAJEURE. PPR = déclaration obligatoire. Port de gants lors des mises-bas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Constantes physiologiques — Ovin/Caprin</div>
+        <table class="tbl">
+          <thead><tr><th>Paramètre</th><th>Ovin</th><th>Caprin</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Température rectale</strong></td><td>38.5 – 40.0 °C</td><td>38.5 – 40.5 °C</td></tr>
+            <tr><td><strong>FC (bpm)</strong></td><td>60 – 120</td><td>70 – 130</td></tr>
+            <tr><td><strong>FR (/min)</strong></td><td>12 – 30</td><td>15 – 40</td></tr>
+            <tr><td><strong>Durée gestation</strong></td><td>145 – 155 jours</td><td>145 – 155 jours</td></tr>
+            <tr><td><strong>Entretien hydrique</strong></td><td>40 – 60 mL/kg/j</td><td>40 – 60 mL/kg/j</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Cheval/Équin -->
+  <div id="vacc-cheval" style="display:none">
+    <div class="ibox ibox-b" style="margin-bottom:16px">🐴 <strong>Équins — Algérie :</strong> Grippe équine et Tétanos sont la base vaccinale. La Morve (Glanders) est une zoonose mortelle — test de Mallein annuel OBLIGATOIRE en Algérie.</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">📋 Calendrier vaccinal — Cheval / Âne / Mulet</div>
+        <table class="tbl">
+          <thead><tr><th>Vaccin</th><th>Maladies</th><th>Protocole</th><th>Voie</th></tr></thead>
+          <tbody>
+            <tr><td><span class="bdg bdg-b">Grippe Équine</span></td><td>Influenza A/Equi H3N8</td><td>M0 + M1–3 puis tous les 6–12 mois</td><td>IM</td></tr>
+            <tr><td><span class="bdg bdg-b">Tétanos</span></td><td>Clostridium tetani</td><td>M0 + M1 puis rappel annuel</td><td>IM</td></tr>
+            <tr><td><span class="bdg bdg-u">Rhinopneumonie (EHV-1/4)</span></td><td>Herpèsvirus équin</td><td>Tous les 6 mois · juments gestantes M5/M7/M9</td><td>IM</td></tr>
+            <tr><td><span class="bdg bdg-u">Rage équine</span></td><td>Lyssavirus</td><td>Annuel (zones à risque DZ)</td><td>IM</td></tr>
+            <tr><td><span class="bdg bdg-c">Morve (Glanders)</span></td><td>Burkholderia mallei</td><td>PAS de vaccin — test Mallein annuel EXIGÉ DZ</td><td>Intradermique</td></tr>
+            <tr style="background:var(--surface2)"><td colspan="4" style="font-size:11px;color:var(--muted);font-style:italic">🔴 Morve = zoonose mortelle à DÉCLARATION OBLIGATOIRE. Animal positif → abattage sanitaire obligatoire DZ.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Constantes physiologiques — Équin adulte</div>
+        <table class="tbl">
+          <thead><tr><th>Paramètre</th><th>Cheval</th><th>Âne</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Température rectale</strong></td><td>37.5 – 38.5 °C</td><td>36.5 – 38.0 °C</td></tr>
+            <tr><td><strong>FC (bpm)</strong></td><td>28 – 44</td><td>36 – 52</td></tr>
+            <tr><td><strong>FR (/min)</strong></td><td>8 – 16</td><td>12 – 28</td></tr>
+            <tr><td><strong>Motilité intestinale</strong></td><td>Gurgling 2–3/min (4 quadrants)</td><td>Similaire</td></tr>
+            <tr><td><strong>Durée gestation</strong></td><td>320 – 360 jours</td><td>360 – 375 jours</td></tr>
+            <tr><td><strong>Entretien hydrique</strong></td><td>50 – 80 mL/kg/j</td><td>40 – 60 mL/kg/j</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🚨 Urgences courantes — Cheval (DZ)</div>
+      <table class="tbl">
+        <thead><tr><th>Urgence</th><th>Clinique</th><th>Traitement 1er choix</th></tr></thead>
+        <tbody>
+          <tr><td><strong>Colique</strong></td><td>Douleur abdominale · grattage · sudation</td><td>Flunixine 1.1 mg/kg IV · Spasfon · ±SNG + paraffine</td></tr>
+          <tr><td><strong>Fourbure (laminite)</strong></td><td>Chaleur sabots · boiterie bilatérale</td><td>Phénylbutazone 4.4 mg/kg PO · Froid · Parage correcteur</td></tr>
+          <tr><td><strong>Tétanos</strong></td><td>Trismus · rigidité · 3e paupière</td><td>SAT 100 000–300 000 UI + Péni G + Diazépam</td></tr>
+          <tr><td><strong>Colique chirurgicale</strong></td><td>Absence bruits intestinaux · reflux SNG &gt;2L</td><td>Référer CHIRURGIE en urgence — pronostic lié au délai</td></tr>
+          <tr style="background:var(--surface2)"><td colspan="3" style="font-size:11px;color:var(--muted);font-style:italic">🔴 Colique > 30 min sans réponse médicale → laparotomie exploratrice d'urgence.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Volaille -->
+  <div id="vacc-volaille" style="display:none">
+    <div class="ibox ibox-b" style="margin-bottom:16px">🐓 <strong>Volaille — Algérie :</strong> Influenza Aviaire H5N1 et Newcastle sont maladies à déclaration obligatoire. Vaccination réglementée par l'ONVSA.</div>
+    <div class="g2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="card-title">📋 Calendrier vaccinal — Poulet / Pondeuse</div>
+        <table class="tbl">
+          <thead><tr><th>Vaccin</th><th>Maladies</th><th>Âge/Moment</th><th>Voie</th></tr></thead>
+          <tbody>
+            <tr><td><span class="bdg bdg-b">Newcastle (ND) — La Sota</span></td><td>Paramyxovirus aviaire type 1</td><td>J1 couvoir + J21 + rappel 8 sem.</td><td>Eau · Oculonasale · Spray</td></tr>
+            <tr><td><span class="bdg bdg-b">Bronchite infectieuse (IB)</span></td><td>Coronavirus aviaire</td><td>J1 + J21 (souches Ma5 + 4/91)</td><td>Eau · Oculonasale</td></tr>
+            <tr><td><span class="bdg bdg-u">Gumboro (IBD)</span></td><td>Birnavirus — bourse de Fabricius</td><td>J14 + J28 (intermédiaire)</td><td>Eau de boisson</td></tr>
+            <tr><td><span class="bdg bdg-u">Marek (HVT)</span></td><td>Herpèsvirus aviaire</td><td>J1 couvoir uniquement</td><td>SC</td></tr>
+            <tr><td><span class="bdg bdg-n">Influenza Aviaire H5N1</span></td><td>Virus Influenza A H5N1</td><td>Selon campagnes ONVSA DZ</td><td>IM</td></tr>
+            <tr><td><span class="bdg bdg-n">Coccidiose (Eimeria spp.)</span></td><td>Eimeria tenella / acervulina / maxima</td><td>J1–J7 (buvette ou spray)</td><td>Eau · Spray</td></tr>
+            <tr style="background:var(--surface2)"><td colspan="4" style="font-size:11px;color:var(--muted);font-style:italic">⚠️ Mortalité &gt;10% en 24h ou suspicion IA H5N1 → isolement immédiat + déclaration DSV wilaya.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-title">📊 Constantes physiologiques — Volaille</div>
+        <table class="tbl">
+          <thead><tr><th>Paramètre</th><th>Poulet</th><th>Dinde</th><th>Canard</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Température</strong></td><td>40.5 – 42.0 °C</td><td>40.0 – 41.5 °C</td><td>41.0 – 43.0 °C</td></tr>
+            <tr><td><strong>FC (bpm)</strong></td><td>250 – 350</td><td>160 – 200</td><td>190 – 260</td></tr>
+            <tr><td><strong>FR (/min)</strong></td><td>12 – 36</td><td>28 – 49</td><td>16 – 30</td></tr>
+            <tr><td><strong>Poids vif</strong></td><td>1.5 – 3.5 kg</td><td>5 – 15 kg</td><td>2 – 4.5 kg</td></tr>
           </tbody>
         </table>
       </div>
@@ -2602,7 +2790,7 @@ Voici les données à convertir :
         </div>
         <div class="row2">
           <div class="fg"><label class="lbl">Nom animal *</label><input class="inp" id="vacc-nc-animal" placeholder="Rex"/></div>
-          <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="vacc-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="NAC">🐾 NAC</option></select></div>
+          <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="vacc-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="Bovin">🐄 Bovin/Vache</option><option value="Ovin">🐑 Ovin/Mouton</option><option value="Caprin">🐐 Caprin/Chèvre</option><option value="Cheval">🐴 Cheval/Équin</option><option value="Oiseau">🦜 Oiseau</option><option value="Volaille">🐓 Volaille</option><option value="Lapin">🐇 Lapin</option><option value="Porc">🐷 Porc</option><option value="Reptile">🦎 Reptile</option><option value="Autre">🐾 Autre</option></select></div>
         </div>
       </div>
       <div class="fg"><label class="lbl">Vaccin administré *</label>
@@ -2827,7 +3015,7 @@ Voici les données à convertir :
       </div>
       <div class="row2">
         <div class="fg"><label class="lbl">Nom animal *</label><input class="inp" id="bilan-nc-animal" placeholder="Rex"/></div>
-        <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="bilan-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="NAC">🐾 NAC</option></select></div>
+        <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="bilan-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="Bovin">🐄 Bovin/Vache</option><option value="Ovin">🐑 Ovin/Mouton</option><option value="Caprin">🐐 Caprin/Chèvre</option><option value="Cheval">🐴 Cheval/Équin</option><option value="Oiseau">🦜 Oiseau</option><option value="Volaille">🐓 Volaille</option><option value="Lapin">🐇 Lapin</option><option value="Porc">🐷 Porc</option><option value="Reptile">🦎 Reptile</option><option value="Autre">🐾 Autre</option></select></div>
       </div>
     </div>
     <div class="fg"><label class="lbl">Date prélèvement</label><input class="inp" type="datetime-local" id="bilan-date"/></div>
@@ -3116,7 +3304,7 @@ Voici les données à convertir :
       <div class="card-title">🔢 Calculateur BER (Besoin Énergétique au Repos)</div>
       <div class="row2" style="margin-bottom:12px">
         <div class="fg"><label class="lbl">Espèce</label>
-          <select class="sel" id="nut-esp" onchange="calcNutrition()"><option value="chien">🐕 Chien</option><option value="chat">🐈 Chat</option></select>
+          <select class="sel" id="nut-esp" onchange="calcNutrition()"><option value="chien">🐕 Chien</option><option value="chat">🐈 Chat</option><option value="cheval">🐴 Cheval</option><option value="bovin">🐄 Bovin</option><option value="ovin">🐑 Ovin/Caprin</option><option value="lapin">🐇 Lapin</option><option value="oiseau">🦜 Oiseau</option></select>
         </div>
         <div class="fg"><label class="lbl">Poids (kg)</label>
           <input class="inp" id="nut-poids" type="number" step="0.1" min="0.5" max="80" placeholder="Ex: 15" oninput="calcNutrition()"/>
@@ -3268,7 +3456,7 @@ Voici les données à convertir :
         <div class="fg" style="margin-bottom:10px"><label class="lbl">Téléphone</label><input class="inp" id="admit-client-phone" placeholder="0550 000 000"/></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div class="fg"><label class="lbl">Nom animal *</label><input class="inp" id="admit-animal-new" placeholder="Bella"/></div>
-          <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="admit-species-new"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
+          <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="admit-species-new"><option>Chien</option><option>Chat</option><option>Bovin</option><option>Ovin</option><option>Caprin</option><option>Cheval</option><option>Oiseau</option><option>Volaille</option><option>Lapin</option><option>Porc</option><option>Reptile</option><option>Autre</option></select></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div class="fg"><label class="lbl">Race</label><input class="inp" id="admit-race-new" placeholder="Labrador"/></div>
@@ -3328,7 +3516,7 @@ Voici les données à convertir :
       <div class="fg" style="margin-bottom:8px"><label class="lbl">Nom client *</label><input class="inp" id="rdv-nc-name" placeholder="Benali Ahmed"/></div>
       <div class="fg" style="margin-bottom:8px"><label class="lbl">Téléphone</label><input class="inp" id="rdv-nc-phone" placeholder="0550 000 000"/></div>
       <div class="fg" style="margin-bottom:8px"><label class="lbl">Nom animal *</label><input class="inp" id="rdv-nc-animal" placeholder="Rex"/></div>
-      <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="rdv-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="NAC">🐾 NAC</option></select></div>
+      <div class="fg"><label class="lbl">Espèce</label><select class="sel" id="rdv-nc-species"><option value="Chien">🐕 Chien</option><option value="Chat">🐈 Chat</option><option value="Bovin">🐄 Bovin/Vache</option><option value="Ovin">🐑 Ovin/Mouton</option><option value="Caprin">🐐 Caprin/Chèvre</option><option value="Cheval">🐴 Cheval/Équin</option><option value="Oiseau">🦜 Oiseau</option><option value="Volaille">🐓 Volaille</option><option value="Lapin">🐇 Lapin</option><option value="Porc">🐷 Porc</option><option value="Reptile">🦎 Reptile</option><option value="Autre">🐾 Autre</option></select></div>
     </div>
     <div class="row2"><div class="fg"><label class="lbl">Date *</label><input class="inp" type="date" id="rdv-date"/></div><div class="fg"><label class="lbl">Heure *</label><input class="inp" type="time" id="rdv-time"/></div></div>
     <div class="fg"><label class="lbl">Type</label><select class="sel" id="rdv-type"><option>Consultation</option><option>Contrôle</option><option>Post-opératoire</option><option>Vaccination</option><option>Vermifugation</option></select></div>
@@ -3837,7 +4025,21 @@ function stripAnimalEmoji(name){
   return (name || '').replace(/^[^\p{L}\p{N}]+/u, '').trim();
 }
 function animalEmoji(species){
-  return (species || '').toLowerCase().includes('chat') ? '🐈' : '🐕';
+  const s=(species||'').toLowerCase();
+  if(s.includes('chat')||s.includes('felin')||s.includes('cat'))return'🐈';
+  if(s.includes('cheval')||s.includes('equin')||s.includes('jument'))return'🐴';
+  if(s.includes('bovin')||s.includes('vache')||s.includes('taureau')||s.includes('veau'))return'🐄';
+  if(s.includes('ovin')||s.includes('mouton')||s.includes('brebis')||s.includes('agneau'))return'🐑';
+  if(s.includes('caprin')||s.includes('chevre')||s.includes('bouc'))return'🐐';
+  if(s.includes('oiseau')||s.includes('perroquet')||s.includes('canari')||s.includes('perruche')||s.includes('pigeon'))return'🦜';
+  if(s.includes('poule')||s.includes('poulet')||s.includes('coq')||s.includes('volaille')||s.includes('dinde'))return'🐓';
+  if(s.includes('lapin')||s.includes('rabbit'))return'🐇';
+  if(s.includes('reptile')||s.includes('tortue')||s.includes('serpent')||s.includes('gecko'))return'🦎';
+  if(s.includes('hamster')||s.includes('cobaye')||s.includes('rongeur'))return'🐹';
+  if(s.includes('poisson')||s.includes('fish'))return'🐠';
+  if(s.includes('porc')||s.includes('cochon')||s.includes('porcin')||s.includes('truie'))return'🐷';
+  if(s.includes('chien')||s.includes('dog')||s.includes('canin'))return'🐕';
+  return'🐾';
 }
 function displayAnimalName(name, species){
   const clean = stripAnimalEmoji(name);
@@ -4159,7 +4361,7 @@ function ensureClientIntakePanel(){
       </div>
       <div class="row3">
         <div class="fg"><label class="lbl">Nom animal</label><input class="inp" id="client-intake-animal" placeholder="Bella"/></div>
-        <div class="fg"><label class="lbl">Espece</label><select class="sel" id="client-intake-species"><option>Chien</option><option>Chat</option><option>NAC</option></select></div>
+        <div class="fg"><label class="lbl">Espece</label><select class="sel" id="client-intake-species"><option>Chien</option><option>Chat</option><option>Bovin</option><option>Ovin</option><option>Caprin</option><option>Cheval</option><option>Oiseau</option><option>Volaille</option><option>Lapin</option><option>Porc</option><option>Reptile</option><option>Hamster/Cobaye</option><option>Autre</option></select></div>
         <div class="fg"><label class="lbl">Race</label><input class="inp" id="client-intake-race" placeholder="Labrador"/></div>
       </div>
       <div class="row3">
@@ -4782,7 +4984,7 @@ function renderClientsSidebar(){
 
   // ── Species distribution ──
   const speciesCounts = {};
-  const speciesEmoji = { chien: '🐕', chat: '🐈', oiseau: '🐦', lapin: '🐇', reptile: '🦎', poisson: '🐠', hamster: '🐹', cheval: '🐴', tortue: '🐢' };
+  const speciesEmoji = { chien:'🐕', chat:'🐈', oiseau:'🦜', perroquet:'🦜', perruche:'🦜', canari:'🦜', lapin:'🐇', reptile:'🦎', tortue:'🦎', poisson:'🐠', hamster:'🐹', cobaye:'🐹', rongeur:'🐹', cheval:'🐴', equin:'🐴', bovin:'🐄', vache:'🐄', ovin:'🐑', mouton:'🐑', caprin:'🐐', chevre:'🐐', porc:'🐷', cochon:'🐷', volaille:'🐓', poulet:'🐓', poule:'🐓', dinde:'🐓' };
   const speciesColors = ['var(--info)', '#6B21A8', '#D97706', '#059669', '#DC2626', '#7C3AED', '#0891B2', '#BE185D'];
 
   patients.forEach(p => {
@@ -5292,7 +5494,7 @@ async function openClientQR(clientName) {
   }
   if (animEl) {
     const animalTags = animals.map(a => {
-      const icon = (a.species||a.espece||'').toLowerCase()==='chat'?'🐈':'🐕';
+      const icon = animalEmoji(a.species||a.espece||'');
       return `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5f0;color:#1A4A2E;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;margin:2px">${icon} ${a.name}</span>`;
     }).join('');
     animEl.innerHTML = animalTags || '<span style="color:#aaa;font-size:12px">Aucun animal enregistré</span>';
@@ -5428,8 +5630,23 @@ function calcUrg(){
   const fc=parseInt(document.getElementById('inp-fc')?.value);
   const hyd=parseInt(document.getElementById('inp-hyd')?.value)||0;
   const doul=parseInt(document.getElementById('inp-doul')?.value)||0;
-  if(!isNaN(t)){if(t>=40.5||t<37.5)sc+=3;else if(t>=39.8||t<38)sc+=2;}
-  if(!isNaN(fc)){if(fc>200||fc<40)sc+=3;else if(fc>160||fc<55)sc+=2;}
+  // Species-specific normal ranges
+  const esp=(document.getElementById('case-espece')?.value||'Chien').toLowerCase();
+  const ranges={
+    chien:   {tLo:38.0,tHi:39.5,tWLo:37.5,tWHi:40.0,fcLo:60,fcHi:140,fcWLo:40,fcWHi:180},
+    chat:    {tLo:38.0,tHi:39.5,tWLo:37.5,tWHi:40.5,fcLo:120,fcHi:220,fcWLo:90,fcWHi:260},
+    cheval:  {tLo:37.5,tHi:38.5,tWLo:37.0,tWHi:39.0,fcLo:28,fcHi:44,fcWLo:20,fcWHi:60},
+    bovin:   {tLo:38.0,tHi:39.5,tWLo:37.5,tWHi:40.0,fcLo:40,fcHi:80,fcWLo:30,fcWHi:100},
+    ovin:    {tLo:38.5,tHi:40.0,tWLo:38.0,tWHi:40.5,fcLo:60,fcHi:120,fcWLo:50,fcWHi:150},
+    caprin:  {tLo:38.5,tHi:40.5,tWLo:38.0,tWHi:41.0,fcLo:70,fcHi:130,fcWLo:50,fcWHi:160},
+    lapin:   {tLo:38.5,tHi:40.0,tWLo:38.0,tWHi:40.5,fcLo:130,fcHi:325,fcWLo:100,fcWHi:350},
+    oiseau:  {tLo:40.0,tHi:42.0,tWLo:39.5,tWHi:43.0,fcLo:200,fcHi:400,fcWLo:150,fcWHi:500},
+    volaille:{tLo:40.5,tHi:42.0,tWLo:40.0,tWHi:43.0,fcLo:200,fcHi:350,fcWLo:150,fcWHi:400},
+    porc:    {tLo:38.5,tHi:40.0,tWLo:38.0,tWHi:40.5,fcLo:60,fcHi:120,fcWLo:50,fcWHi:150},
+  };
+  const r=ranges[esp]||ranges.chien;
+  if(!isNaN(t)){if(t>=r.tWHi||t<r.tWLo)sc+=3;else if(t>=r.tHi||t<r.tLo)sc+=2;}
+  if(!isNaN(fc)){if(fc>r.fcWHi||fc<r.fcWLo)sc+=3;else if(fc>r.fcHi||fc<r.fcLo)sc+=2;}
   sc+=hyd;sc+=doul;
   const n=sc>=7?'Critique':sc>=4?'Urgent':'Normal';
   const cfg={
@@ -5447,7 +5664,7 @@ function calcUrg(){
 }
 
 // ── DIAG AUTOCOMPLETE ──
-const DIAGS=['Parvovirose','Piroplasmose','IRC','Gastro-entérite','Gastro-entérite hémorragique','Dermatite allergique','Otite externe','Pneumonie','Cystite','Diabète sucré','Hyperthyroïdie','Leishmaniose','Ehrlichiose','Giardiose','Distemper','Leptospirose','Torsion gastrique','Pancréatite','Cardiomyopathie','Epilepsie','Pyodermite','Teigne','Conjonctivite','Ulcère cornéen','Stomatite féline','Gingivite','Othématome','Intoxication'];
+const DIAGS=['Parvovirose','Piroplasmose','IRC','Gastro-entérite','Gastro-entérite hémorragique','Dermatite allergique','Otite externe','Pneumonie','Cystite','Diabète sucré','Hyperthyroïdie','Leishmaniose','Ehrlichiose','Giardiose','Distemper','Leptospirose','Torsion gastrique','Pancréatite','Cardiomyopathie','Epilepsie','Pyodermite','Teigne','Conjonctivite','Ulcère cornéen','Stomatite féline','Gingivite','Othématome','Intoxication','Fièvre Aphteuse (FMD)','Colique (équin)','Tympanisme','Météorisation ruminale','Fièvre de lait (hypocalcémie)','Rétention placentaire','Métrite','Mammite','Clavelée','PPR (Peste Petits Ruminants)','Brucellose','Pasteurellose','Charbon bactéridien','Entérotoxémie','Coccidiose','Newcastle (NDV)','Gumboro (IBD)','Bronchite infectieuse aviaire','Grippe équine','Rhinopneumonie équine','Fourbure (laminite)','Morve (Glanders)','Babésiose bovine','Theilériose','Hypocalcémie bovine','Acidose ruminale','Déplacement caillette','Prolapsus vaginal','Dystocie','Omphalite (veau)'];
 function showDiagAC(v){
   const ac=document.getElementById('diag-ac');
   if(!v.trim()){ac.style.display='none';return;}
@@ -7062,11 +7279,13 @@ function calcPf(){
   const duree=parseFloat(document.getElementById('pf-h').value)||24;
   const fluide=document.getElementById('pf-f').value;
   const gtt=parseInt(document.querySelector('input[name="gtt"]:checked')?.value)||20;
-  const ent=esp==='chien'?poids*60:poids*50;
+  const entRates={chien:60,chat:50,cheval:60,bovin:50,ovin:40,caprin:40,porc:50,lapin:100,oiseau:50};
+  const ent=(entRates[esp]||55)*poids;
   const def=poids*pct*10;const pertes=poids*pertesPct;
   const total=ent+def+pertes;const dH=total/duree;
   const gouttes=Math.round(dH/60*gtt);const poches=Math.ceil(total/500);const isBolus=duree<=0.5;
-  const choc=Math.round(poids*(esp==='chien'?90:60));
+  const chocRates={chien:90,chat:60,cheval:10,bovin:10,ovin:10,caprin:10,porc:20,lapin:75,oiseau:10};
+  const choc=Math.round(poids*(chocRates[esp]||20));
   const fn={'rl':'Ringer Lactate','nacl':'NaCl 0.9%','g5':'Glucose 5%'}[fluide];
   const urgStyle=pct>=10?'var(--danger)':pct>=5?'var(--warning)':'var(--sage)';
   const urgMsg=pct>=10?'🚨 Bolus IV immédiat requis — Réévaluation /30min':pct>=5?'⚠️ Voie IV obligatoire — Réévaluation à 2-4h':'✅ SC possible — Réévaluation à 6-12h';
@@ -7126,7 +7345,7 @@ function calcAn(){
     const ratio=document.getElementById('an-xk-ratio')?.value||'std';
     const avecAtr=document.querySelector('input[name="an-atr"]:checked')?.value==='oui';
     const ratios={
-      std:{x:esp==='chien'?1.0:0.5,k:10,name:'Standard'},
+      std:{x:esp==='chien'?1.0:(esp==='chat'?0.5:(esp==='cheval'?1.1:(esp==='bovin'||esp==='ovin'||esp==='caprin'?0.1:0.5))),k:esp==='cheval'?2.2:(esp==='bovin'||esp==='ovin'||esp==='caprin'?2.0:10),name:'Standard'},
       light:{x:esp==='chien'?0.5:0.3,k:5,name:'Légère sédation'},
       deep:{x:esp==='chien'?2.0:0.8,k:15,name:'Profonde'}
     };
@@ -7762,7 +7981,7 @@ function saveEditOrdo() {
 // VACCINATIONS tabs
 // ══════════════════════════════════════════════════════════════
 function setVaccTab(el, tab) {
-  ['chien','chat','rappels','historique'].forEach(t => {
+  ['chien','chat','bovin','ovin','cheval','volaille','rappels','historique'].forEach(t => {
     const div = document.getElementById('vacc-' + t);
     if (div) div.style.display = t === tab ? 'block' : 'none';
   });
@@ -8871,27 +9090,31 @@ function calcNutrition() {
   const vals    = document.getElementById('nut-vals');
   if (!poids || poids <= 0 || !res || !vals) return;
 
-  // BER = 70 × Poids^0.75 (chien et chat)
-  const ber  = Math.round(70 * Math.pow(poids, 0.75));
-  const bej  = Math.round(ber * facteur);
-  // Protéines : chien 5g/100kcal, chat 6g/100kcal
-  const prot = Math.round(bej * (esp === 'chat' ? 6 : 5) / 100);
-  // Eau : 50–70 mL/kg
-  const eau  = Math.round(poids * 60);
-  // Ration croquettes approx (350 kcal/100g standard)
-  const ration = Math.round(bej / 3.5);
-  // Ration humide (80–90 kcal/100g)
-  const humid = Math.round(bej / 0.85);
-
-  res.style.display = 'block';
-  vals.innerHTML = [
-    ['⚡ BER', ber + ' kcal/j', 'Besoin au repos (70×P^0.75)'],
-    ['🎯 BEJ', bej + ' kcal/j', 'Besoin énergétique journalier (×' + facteur + ')'],
-    ['🥩 Protéines', prot + ' g/j', esp === 'chat' ? '6g/100kcal (chat)' : '5g/100kcal (chien)'],
-    ['💧 Eau', eau + ' mL/j', '60 mL/kg/j minimum'],
-    ['🏘️ Croquettes', ration + ' g/j', '~350 kcal/100g standard'],
-    ['🥫 Humide', humid + ' g/j', '~85 kcal/100g'],
-  ].map(([l, v, n]) => `
+  // BER — adapted by species (Kleiber + species-specific constants)
+  const isLargeAnimal=esp==='cheval'||esp==='bovin'||esp==='ovin';
+  const isLapin=esp==='lapin';
+  const isOiseau=esp==='oiseau';
+  const ber=isOiseau?Math.round(78*Math.pow(poids,0.75)):isLapin?Math.round(100*Math.pow(poids,0.75)):Math.round(70*Math.pow(poids,0.75));
+  const bej=Math.round(ber*facteur);
+  const eauRates={chien:60,chat:50,cheval:60,bovin:70,ovin:50,caprin:50,lapin:100,oiseau:50};
+  const eau=Math.round(poids*(eauRates[esp]||60));
+  const protRate=esp==='chat'?6:(isLargeAnimal?4:5);
+  const prot=Math.round(bej*protRate/100);
+  let rows;
+  if(isLargeAnimal){
+    const fourrage=Math.round(poids*0.02*1000);
+    const concentre=Math.round(bej*0.3/3.0);
+    rows=[['⚡ BER',ber+' kcal/j','Besoin au repos (70×P^0.75)'],['🎯 BEJ',bej+' kcal/j','Besoin journalier (×'+facteur+')'],['🥩 Protéines',prot+' g/j',protRate+'g/100kcal'],['💧 Eau',eau+' mL/j',(eauRates[esp]||60)+' mL/kg/j'],['🌾 Fourrage/MS',fourrage+' g/j','~2% poids vif (MS)'],['🌽 Concentré',concentre+' g/j','~30% BEJ (~3 kcal/g)']];
+  }else if(isLapin){
+    rows=[['⚡ BER',ber+' kcal/j','Besoin au repos (100×P^0.75)'],['🎯 BEJ',bej+' kcal/j','Besoin journalier (×'+facteur+')'],['💧 Eau',eau+' mL/j','100 mL/kg/j minimum'],['🌾 Granulés',Math.round(poids*50)+' g/j','~50 g/kg/j'],['🌿 Foin',Math.round(poids*150)+' g/j','Ad libitum'],['🥩 Protéines',prot+' g/j','5g/100kcal']];
+  }else if(isOiseau){
+    rows=[['⚡ BER',ber+' kcal/j','Besoin au repos (78×P^0.75)'],['🎯 BEJ',bej+' kcal/j','Besoin journalier (×'+facteur+')'],['💧 Eau',eau+' mL/j','50 mL/kg/j minimum'],['🌾 Graines/Granulés',Math.round(poids*30)+' g/j','~30 g/kg/j total'],['🥩 Protéines',prot+' g/j','5g/100kcal'],['🧠 Note','Enrichissement','Perchoirs + bains + jeux']];
+  }else{
+    const ration=Math.round(bej/3.5);const humid=Math.round(bej/0.85);
+    rows=[['⚡ BER',ber+' kcal/j','Besoin au repos (70×P^0.75)'],['🎯 BEJ',bej+' kcal/j','Besoin journalier (×'+facteur+')'],['🥩 Protéines',prot+' g/j',esp==='chat'?'6g/100kcal (chat)':'5g/100kcal (chien)'],['💧 Eau',eau+' mL/j',(eauRates[esp]||60)+' mL/kg/j'],['🏠 Croquettes',ration+' g/j','~350 kcal/100g standard'],['🥫 Humide',humid+' g/j','~85 kcal/100g']];
+  }
+  res.style.display='block';
+  vals.innerHTML=rows.map(([l,v,n])=>`
     <div style="background:rgba(255,255,255,.08);border-radius:10px;padding:10px 12px">
       <div style="color:rgba(255,255,255,.45);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px">${l}</div>
       <div style="color:#fff;font-size:16px;font-weight:800">${v}</div>
@@ -9684,7 +9907,7 @@ function casFilterPrefill(q) {
   if (animalHits.length) {
     html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:1px;color:#9ab8a3;background:#f8fdf9;text-transform:uppercase">Animaux</div>`;
     html += animalHits.map(p => {
-      const icon = (p.species||'').toLowerCase()==='chat'?'🐈':'🐕';
+      const icon = animalEmoji(p.species||'');
       const sub  = [p.owner, p.race, p.age, p.weight].filter(Boolean).join(' · ') || '—';
       const ow = (p.owner||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const nm = (p.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -9721,7 +9944,7 @@ function casPrefillClient(fullName, phone) {
     const drop = _getCasDrop();
     let html = `<div style="padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:1px;color:#9ab8a3;background:#f8fdf9;text-transform:uppercase">Choisir l'animal</div>`;
     html += animals.map(a => {
-      const icon = (a.species||'').toLowerCase()==='chat'?'🐈':'🐕';
+      const icon = animalEmoji(a.species||'');
       const sub  = [a.race, a.age, a.weight].filter(Boolean).join(' · ') || '—';
       const ow = (a.owner||fullName).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       const nm = (a.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -9764,8 +9987,18 @@ function casPrefillAnimal(owner, animalName, species, race, age, weight, sexe) {
   const especeEl = document.getElementById('case-espece');
   if (especeEl) {
     const sp = (species||'').toLowerCase();
-    if (sp.includes('chat') || sp.includes('felin') || sp==='cat') especeEl.value = 'Chat';
-    else especeEl.value = 'Chien';
+    if(sp.includes('chat')||sp.includes('felin')||sp==='cat') especeEl.value='Chat';
+    else if(sp.includes('cheval')||sp.includes('equin')||sp.includes('jument')) especeEl.value='Cheval';
+    else if(sp.includes('bovin')||sp.includes('vache')||sp.includes('veau')) especeEl.value='Bovin';
+    else if(sp.includes('ovin')||sp.includes('mouton')||sp.includes('brebis')||sp.includes('agneau')) especeEl.value='Ovin';
+    else if(sp.includes('caprin')||sp.includes('chevre')||sp.includes('bouc')) especeEl.value='Caprin';
+    else if(sp.includes('oiseau')||sp.includes('perroquet')||sp.includes('canari')||sp.includes('perruche')) especeEl.value='Oiseau';
+    else if(sp.includes('volaille')||sp.includes('poulet')||sp.includes('poule')||sp.includes('dinde')) especeEl.value='Volaille';
+    else if(sp.includes('lapin')||sp.includes('rabbit')) especeEl.value='Lapin';
+    else if(sp.includes('porc')||sp.includes('cochon')||sp.includes('porcin')) especeEl.value='Porc';
+    else if(sp.includes('reptile')||sp.includes('tortue')||sp.includes('serpent')||sp.includes('gecko')) especeEl.value='Reptile';
+    else if(sp.includes('hamster')||sp.includes('cobaye')||sp.includes('rongeur')) especeEl.value='Hamster/Cobaye';
+    else especeEl.value='Chien';
   }
   const raceEl = document.getElementById('case-race');   if (raceEl) raceEl.value = race||'';
   const ageEl  = document.getElementById('case-age');    if (ageEl)  ageEl.value  = age||'';
@@ -22166,13 +22399,19 @@ function saveAdmission() {
 
   function getAnimalEmoji(species){
     const s=(species||'').toLowerCase();
-    if(s.includes('chien')||s.includes('dog'))return'🐕';
-    if(s.includes('chat')||s.includes('cat'))return'🐈';
-    if(s.includes('cheval')||s.includes('horse'))return'🐴';
-    if(s.includes('oiseau')||s.includes('bird'))return'🐦';
+    if(s.includes('chat')||s.includes('felin')||s.includes('cat'))return'🐈';
+    if(s.includes('cheval')||s.includes('equin')||s.includes('jument'))return'🐴';
+    if(s.includes('bovin')||s.includes('vache')||s.includes('taureau')||s.includes('veau'))return'🐄';
+    if(s.includes('ovin')||s.includes('mouton')||s.includes('brebis')||s.includes('agneau'))return'🐑';
+    if(s.includes('caprin')||s.includes('chevre')||s.includes('bouc'))return'🐐';
+    if(s.includes('oiseau')||s.includes('perroquet')||s.includes('canari')||s.includes('perruche'))return'🦜';
+    if(s.includes('poule')||s.includes('poulet')||s.includes('coq')||s.includes('volaille')||s.includes('dinde'))return'🐓';
     if(s.includes('lapin')||s.includes('rabbit'))return'🐇';
-    if(s.includes('bovin')||s.includes('vache'))return'🐄';
-    if(s.includes('ovin')||s.includes('mouton'))return'🐑';
+    if(s.includes('reptile')||s.includes('tortue')||s.includes('serpent')||s.includes('gecko'))return'🦎';
+    if(s.includes('hamster')||s.includes('cobaye')||s.includes('rongeur'))return'🐹';
+    if(s.includes('poisson')||s.includes('fish'))return'🐠';
+    if(s.includes('porc')||s.includes('cochon')||s.includes('porcin')||s.includes('truie'))return'🐷';
+    if(s.includes('chien')||s.includes('dog')||s.includes('canin'))return'🐕';
     return'🐾';
   }
 
