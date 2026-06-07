@@ -7018,13 +7018,20 @@ try{
   var rep="";
   var useEdge=(_sb && typeof SUPA_URL !== 'undefined' && SUPA_URL && SUPA_URL !== "VOTRE_SUPABASE_URL");
   if(useEdge){
-    var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages}});
-    var d=invRes.data;var e=invRes.error;
-    removeTyping();
-    if(e){appendAIMsg("bot","❌ Erreur: "+(e.message||"Erreur inconnue"));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
-    if(d&&d.error){appendAIMsg("bot","❌ "+d.error+(d.hint?"\n\n"+d.hint:""));aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
-    rep=d&&d.content||"";
-  }else{
+    try{
+      var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages}});
+      var d=invRes.data;var e=invRes.error;
+      removeTyping();
+      if(e) throw new Error(e.message||"Edge Function error");
+      if(d&&d.error) throw new Error(d.error);
+      rep=d&&d.content||"";
+    }catch(edgeErr){
+      // Edge Function failed — fall back to direct Gemini API
+      console.warn("[VetPro] Edge Function failed, falling back to direct API:", edgeErr.message);
+      useEdge=false;
+    }
+  }
+  if(!useEdge){
     GEMINI_API_KEY=localStorage.getItem("vetpro-gemini-key")||"";
     if(!GEMINI_API_KEY){removeTyping();appendAIMsg("bot","⚠️ <strong>Clé API Gemini non configurée.</strong><br><br>Allez dans <strong>Paramètres</strong> et entrez votre clé Google AI Studio.");aiLoading=false;btn.disabled=false;btn.textContent="➤";return;}
     var geminiContents=chatHist.slice(-8).map(function(m){return{role:m.role==="assistant"?"model":"user",parts:[{text:m.content}]};});
