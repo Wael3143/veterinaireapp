@@ -1051,6 +1051,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="sb-item" onclick="nav('urgences')"><div class="sb-ico-wrap">🚨</div><span>Protocoles Urgence</span></div>
     <div class="sb-item" onclick="nav('nutrition')"><div class="sb-ico-wrap">🥩</div><span>Nutrition</span></div>
     <div class="sb-item" onclick="nav('preop')"><div class="sb-ico-wrap">✅</div><span>Checklist Pré-op</span></div>
+    <div class="sb-item" onclick="nav('ophtalmologie')"><div class="sb-ico-wrap">👁️</div><span>Ophtalmologie</span></div>
   </div>
 
   <div class="sb-section">
@@ -3435,6 +3436,238 @@ Voici les données à convertir :
   </div>
 </div>
 
+
+<div id="page-ophtalmologie" class="page">
+  <div class="page-hero">
+    <div class="tag">👁️ Ophtalmologie canine · Données ENSV-OPH · Alger 2026</div>
+    <h2>Ophtalmologie Canine 🐕</h2>
+    <p>Protocole ENSV-OPH · Prédispositions raciales · Affections héréditaires · Dépistage</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="fchips" id="oph-tabs" style="margin-bottom:16px">
+    <div class="fchip on" onclick="ophTab(this,'oph-races')">🏆 Races prioritaires</div>
+    <div class="fchip" onclick="ophTab(this,'oph-protocol')">🔬 Protocole ENSV-OPH</div>
+    <div class="fchip" onclick="ophTab(this,'oph-affections')">👁️ Affections</div>
+    <div class="fchip" onclick="ophTab(this,'oph-stats')">📊 Épidémiologie Alger</div>
+  </div>
+
+  <!-- TAB 1: Races prioritaires -->
+  <div id="oph-races">
+    <div class="ibox ibox-b" style="margin-bottom:14px">📚 Données issues de l'étude ENSV-OPH (n=120 chiens, 8 cliniques, Alger 2026) — Kherbache W. &amp; Ouadi N., dir. Pr. Marniche F.</div>
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">🔴 Races à risque élevé (p &lt; 0,05)</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <div onclick="showRaceDetail('husky')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid #e74c3c">
+              <span style="font-size:24px">🐺</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Husky Sibérien</div><div style="font-size:11.5px;color:var(--muted)">Cataracte héréditaire (HSF4) · AOC</div></div>
+              <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#e74c3c">80%</div><div style="font-size:10px;color:var(--muted)">p=0.009</div></div>
+            </div>
+            <div onclick="showRaceDetail('poodle')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid #e74c3c">
+              <span style="font-size:24px">🐩</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Poodle (Caniche)</div><div style="font-size:11.5px;color:var(--muted)">Cataracte juvénile · ARP (prcd-PRA)</div></div>
+              <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#e74c3c">71,4%</div><div style="font-size:10px;color:var(--muted)">p=0.018</div></div>
+            </div>
+            <div onclick="showRaceDetail('bouledogue')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid #e67e22">
+              <span style="font-size:24px">🐶</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Bouledogue Français</div><div style="font-size:11.5px;color:var(--muted)">Entropion · Glaucome · Sd. brachycéphale</div></div>
+              <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#e67e22">66,7%</div><div style="font-size:10px;color:var(--muted)">p=0.028</div></div>
+            </div>
+            <div onclick="showRaceDetail('cocker')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid #e67e22">
+              <span style="font-size:24px">🐕</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Cocker Spaniel Am.</div><div style="font-size:11.5px;color:var(--muted)">Glaucome primaire · Cataracte · ARP</div></div>
+              <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#e67e22">66,7%</div><div style="font-size:10px;color:var(--muted)">p=0.032</div></div>
+            </div>
+            <div onclick="showRaceDetail('labrador')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid #f39c12">
+              <span style="font-size:24px">🦮</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Labrador Retriever</div><div style="font-size:11.5px;color:var(--muted)">Cataracte héréditaire · ARP (prcd-PRA)</div></div>
+              <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#f39c12">57,1%</div><div style="font-size:10px;color:var(--muted)">p=0.045</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">🟡 Autres races surveillées</div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:8px">
+            <div onclick="showRaceDetail('golden')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid #27ae60">
+              <span style="font-size:24px">🐕</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Golden Retriever</div><div style="font-size:11.5px;color:var(--muted)">Cataracte · ARP · Dysplasie rétinienne</div></div>
+              <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#27ae60">50%</div><div style="font-size:10px;color:var(--muted)">NS</div></div>
+            </div>
+            <div onclick="showRaceDetail('berger')" style="cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid #27ae60">
+              <span style="font-size:24px">🐕‍🦺</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Berger Allemand</div><div style="font-size:11.5px;color:var(--muted)">Pannus (KPS) · Cataracte — aggravé ensoleillement algérien</div></div>
+              <div style="text-align:right"><div style="font-size:20px;font-weight:900;color:#27ae60">38,9%</div><div style="font-size:10px;color:var(--muted)">NS</div></div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--surface2);border-radius:10px;border-left:4px solid var(--muted)">
+              <span style="font-size:24px">🐕</span>
+              <div style="flex:1"><div style="font-weight:700;font-size:13.5px">Berger Australien / Border Collie</div><div style="font-size:11.5px;color:var(--muted)">AOC (Anomalie de l'œil du Colley) · Colobome optique</div></div>
+              <div style="text-align:right"><div style="font-size:13px;font-weight:700;color:var(--muted)">Dépistage CEA</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">🧬 Tests ADN disponibles</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tests recommandés avant reproduction</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:12.5px">
+              <span>🔬 prcd-PRA</span><span style="color:var(--sage);font-weight:700">Labrador · Golden · Poodle · Cocker</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:12.5px">
+              <span>🔬 HSF4</span><span style="color:var(--sage);font-weight:700">Husky Sibérien (cataracte)</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:12.5px">
+              <span>🔬 CEA (AOC)</span><span style="color:var(--sage);font-weight:700">Berger Australien · Border Collie · Husky</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;font-size:12.5px">
+              <span>🔬 ADAMTS17</span><span style="color:var(--sage);font-weight:700">Jack Russell · Terriers (luxation cristallin)</span>
+            </div>
+            <div style="padding:8px 10px;background:#e8f5e9;border-radius:8px;font-size:11.5px;color:#2e7d32">
+              💡 Laboratoires : <strong>Optigen</strong> (optigen.com) · <strong>LABOKLIN</strong> (laboklin.de)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Protocole ENSV-OPH -->
+  <div id="oph-protocol" style="display:none">
+    <div class="ibox ibox-b" style="margin-bottom:14px">🔬 Protocole ENSV-OPH validé par Pr. Marniche Faize — Utilisable sans équipement spécialisé · Toutes cliniques</div>
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">📋 ÉTAPE D1 — Examen à distance</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <div class="ibox" style="font-size:12.5px;margin:0">🔦 Matériel : lampe de poche focale uniquement</div>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Symétrie des globes</strong> — asymétrie → suspicion microphtalmie / exophtalmie</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Strabisme</strong> — convergent / divergent / vertical</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Test de la menace</strong> — geste devant l'œil → clignement attendu</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Test de la chute de coton</strong> — lancer coton → suit avec les yeux</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Interrogatoire héméralopie</strong> — « votre chien a-t-il du mal dans le noir ? » → ARP précoce</span></label>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">📋 ÉTAPE D2 — Examen des annexes et segment antérieur</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Paupières</strong> — entropion / ectropion / masse</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Cils</strong> — distichiasis / trichiasis (contact cornéen)</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Conjonctive</strong> — hyperhémie / follicules / pétéchies</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Membrane nictitante</strong> — prolapsus glande (« œil de cerise »)</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Cornée</strong> — reflet irrégulier / zone mate / néovascularisation / pigmentation</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Chambre antérieure</strong> — trouble / profondeur anormale</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Iris / Pupille</strong> — colobome / synéchies / RPD / RPC anormal</span></label>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">📋 ÉTAPE D3 — Cristallin (rétroéclairage)</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <div class="ibox" style="font-size:12.5px;margin:0">🔦 Technique : lampe de poche en pièce sombre — regarder le reflet tapetal</div>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Reflet tapetal vert-doré uniforme</strong> → cristallin normal ✅</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Opacité partielle</strong> → cataracte incipiente/immature</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Pupille blanche / reflet absent</strong> → cataracte mature 🚨</span></label>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:#fff3e0;border-radius:8px;font-size:12px">
+            <strong>Stades cataracte :</strong><br>
+            • <strong>Incipiente</strong> (&lt;10%) — pas de déficit visuel → surveillance + test génétique<br>
+            • <strong>Immature</strong> (10-99%) — déficit partiel → évaluation chirurgicale<br>
+            • <strong>Mature</strong> (100%) — cécité fonctionnelle → phacoémulsification indiquée<br>
+            • <strong>Hypermature</strong> — risque uvéite phacolytique → chirurgie urgente
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📋 ÉTAPE D4 — Fond d'œil simplifié</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+            <div class="ibox" style="font-size:12.5px;margin:0">🔦 En obscurité totale — observer qualité et uniformité du reflet tapetal</div>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Hyperréflectivité diffuse</strong> → ARP suspectée (dégénérescence bâtonnets)</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Absence de reflet</strong> → opacité des milieux (cataracte) ou décollement rétine</span></label>
+            <label style="display:flex;align-items:flex-start;gap:8px;font-size:13px;cursor:pointer"><input type="checkbox" style="margin-top:2px"> <span><strong>Héméralopie confirmée</strong> + hyperréflectivité → recommander test ADN prcd-PRA</span></label>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:#e8f5e9;border-radius:8px;font-size:12px">
+            <strong>💡 Clé clinique ENSV-OPH :</strong> L'interrogatoire sur l'héméralopie était positif dans 7/9 cas d'ARP de l'étude. Toujours poser la question au propriétaire !
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Affections -->
+  <div id="oph-affections" style="display:none">
+    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <div class="fchip on" onclick="setOphFilter(this,'')">Toutes</div>
+      <div class="fchip" onclick="setOphFilter(this,'hereditaire')">🧬 Héréditaires</div>
+      <div class="fchip" onclick="setOphFilter(this,'palpebral')">👁️ Paupières</div>
+      <div class="fchip" onclick="setOphFilter(this,'cornee')">🔵 Cornée</div>
+      <div class="fchip" onclick="setOphFilter(this,'cristallin')">🔮 Cristallin</div>
+      <div class="fchip" onclick="setOphFilter(this,'retine')">📡 Rétine</div>
+      <div class="fchip" onclick="setOphFilter(this,'urgence')">🚨 Urgences</div>
+    </div>
+    <div class="ga" id="oph-affections-grid"></div>
+  </div>
+
+  <!-- TAB 4: Épidémiologie -->
+  <div id="oph-stats" style="display:none">
+    <div class="ibox ibox-b" style="margin-bottom:14px">📊 Résultats de l'étude ENSV-OPH · n=120 chiens · 8 cliniques · Alger, janvier–avril 2026</div>
+    <div class="g2">
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">📊 Diagnostics finaux — Fréquence globale</div>
+          <div id="oph-stats-bars" style="display:flex;flex-direction:column;gap:5px;margin-top:8px"></div>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:14px">
+          <div class="card-title">🏆 Chiffres clés de l'étude</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px">
+              <div style="font-size:28px;font-weight:900;color:#e74c3c">51,7%</div>
+              <div style="font-size:11px;color:var(--muted)">animaux avec ≥1 affection héréditaire</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px">
+              <div style="font-size:28px;font-weight:900;color:#e67e22">31,7%</div>
+              <div style="font-size:11px;color:var(--muted)">non diagnostiqués avant examen</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px">
+              <div style="font-size:28px;font-weight:900;color:#27ae60">90%+</div>
+              <div style="font-size:11px;color:var(--muted)">propriétaires favorables au dépistage</div>
+            </div>
+            <div style="text-align:center;padding:14px;background:var(--surface2);border-radius:10px">
+              <div style="font-size:28px;font-weight:900;color:#3498db">1,65/4</div>
+              <div style="font-size:11px;color:var(--muted)">score moyen connaissance propriétaires</div>
+            </div>
+          </div>
+          <div style="margin-top:12px;padding:10px;background:#e8f5e9;border-radius:8px;font-size:12px">
+            <strong>💡 Contexte algérien :</strong> Leishmaniose (endémique nord Algérie) = 1ère cause uvéite chronique. Pannus aggravé par ensoleillement (&gt;2800h/an). Siroco et poussières = facteurs irritants spécifiques.
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">📈 Comparaison littérature internationale</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;font-size:12.5px">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;font-weight:700;color:var(--muted);font-size:11px;padding:0 4px">
+              <span>Diagnostic</span><span style="text-align:center">Alger 2026</span><span style="text-align:center">ECVO Europe</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:7px 8px;background:var(--surface2);border-radius:7px;font-size:12.5px">
+              <span>Conjonctivite</span><span style="text-align:center;font-weight:700;color:#e74c3c">45,8%</span><span style="text-align:center;color:var(--muted)">38%</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:7px 8px;background:var(--surface2);border-radius:7px;font-size:12.5px">
+              <span>Cataracte</span><span style="text-align:center;font-weight:700;color:#e74c3c">38,3%</span><span style="text-align:center;color:var(--muted)">27%</span>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:7px 8px;background:var(--surface2);border-radius:7px;font-size:12.5px">
+              <span>Entropion</span><span style="text-align:center;font-weight:700;color:#e74c3c">18,3%</span><span style="text-align:center;color:var(--muted)">12%</span>
+            </div>
+          </div>
+          <div style="margin-top:10px;font-size:11.5px;color:var(--muted)">Prévalences algériennes supérieures aux données européennes — sous-diagnostic + facteurs environnementaux locaux.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /shell -->
@@ -3484,6 +3717,241 @@ Voici les données à convertir :
     </div>
   </div>
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     PAGE: OPHTALMOLOGIE CANINE — ENSV-OPH (KHERBACHE & OUADI, 2026)
+══════════════════════════════════════════════════════════════ -->
+
+
+<!-- Race Detail Modal -->
+<div class="overlay" id="modal-oph-race">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-hdr">
+      <div class="modal-title" id="oph-race-title">Race</div>
+      <button class="btn-ico" onclick="closeModal('modal-oph-race')">✕</button>
+    </div>
+    <div id="oph-race-body"></div>
+  </div>
+</div>
+
+<script>
+// ── Ophthalmologie module ────────────────────────────────────
+const OPH_RACES = {
+  husky:{name:'Husky Sibérien',emoji:'🐺',prev:'80,0%',pval:'p=0,009 **',affections:[
+    {n:'Cataracte héréditaire (HSF4)',desc:'Mutation HSF4 → opacification bilatérale avant 5 ans. Urgence si mature.',trait:'Test ADN HSF4 (LABOKLIN). Évaluation phacoémulsification.'},
+    {n:'Uvéite associée à la cataracte',desc:'Uvéite phacoclastique fréquente. Myosis + flare + douleur.',trait:'AINS topiques + corticoïdes. Traiter cataracte sous-jacente.'},
+    {n:'Anomalie de l\'œil du Colley (AOC)',desc:'Hypoplasie choroïdienne temporale ± colobome nerf optique.',trait:'Test ADN CEA (LABOKLIN). Pas de traitement, dépistage éleveurs.'},
+    {n:'Dystrophie cornéenne stromale',desc:'Opacité blanchâtre centrale bilatérale, souvent asymptomatique.',trait:'Surveillance. Ciclosporine A si progression.'}
+  ],note:'Race prioritaire #1 en Algérie — dépistage ADN obligatoire avant reproduction.'},
+  poodle:{name:'Poodle (Caniche)',emoji:'🐩',prev:'71,4%',pval:'p=0,018 *',affections:[
+    {n:'Cataracte héréditaire juvénile',desc:'Apparition avant 5 ans. Mode autosomique récessif/dominant. Cataracte postérieure subcapsulaire typique.',trait:'Test ADN prcd-PRA (Optigen). Phacoémulsification si mature.'},
+    {n:'ARP centrale (ARPC)',desc:'Dégénérescence cône-bâtonnet. Déficit vision diurne puis totale.',trait:'Aucun traitement curatif. Test ADN progéniteurs. Supplémentation vitamine E (palliative).'},
+    {n:'Distichiasis',desc:'Cils supplémentaires contact cornéen → irritation chronique.',trait:'Électroépilation / cryothérapie sous anesthésie locale.'},
+    {n:'KCS (Keratoconjonctivite sèche)',desc:'Surface oculaire terne, écoulement muqueux visqueux, conjonctivite chronique.',trait:'Ciclosporine A 0,2% (Optimmune) 2x/j + larmes artificielles à vie.'}
+  ],note:'Dépistage prcd-PRA recommandé chez tout reproducteur Caniche.'},
+  bouledogue:{name:'Bouledogue Français',emoji:'🐶',prev:'66,7%',pval:'p=0,028 *',affections:[
+    {n:'Syndrome oculaire brachycéphale',desc:'Exophtalmie + macroblépharon + lagophtalmie + entropion médial + trichiasis nasal.',trait:'Chirurgie corrective (Hotz-Celsus) + résection fente palpébrale selon sévérité.'},
+    {n:'Entropion constitutionnel',desc:'Retournement bord palpébral → frottement cils sur cornée → ulcères récurrents.',trait:'Chirurgie Hotz-Celsus. Ne pas attendre — risque ulcère perforant.'},
+    {n:'Glaucome',desc:'PIOO >25 mmHg. Urgence absolue si aiguë : cornée bleutée, œil douloureux, mydriase fixe.',trait:'Mannitol IV + Dorzolamide + Latanoprost. Référer pour chirurgie filtrante.'},
+    {n:'Ulcère cornéen récidivant',desc:'Secondaire à lagophtalmie + trichiasis. Stroma exposé.',trait:'ATB topiques + protection (lentille thérapeutique) + traiter cause (chirurgie paupière).'}
+  ],note:'Examen ophtalmologique systématique à chaque consultation pour tout brachycéphale.'},
+  cocker:{name:'Cocker Spaniel Américain',emoji:'🐕',prev:'66,7%',pval:'p=0,032 *',affections:[
+    {n:'Glaucome primaire',desc:'Fermeture angle irido-cornéen. Urgence — chaque heure compte.',trait:'URGENCE : Mannitol 0,5-2g/kg IV + Dorzolamide + Latanoprost. Viser PIO <15.'},
+    {n:'Cataracte héréditaire',desc:'Typiquement postérieure subcapsulaire. Bilatérale.',trait:'Test ADN prcd-PRA. Phacoémulsification si mature.'},
+    {n:'ARP',desc:'Héméralopie précoce → cécité totale progressive.',trait:'Test ADN prcd-PRA. Dépistage reproducteurs.'},
+    {n:'Prolapsus glande nictitante',desc:'Ligaments conjonctifs insuffisants. Masse charnue rose canthus médial.',trait:'JAMAIS exérèse. Repositionnement chirurgical (technique pocket flap ou Morgan pocket).'}
+  ],note:'Le glaucome du Cocker est une urgence ophtalmologique absolue.'},
+  labrador:{name:'Labrador Retriever',emoji:'🦮',prev:'57,1%',pval:'p=0,045 *',affections:[
+    {n:'Cataracte héréditaire',desc:'Mutation prcd-PRA associée. Avant 8 ans chez race pure.',trait:'Test ADN prcd-PRA (Optigen). Phacoémulsification si mature (succès >90%).'},
+    {n:'ARP généralisée (prcd-PRA)',desc:'Héméralopie (refuse escaliers nuit) → cécité totale. IRréversible.',trait:'Test ADN progéniteurs OBLIGATOIRE. Supplément vitamine E antioxydant (palliative).'},
+    {n:'Dysplasie rétinienne',desc:'Plis / rosettes rétiniennes. Héréditaire (AR) ou post-herpèsvirus néonatal.',trait:'Aucun traitement. Surveillance. Déconseiller reproduction animaux atteints.'},
+    {n:'Cataracte sénile',desc:'Après 8-9 ans. Non héréditaire (liée à l\'âge).',trait:'Surveillance. Chirurgie si cécité fonctionnelle et animal en bonne santé générale.'}
+  ],note:'Race la plus représentée dans l\'étude (n=14). Dépistage prcd-PRA avant toute reproduction.'},
+  golden:{name:'Golden Retriever',emoji:'🐕',prev:'50,0%',pval:'NS (p=0,092)',affections:[
+    {n:'Cataracte héréditaire',desc:'AR. Similaire Labrador (prcd-PRA).',trait:'Test ADN prcd-PRA. Chirurgie si mature.'},
+    {n:'ARP',desc:'Dégénérescence photorécepteurs. Héméralopie précède cécité.',trait:'Test ADN. Pas de traitement curatif.'},
+    {n:'Dysplasie rétinienne',desc:'Plis focaux ou multifocaux.',trait:'Surveillance. Pas de reproduction animaux sévèrement atteints.'}
+  ],note:'Non significatif statistiquement (effectif limité n=12) mais prédisposition biologique réelle.'},
+  berger:{name:'Berger Allemand',emoji:'🐕‍🦺',prev:'38,9%',pval:'NS (p=0,118)',affections:[
+    {n:'Pannus (KPS — Kératite Ponctuée Superficielle)',desc:'Immuno-médié. Voile grisâtre/brun s\'étendant du bord latéral. AGGRAVÉ par ensoleillement algérien >2800h/an.',trait:'Corticoïdes topiques (Dexaméthasone 0,1%) + Ciclosporine A 0,2% à VIE. Protection UV recommandée.'},
+    {n:'Cataracte héréditaire',desc:'Mode polygénique. Moins prévisible que Labrador.',trait:'Examen ophtalmologique annuel tout reproducteur. Chirurgie si mature.'},
+    {n:'Anomalie angle irido-cornéen',desc:'Prédisposition glaucome secondaire.',trait:'Surveillance PIO (référer équipé). Traitement hypotenseur préventif si PIO limite.'}
+  ],note:'Le pannus du Berger Allemand est aggravé par le fort ensoleillement algérien — systématiser la protection UV.'}
+};
+
+const OPH_AFFECTIONS = [
+  {id:'entropion',cat:'palpebral',n:'Entropion',e:'👁️',races:'Shar-Pei · Bouledogue · Chow-Chow · Brachycéphales',
+   symp:'Blepharospasme · Épiphora · Cornée irritée · Frottement permanent cils',
+   diag:'Inspection directe — bord palpébral retourné vers l\'intérieur',
+   trait:'Chirurgie Hotz-Celsus (entropion inférieur). Agrafes temporaires nourrisson.',prog:'Excellent si chirurgie avant complications cornéennes',freq:'18,3%'},
+  {id:'ectropion',cat:'palpebral',n:'Ectropion',e:'👁️',races:'Cocker · Saint-Bernard · Basset · Rottweiler · Gériatrique',
+   symp:'Conjonctive exposée · Conjonctivites récurrentes · Épiphora · Œil de "lapin"',
+   diag:'Éversion bord palpébral inférieur visible à l\'inspection',
+   trait:'Conservateur (lubrifiants) si léger. Chirurgie résection V si sévère.',prog:'Bon',freq:'9,2%'},
+  {id:'distichiasis',cat:'palpebral',n:'Distichiasis / Trichiasis',e:'🪲',races:'Poodle · Cocker · Golden · Pékinois · Brachycéphales',
+   symp:'Clignements fréquents · Épiphora · Irritation cornéenne · Asymptomatique si léger',
+   diag:'Inspection lampe focale — cils supplémentaires sur bord palpébral',
+   trait:'Légère : surveillance. Sévère : électroépilation / cryothérapie sous AG.',prog:'Excellent avec traitement adapté',freq:'18,3%'},
+  {id:'prolapsus',cat:'palpebral',n:'Prolapsus glande nictitante',e:'🍒',races:'Brachycéphales · Cocker · Beagle · Jeunes chiens',
+   symp:'Masse rose/rouge canthus médial (« œil de cerise ») · Conjonctivite secondaire',
+   diag:'Inspection — masse charnue protrusive canthus interne',
+   trait:'JAMAIS exérèse (→ KCS iatrogène). Repositionnement chirurgical pocket flap.',prog:'Excellent si chirurgie précoce. KCS possible si exérèse.',freq:'11,7%'},
+  {id:'ulcere',cat:'cornee',n:'Ulcère cornéen',e:'🔵',races:'Toutes races · Brachycéphales +++',
+   symp:'Blepharospasme · Épiphora · Surface cornéenne mate/irrégulière · Vascularisation',
+   diag:'Lampe de poche : reflet irrégulier, zone mate. Fluorescéine si disponible.',
+   trait:'ATB topiques (Chloramphénicol / Tobramycine) · Atropine 1% · Collerette.',prog:'Bon si traitement rapide. Perforant : urgence chirurgicale.',freq:'22,5%'},
+  {id:'kcs',cat:'cornee',n:'KCS — Kératoconjonctivite Sèche',e:'🏜️',races:'Cocker · Bouledogue · Yorkshire · Cavalier KCS · Post-exérèse nictitante',
+   symp:'Surface oculaire terne/sèche · Écoulement muqueux visqueux · Blépharite · Conjonctivite chronique',
+   diag:'Aspect caractéristique surface oculaire. Schirmer &lt;10mm/min si disponible.',
+   trait:'Ciclosporine A 0,2% (Optimmune) 2x/j à VIE + substituts lacrymaux fréquents.',prog:'Contrôle possible, guérison rare',freq:'13,3%'},
+  {id:'pannus',cat:'cornee',n:'Pannus (KPS)',e:'🌫️',races:'Berger Allemand EXCLUSIF (quasi) · Greyhound',
+   symp:'Voile grisâtre/brun bord latéral cornée → extension progressive. INDOLORE.',
+   diag:'Inspection directe — pigmentation + vascularisation superficielle cornée',
+   trait:'Corticoïdes topiques + Ciclosporine A à VIE. Protection UV (soleil algérien +++). Jamais stopper traitement.',prog:'Contrôle à vie. Aggravation si exposition UV prolongée.',freq:'3,3%'},
+  {id:'cataracte',cat:'cristallin',n:'Cataracte',e:'⚪',races:'Labrador · Poodle · Cocker · Husky · Golden (héréditaire) · Âge (sénile)',
+   symp:'Pupille blanchâtre/grisâtre · Absence reflet tapetal · Déficit visuel · Hésitation obstacles',
+   diag:'Rétroéclairage lampe de poche en pièce sombre. Pupille blanche = mature.',
+   trait:'Stade incipiente/immature : surveillance. Mature : phacoémulsification (>90% succès).',prog:'Excellent si chirurgie avant complications (uvéite phacolytique)',freq:'38,3%'},
+  {id:'luxation',cat:'cristallin',n:'Luxation du cristallin',e:'🔮',races:'Jack Russell · Fox Terrier · Bull Terrier (ADAMTS17)',
+   symp:'Douleur soudaine · Cornée trouble · Chambre antérieure irrégulière · Glaucome aigu',
+   diag:'Inspection : iridodonésis (tremblement iris) · Aphakie partielle visible',
+   trait:'URGENCE — Luxation antérieure : extraction chirurgicale immédiate + traitement glaucome.',prog:'Réservé si glaucome associé. Bon si traitement précoce.',freq:'2,5%'},
+  {id:'arp',cat:'retine',n:'ARP — Atrophie Rétinienne Progressive',e:'📡',races:'Labrador · Golden · Poodle · Cocker · Husky (prcd-PRA / HSF4)',
+   symp:'Héméralopie (chien refuse escaliers nuit) → cécité totale progressive. Indolore.',
+   diag:'Hyperréflectivité tapetale à la lampe de poche en obscurité. Vaisseaux rétiniens appauvris.',
+   trait:'AUCUN traitement curatif. Test ADN progéniteurs OBLIGATOIRE (prcd-PRA Optigen). Vitamine E antioxydant (palliative).',prog:'Irréversible. Cécité totale en 1-3 ans. Dépistage génétique = seule prévention.',freq:'7,5%'},
+  {id:'dysplasie',cat:'retine',n:'Dysplasie rétinienne',e:'🌀',races:'Labrador · Cocker · English Springer Sp. (héréditaire) · Nourrissons herpèsvirus',
+   symp:'Strabisme · Nystagmus · Microphtalmie associée parfois · Déficit visuel variable',
+   diag:'Examen fond d\'œil (ophtalmoscope indirect). Plis/rosettes rétiniennes.',
+   trait:'Aucun traitement. Surveillance. Déconseiller reproduction.',prog:'Variable (formes légères stables, formes sévères → décollement rétine)',freq:'5,8%'},
+  {id:'glaucome',cat:'urgence',n:'Glaucome',e:'🚨',races:'Cocker · Bouledogue · Basset (primaire) · Toutes races (secondaire)',
+   symp:'URGENCE — Douleur intense · Globe agrandi (buphtalmie) · Cornée bleutée (œdème) · Mydriase fixe · Vascularisation épisclérale',
+   diag:'PIO > 25 mmHg. Inspection : cornée bleutée + mydriase fixe + douleur = glaucome jusqu\'à preuve contraire.',
+   trait:'URGENCE ABSOLUE — Mannitol 0,5-2g/kg IV · Dorzolamide toutes 8h · Latanoprost · Référer immédiatement.',prog:'Chaque heure compte. >6h sans traitement : cécité définitive probable.',freq:'6,7%',urgent:true},
+  {id:'uveite',cat:'urgence',n:'Uvéite',e:'🔥',races:'Toutes races. Causes : Leishmaniose (endémique 🇩🇿) · Ehrlichiose · Brucellose · Cataracte',
+   symp:'Myosis (pupille en constriction) · Hyperhémie périkératique · Trouble chambre antérieure · Douleur oculaire · Flare',
+   diag:'Inspection : myosis + hyperhémie limbique + trouble CA. Bilan systémique Leishmania TOUJOURS en Algérie.',
+   trait:'AINS topiques (Flurbiprofène) + Atropine 1% (mydriase thérapeutique) + Traiter cause systémique.',prog:'Dépend de la cause. Complications : synéchies · cataracte secondaire · glaucome.',freq:'9,2%',urgent:false},
+  {id:'microphtalmie',cat:'hereditaire',n:'Microphtalmie',e:'⚫',races:'Merle × Merle (double merle) · Certaines races pures',
+   symp:'Globe oculaire réduit · Asymétrie faciale · Fente palpébrale réduite · Strabisme',
+   diag:'Inspection : asymétrie taille globes oculaires évidente.',
+   trait:'Aucun traitement. Ne jamais croiser deux chiens merle × merle.',prog:'Stable. Déficit visuel selon degré. Prévention génétique.',freq:'4,2%'},
+];
+
+function ophTab(el,tabId){
+  document.querySelectorAll('#oph-tabs .fchip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  ['oph-races','oph-protocol','oph-affections','oph-stats'].forEach(id=>{
+    const d=document.getElementById(id);
+    if(d) d.style.display = id===tabId ? '' : 'none';
+  });
+  if(tabId==='oph-affections') renderOphAffections('');
+  if(tabId==='oph-stats') renderOphStatsBars();
+}
+
+function renderOphStatsBars(){
+  const container=document.getElementById('oph-stats-bars');
+  if(!container||container.innerHTML!=='') return;
+  const data=[
+    ['Conjonctivite',45.8,'#3498db'],['Cataracte (toutes formes)',38.3,'#e74c3c'],
+    ['Anomalie cornéenne',22.5,'#2ecc71'],['Entropion',18.3,'#9b59b6'],
+    ['Distichiasis / Trichiasis',18.3,'#9b59b6'],['KCS',13.3,'#f39c12'],
+    ['Prolapsus nictitante',11.7,'#1abc9c'],['Uvéite',9.2,'#e67e22'],
+    ['Ectropion',9.2,'#e67e22'],['ARP',7.5,'#c0392b'],
+    ['Glaucome',6.7,'#c0392b'],['Dysplasie rétinienne',5.8,'#c0392b'],
+    ['Microphtalmie',4.2,'#7f8c8d'],['Colobome',4.2,'#7f8c8d'],['Pannus (KPS)',3.3,'#7f8c8d'],
+  ];
+  container.innerHTML=data.map(([name,pct,color])=>{
+    const div=document.createElement('div');
+    div.style.cssText='display:flex;align-items:center;gap:8px;font-size:12px';
+    div.innerHTML='<div style="width:110px;flex-shrink:0;color:var(--ink)">'+name+'</div>'+
+      '<div style="flex:1;background:#eee;border-radius:4px;height:10px;overflow:hidden">'+
+      '<div style="width:'+pct+'%;height:100%;background:'+color+';border-radius:4px"></div></div>'+
+      '<div style="width:40px;text-align:right;font-weight:700;color:'+color+'">'+pct+'%</div>';
+    return div.outerHTML;
+  }).join('');
+}
+
+function setOphFilter(el,cat){
+  document.querySelectorAll('#oph-affections .fchip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  renderOphAffections(cat);
+}
+
+function renderOphAffections(cat){
+  const grid = document.getElementById('oph-affections-grid');
+  if(!grid) return;
+  const filtered = cat ? OPH_AFFECTIONS.filter(a=>a.cat===cat||a.id===cat) : OPH_AFFECTIONS;
+  grid.innerHTML = filtered.map(a=>`
+    <div class="card" style="cursor:pointer;${a.urgent?'border-left:4px solid #e74c3c':''}" onclick="showOphAffection('${a.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:20px">${a.e}</span>
+          <div>
+            <div style="font-weight:700;font-size:13.5px;color:var(--ink)">${a.n}</div>
+            <div style="font-size:11px;color:var(--muted)">${a.races}</div>
+          </div>
+        </div>
+        <div style="font-size:20px;font-weight:900;color:${a.urgent?'#e74c3c':'var(--sage)'}">${a.freq}</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.4">${a.symp}</div>
+    </div>
+  `).join('');
+}
+
+function showOphAffection(id){
+  const a = OPH_AFFECTIONS.find(x=>x.id===id);
+  if(!a) return;
+  const modal = document.getElementById('modal-oph-race');
+  document.getElementById('oph-race-title').textContent = a.e + ' ' + a.n;
+  document.getElementById('oph-race-body').innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:12px">
+      ${a.urgent?'<div class="ibox" style="background:#fff3f3;border-color:#e74c3c;color:#c0392b;font-weight:700">🚨 URGENCE OPHTALMOLOGIQUE — Agir dans l\'heure</div>':''}
+      <div><div style="font-weight:700;font-size:11px;color:var(--muted);margin-bottom:4px">📊 FRÉQUENCE (Alger 2026)</div>
+        <div style="font-size:22px;font-weight:900;color:var(--sage)">${a.freq} des chiens examinés</div></div>
+      <div><div style="font-weight:700;font-size:11px;color:var(--muted);margin-bottom:4px">🐕 RACES PRÉDISPOSÉES</div>
+        <div style="font-size:13px">${a.races}</div></div>
+      <div><div style="font-weight:700;font-size:11px;color:var(--muted);margin-bottom:4px">🔍 SIGNES CLINIQUES</div>
+        <div style="font-size:13px">${a.symp}</div></div>
+      <div><div style="font-weight:700;font-size:11px;color:var(--muted);margin-bottom:4px">🔬 DIAGNOSTIC (sans équipement spécialisé)</div>
+        <div style="font-size:13px">${a.diag}</div></div>
+      <div><div style="font-weight:700;font-size:11px;color:var(--muted);margin-bottom:4px">💊 TRAITEMENT</div>
+        <div style="font-size:13px">${a.trait}</div></div>
+      <div><div style="font-weight:700;font-size:11px;color:var(--muted);margin-bottom:4px">📈 PRONOSTIC</div>
+        <div style="font-size:13px">${a.prog}</div></div>
+    </div>
+  `;
+  modal.classList.add('open');
+}
+
+function showRaceDetail(raceId){
+  const r = OPH_RACES[raceId];
+  if(!r) return;
+  const modal = document.getElementById('modal-oph-race');
+  document.getElementById('oph-race-title').textContent = r.emoji + ' ' + r.name;
+  document.getElementById('oph-race-body').innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px;padding:12px;background:var(--surface2);border-radius:10px;margin-bottom:14px">
+      <span style="font-size:40px">${r.emoji}</span>
+      <div>
+        <div style="font-size:28px;font-weight:900;color:#e74c3c">${r.prev}</div>
+        <div style="font-size:12px;color:var(--muted)">Prévalence affections héréditaires · ${r.pval}</div>
+      </div>
+    </div>
+    <div class="ibox ibox-b" style="margin-bottom:14px;font-size:12px">${r.note}</div>
+    <div style="font-weight:700;font-size:12px;color:var(--muted);margin-bottom:8px">AFFECTIONS DOCUMENTÉES</div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      ${r.affections.map(af=>`
+        <div style="padding:12px;background:var(--surface2);border-radius:10px">
+          <div style="font-weight:700;font-size:13px;color:var(--ink);margin-bottom:4px">${af.n}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${af.desc}</div>
+          <div style="font-size:12px;padding:6px 8px;background:#e8f5e9;border-radius:6px"><strong>Traitement :</strong> ${af.trait}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  modal.classList.add('open');
+}
+</script>
 
 <!-- Suivi quotidien -->
 <div class="overlay" id="modal-suivi">
@@ -3884,7 +4352,7 @@ const TITLES={
   rdv:'Rendez-vous',finances:'Finances',
   references:'Références Cliniques',support:'Support & Feedback',
   statistics:'Statistiques & Analytics',ordonnances:'Ordonnances',
-  maladies:'Maladies · Chiens & Chats · Algérie',settings:'Paramètres',vaccinations:'Vaccinations & Rappels',labo:'Examens de Laboratoire',urgences:'Protocoles d\'Urgence',nutrition:'Nutrition & Besoins Énergétiques',preop:'Checklist Pré-Opératoire'
+  maladies:'Maladies · Chiens & Chats · Algérie',settings:'Paramètres',vaccinations:'Vaccinations & Rappels',labo:'Examens de Laboratoire',urgences:'Protocoles d\'Urgence',nutrition:'Nutrition & Besoins Énergétiques',preop:'Checklist Pré-Opératoire',ophtalmologie:'Ophtalmologie Canine · ENSV-OPH 2026'
 };
 
 function nav(id){
@@ -3917,6 +4385,7 @@ function nav(id){
   if(id==='historique'){renderHist('');}
   if(id==='settings'){loadGeminiKeyToSettings();if(typeof refreshSyncStats==='function')refreshSyncStats();}
   if(id==='preop'){renderChecklist();}
+  if(id==='ophtalmologie'){renderOphAffections('');}
   if(id==='urgences'){setUrg(document.querySelector('#page-urgences .fchip'),'choc');}
 }
 
