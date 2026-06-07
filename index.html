@@ -1389,12 +1389,11 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 
   <!-- ── CLIENT PREFILL BANNER ── -->
-  <div id="cas-client-prefill-bar" style="background:linear-gradient(135deg,#e8f5f0,#f0faf5);border:1.5px solid var(--mint);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+  <div id="cas-client-prefill-bar" style="background:linear-gradient(135deg,#e8f5f0,#f0faf5);border:1.5px solid var(--mint);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:relative">
     <div style="font-size:18px">🔍</div>
     <div style="flex:1;min-width:180px">
       <div style="font-size:12px;font-weight:700;color:var(--forest);margin-bottom:4px">Récupérer un client existant</div>
       <input id="cas-prefill-search" class="inp" placeholder="Tapez nom du client ou animal…" style="margin:0;font-size:13px" oninput="casFilterPrefill(this.value)"/>
-      <div id="cas-prefill-results" style="position:absolute;left:0;right:0;background:#fff;border:1.5px solid var(--sage);border-radius:10px;box-shadow:var(--sh2);z-index:60;overflow:hidden;margin-top:3px;display:none;max-height:220px;overflow-y:auto"></div>
     </div>
     <div style="font-size:11px;color:var(--muted);white-space:nowrap">ou</div>
     <button class="btn btn-ghost btn-sm" onclick="casClearPrefill()" style="white-space:nowrap">✏️ Saisie manuelle</button>
@@ -9610,114 +9609,199 @@ function saveNewCase() {
 }
 
 // ── NOUVEAU CAS: prefill from existing client ──────────────────────────────
-function casFilterPrefill(q) {
-  const box = document.getElementById('cas-prefill-results');
-  if (!box) return;
-  const val = (q||'').trim().toLowerCase();
-  if (!val) { box.style.display='none'; return; }
-  // Search clients + patients
-  const clientHits = (window.CLIENTS||[]).filter(c =>
-    (c.fullName||'').toLowerCase().includes(val) || (c.phone||'').includes(val)
-  ).slice(0,6);
-  const animalHits = (window.PATIENTS||[]).filter(p =>
-    (p.name||'').toLowerCase().includes(val) && !clientHits.find(c => (c.fullName||'').toLowerCase() === (p.owner||'').toLowerCase())
-  ).slice(0,4);
-
-  const rows = [
-    ...clientHits.map(c => {
-      const animals = (window.PATIENTS||[]).filter(p => (p.owner||'').toLowerCase() === (c.fullName||'').toLowerCase());
-      const animalList = animals.map(a => (a.species||'').toLowerCase()==='chat'?'🐈':'🐕'+' '+a.name).join(', ') || 'Aucun animal';
-      return `<div onclick="casPrefillClient('${c.fullName.replace(/'/g,"\\'")}','${(c.phone||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f5f2;transition:.12s" onmouseover="this.style.background='#f0faf5'" onmouseout="this.style.background=''">
-        <div style="font-size:13px;font-weight:700;color:#1A4A2E">👤 ${c.fullName}</div>
-        <div style="font-size:11px;color:#6b8f73">${c.phone||''} · ${animalList}</div>
-      </div>`;
-    }),
-    ...animalHits.map(p => `<div onclick="casPrefillAnimal('${(p.owner||'').replace(/'/g,"\\'")}','${(p.name||'').replace(/'/g,"\\'")}','${(p.species||'').replace(/'/g,"\\'")}','${(p.race||'').replace(/'/g,"\\'")}','${(p.age||'').replace(/'/g,"\\'")}','${(p.weight||'').replace(/'/g,"\\'")}','${(p.sexe||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f5f2;transition:.12s" onmouseover="this.style.background='#f0faf5'" onmouseout="this.style.background=''">
-        <div style="font-size:13px;font-weight:700;color:#1A4A2E">${(p.species||'').toLowerCase()==='chat'?'🐈':'🐕'} ${p.name}</div>
-        <div style="font-size:11px;color:#6b8f73">${p.owner||''} · ${[p.race,p.age,p.weight].filter(Boolean).join(' · ')||'—'}</div>
-      </div>`)
-  ];
-
-  if (!rows.length) {
-    box.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#aaa">Aucun résultat pour "${q}"</div>`;
-  } else {
-    box.innerHTML = rows.join('');
+// ── LAZY DROPDOWN SINGLETON (appended to body, not inside the banner) ────────
+function _getCasDrop() {
+  let drop = document.getElementById('cas-drop-global');
+  if (!drop) {
+    drop = document.createElement('div');
+    drop.id = 'cas-drop-global';
+    drop.style.cssText = 'position:fixed;z-index:9000;background:#fff;border:1.5px solid #4A7C59;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,.16);overflow:hidden;display:none;max-height:260px;overflow-y:auto;min-width:260px';
+    document.body.appendChild(drop);
   }
-  box.style.display = 'block';
-  // Position relative to input
+  return drop;
+}
+function _positionCasDrop(drop) {
   const inp = document.getElementById('cas-prefill-search');
-  if (inp) {
-    const rect = inp.getBoundingClientRect();
-    box.style.position = 'fixed';
-    box.style.top = (rect.bottom + 4) + 'px';
-    box.style.left = rect.left + 'px';
-    box.style.width = rect.width + 'px';
-  }
+  if (!inp) return;
+  const r = inp.getBoundingClientRect();
+  drop.style.top  = (r.bottom + 4) + 'px';
+  drop.style.left = r.left + 'px';
+  drop.style.width = r.width + 'px';
 }
+function _hideCasDrop() {
+  const d = document.getElementById('cas-drop-global');
+  if (d) d.style.display = 'none';
+}
+// Close on outside click
+document.addEventListener('mousedown', function(e) {
+  const d = document.getElementById('cas-drop-global');
+  const inp = document.getElementById('cas-prefill-search');
+  if (d && d.style.display !== 'none' && !d.contains(e.target) && (!inp || !inp.contains(e.target))) _hideCasDrop();
+}, true);
+
+function _getAllClients() { return (typeof CLIENTS !== 'undefined' ? CLIENTS : []).concat(); }
+function _getAllPatients() { return (typeof PATIENTS !== 'undefined' ? PATIENTS : []).concat(); }
+
+function _rowHtml(onclick, icon, title, sub) {
+  return `<div onclick="${onclick}" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0faf5;display:flex;align-items:center;gap:10px" onmouseover="this.style.background='#f0faf5'" onmouseout="this.style.background=''">
+    <div style="font-size:22px;flex-shrink:0">${icon}</div>
+    <div><div style="font-size:13px;font-weight:700;color:#1A4A2E">${title}</div><div style="font-size:11px;color:#6b8f73;margin-top:1px">${sub}</div></div>
+  </div>`;
+}
+
+function casFilterPrefill(q) {
+  const drop = _getCasDrop();
+  const val  = (q||'').trim().toLowerCase();
+  if (!val) { _hideCasDrop(); return; }
+
+  const clients  = _getAllClients();
+  const patients = _getAllPatients();
+
+  const clientHits = clients.filter(c =>
+    (c.fullName||'').toLowerCase().includes(val) || (c.phone||'').replace(/\s/g,'').includes(val.replace(/\s/g,''))
+  ).slice(0, 6);
+
+  const ownerNames = new Set(clientHits.map(c => (c.fullName||'').toLowerCase()));
+  const animalHits = patients.filter(p =>
+    (p.name||'').toLowerCase().includes(val) && !ownerNames.has((p.owner||'').toLowerCase())
+  ).slice(0, 4);
+
+  let html = '';
+
+  if (clientHits.length) {
+    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:1px;color:#9ab8a3;background:#f8fdf9;text-transform:uppercase">Clients</div>`;
+    html += clientHits.map(c => {
+      const pets = patients.filter(p => (p.owner||'').toLowerCase() === (c.fullName||'').toLowerCase());
+      const petStr = pets.length
+        ? pets.map(a => ((a.species||'').toLowerCase()==='chat'?'🐈':'🐕')+' '+a.name).join(' · ')
+        : 'Aucun animal enregistré';
+      const fn  = (c.fullName||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const ph  = (c.phone||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return _rowHtml(`casPrefillClient('${fn}','${ph}')`, '👤', c.fullName, (c.phone ? c.phone+' · ' : '') + petStr);
+    }).join('');
+  }
+
+  if (animalHits.length) {
+    html += `<div style="padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:1px;color:#9ab8a3;background:#f8fdf9;text-transform:uppercase">Animaux</div>`;
+    html += animalHits.map(p => {
+      const icon = (p.species||'').toLowerCase()==='chat'?'🐈':'🐕';
+      const sub  = [p.owner, p.race, p.age, p.weight].filter(Boolean).join(' · ') || '—';
+      const ow = (p.owner||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const nm = (p.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const sp = (p.species||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const rc = (p.race||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const ag = (p.age||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const wt = (p.weight||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const sx = (p.sexe||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return _rowHtml(`casPrefillAnimal('${ow}','${nm}','${sp}','${rc}','${ag}','${wt}','${sx}')`, icon, p.name, sub);
+    }).join('');
+  }
+
+  if (!html) {
+    html = `<div style="padding:12px 14px;font-size:12px;color:#aaa;text-align:center">Aucun résultat · vérifiez l'orthographe</div>`;
+  }
+
+  drop.innerHTML = html;
+  _positionCasDrop(drop);
+  drop.style.display = 'block';
+}
+
 function casPrefillClient(fullName, phone) {
-  ensureCaseFormEnhancements();
-  const nameInp = document.getElementById('case-client-name');
-  const phoneInp = document.getElementById('case-client-phone');
-  if (nameInp) nameInp.value = fullName;
-  if (phoneInp) phoneInp.value = phone;
-  // Try to fill animal if this client has exactly one animal
-  const animals = (window.PATIENTS||[]).filter(p => (p.owner||'').toLowerCase() === fullName.toLowerCase());
+  const patients = _getAllPatients();
+  const animals  = patients.filter(p => (p.owner||'').toLowerCase() === (fullName||'').toLowerCase());
+
   if (animals.length === 1) {
-    casPrefillAnimal(fullName, animals[0].name, animals[0].species||'', animals[0].race||'', animals[0].age||'', animals[0].weight||'', animals[0].sexe||'');
+    const a = animals[0];
+    casPrefillAnimal(fullName, a.name, a.species||'', a.race||'', a.age||'', a.weight||'', a.sexe||'');
     return;
   }
-  // If multiple animals, show a sub-picker
-  const box = document.getElementById('cas-prefill-results');
-  if (box && animals.length > 1) {
-    box.innerHTML = `<div style="padding:8px 14px;font-size:11px;font-weight:700;color:#1A4A2E;background:#f0faf5">Choisir l'animal :</div>` +
-      animals.map(a => `<div onclick="casPrefillAnimal('${fullName.replace(/'/g,"\\'")}','${(a.name||'').replace(/'/g,"\\'")}','${(a.species||'').replace(/'/g,"\\'")}','${(a.race||'').replace(/'/g,"\\'")}','${(a.age||'').replace(/'/g,"\\'")}','${(a.weight||'').replace(/'/g,"\\'")}','${(a.sexe||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f5f2" onmouseover="this.style.background='#f0faf5'" onmouseout="this.style.background=''">${(a.species||'').toLowerCase()==='chat'?'🐈':'🐕'} <strong>${a.name}</strong> · ${[a.race,a.age,a.weight].filter(Boolean).join(' · ')||'—'}</div>`).join('');
+
+  if (animals.length > 1) {
+    // Show animal picker inside the same drop
+    const drop = _getCasDrop();
+    let html = `<div style="padding:6px 14px;font-size:10px;font-weight:700;letter-spacing:1px;color:#9ab8a3;background:#f8fdf9;text-transform:uppercase">Choisir l'animal</div>`;
+    html += animals.map(a => {
+      const icon = (a.species||'').toLowerCase()==='chat'?'🐈':'🐕';
+      const sub  = [a.race, a.age, a.weight].filter(Boolean).join(' · ') || '—';
+      const ow = (a.owner||fullName).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const nm = (a.name||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const sp = (a.species||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const rc = (a.race||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const ag = (a.age||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const wt = (a.weight||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      const sx = (a.sexe||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return _rowHtml(`casPrefillAnimal('${ow}','${nm}','${sp}','${rc}','${ag}','${wt}','${sx}')`, icon, a.name, sub);
+    }).join('');
+    drop.innerHTML = html;
+    drop.style.display = 'block';
     return;
   }
-  document.getElementById('cas-prefill-results').style.display='none';
-  toast('✅ Client pré-rempli — ajoutez les détails de l\'animal');
+
+  // No animals — just fill client info
+  ensureCaseFormEnhancements();
+  const n = document.getElementById('case-client-name');  if (n) n.value = fullName;
+  const p = document.getElementById('case-client-phone'); if (p) p.value = phone||'';
+  _hideCasDrop();
+  const srch = document.getElementById('cas-prefill-search'); if (srch) srch.value = fullName;
+  const bar  = document.getElementById('cas-client-prefill-bar');
+  if (bar) bar.style.background = 'linear-gradient(135deg,#d4edda,#e8f5f0)';
+  toast('✅ Client pré-rempli · aucun animal enregistré');
 }
+
 function casPrefillAnimal(owner, animalName, species, race, age, weight, sexe) {
   ensureCaseFormEnhancements();
-  if (document.getElementById('case-client-name')) document.getElementById('case-client-name').value = owner;
-  const client = (window.CLIENTS||[]).find(c => (c.fullName||'').toLowerCase() === owner.toLowerCase());
-  if (client && document.getElementById('case-client-phone')) document.getElementById('case-client-phone').value = client.phone||'';
-  if (document.getElementById('case-animal-name')) document.getElementById('case-animal-name').value = animalName;
+
+  // Client fields
+  const n = document.getElementById('case-client-name');  if (n) n.value = owner||'';
+  const clients = _getAllClients();
+  const client  = clients.find(c => (c.fullName||'').toLowerCase() === (owner||'').toLowerCase());
+  const p = document.getElementById('case-client-phone');
+  if (p) p.value = (client && client.phone) ? client.phone : '';
+
+  // Animal fields
+  const an = document.getElementById('case-animal-name'); if (an) an.value = animalName||'';
+
   const especeEl = document.getElementById('case-espece');
-  if (especeEl) { const sp = (species||'').toLowerCase(); especeEl.value = sp.includes('chat') ? 'Chat' : 'Chien'; }
-  if (document.getElementById('case-race')) document.getElementById('case-race').value = race||'';
-  if (document.getElementById('case-age'))  document.getElementById('case-age').value  = age||'';
-  if (document.getElementById('case-poids')) document.getElementById('case-poids').value = (weight||'').replace(/[^\d.]/g,'');
+  if (especeEl) {
+    const sp = (species||'').toLowerCase();
+    if (sp.includes('chat') || sp.includes('felin') || sp==='cat') especeEl.value = 'Chat';
+    else especeEl.value = 'Chien';
+  }
+  const raceEl = document.getElementById('case-race');   if (raceEl) raceEl.value = race||'';
+  const ageEl  = document.getElementById('case-age');    if (ageEl)  ageEl.value  = age||'';
+  const poids  = document.getElementById('case-poids');  if (poids)  poids.value  = (weight||'').replace(/[^\d.]/g,'');
+
   const sexeEl = document.getElementById('case-sexe');
   if (sexeEl && sexe) {
-    const opts = Array.from(sexeEl.options).map(o=>o.value.toLowerCase());
-    const idx = opts.findIndex(o => o.includes((sexe||'').toLowerCase().slice(0,4)));
-    if (idx>=0) sexeEl.selectedIndex = idx;
+    const target = (sexe||'').toLowerCase();
+    let found = false;
+    Array.from(sexeEl.options).forEach((opt, i) => {
+      if (!found && opt.value.toLowerCase().startsWith(target.slice(0,4))) {
+        sexeEl.selectedIndex = i; found = true;
+      }
+    });
   }
-  // Show banner confirming
+
+  // Update UI
+  _hideCasDrop();
+  const srch = document.getElementById('cas-prefill-search');
+  if (srch) srch.value = animalName + (owner ? ' · ' + owner : '');
   const bar = document.getElementById('cas-client-prefill-bar');
   if (bar) bar.style.background = 'linear-gradient(135deg,#d4edda,#e8f5f0)';
-  const srch = document.getElementById('cas-prefill-search');
-  if (srch) srch.value = `${animalName} (${owner})`;
-  document.getElementById('cas-prefill-results').style.display='none';
-  toast(`✅ Pré-rempli : ${animalName} · ${owner}`);
+  toast('✅ Formulaire pré-rempli : ' + animalName + ' · ' + owner);
 }
+
 function casClearPrefill() {
   ensureCaseFormEnhancements();
   ['case-client-name','case-client-phone','case-animal-name','case-race','case-age','case-poids'].forEach(id => {
-    const el = document.getElementById(id); if (el) el.value='';
+    const el = document.getElementById(id); if (el) el.value = '';
   });
-  const srch = document.getElementById('cas-prefill-search'); if (srch) srch.value='';
-  const box = document.getElementById('cas-prefill-results'); if (box) box.style.display='none';
+  const srch = document.getElementById('cas-prefill-search'); if (srch) srch.value = '';
+  _hideCasDrop();
   const bar = document.getElementById('cas-client-prefill-bar');
-  if (bar) bar.style.background='linear-gradient(135deg,#e8f5f0,#f0faf5)';
+  if (bar) bar.style.background = 'linear-gradient(135deg,#e8f5f0,#f0faf5)';
   toast('📝 Formulaire vierge — saisie manuelle');
 }
-// Close prefill dropdown on outside click
-document.addEventListener('click', function(e) {
-  const box = document.getElementById('cas-prefill-results');
-  const inp = document.getElementById('cas-prefill-search');
-  if (box && inp && !inp.contains(e.target) && !box.contains(e.target)) box.style.display='none';
-});
 
 function saveAdmission() {
   const cageId = document.getElementById('admit-cage-id')?.value;
