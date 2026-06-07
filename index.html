@@ -7019,7 +7019,8 @@ try{
   var useEdge=(_sb && typeof SUPA_URL !== 'undefined' && SUPA_URL && SUPA_URL !== "VOTRE_SUPABASE_URL");
   if(useEdge){
     try{
-      var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages}});
+      var localKey=localStorage.getItem("vetpro-gemini-key")||"";
+      var invRes=await _sb.functions.invoke("vetpro-ai",{body:{model:GEMINI_MODEL,max_tokens:1024,temperature:0.35,messages:messages,gemini_api_key:localKey}});
       var d=invRes.data;var e=invRes.error;
       removeTyping();
       if(e) throw new Error(e.message||"Edge Function error");
@@ -23174,9 +23175,13 @@ function saveAdmission() {
   const NOTEPAD_KEY = 'vetpro-notepad';
   const style = document.createElement('style');
   style.textContent = `
-    .notepad-fab{position:fixed;bottom:88px;right:20px;width:46px;height:46px;border-radius:14px;background:var(--ink);color:#fff;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:120;transition:transform .15s}
+    .notepad-fab{position:fixed;bottom:24px;left:24px;width:46px;height:46px;border-radius:14px;background:var(--ink);color:#fff;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:54;transition:transform .15s}
     .notepad-fab:hover{transform:scale(1.1)}
-    .notepad-panel{position:fixed;bottom:142px;right:20px;width:320px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:121;display:none;flex-direction:column;overflow:hidden;border:1.5px solid var(--brd)}
+    .notepad-panel{position:fixed;bottom:82px;left:24px;width:320px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:54;display:none;flex-direction:column;overflow:hidden;border:1.5px solid var(--brd)}
+    @media(max-width:768px){
+      .notepad-fab{bottom:80px;left:16px;width:42px;height:42px;font-size:18px;}
+      .notepad-panel{bottom:132px;left:12px;right:12px;width:auto;}
+    }
     .notepad-panel.open{display:flex}
     .notepad-head{background:var(--ink);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700}
     .notepad-body{flex:1}
