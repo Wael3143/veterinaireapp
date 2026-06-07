@@ -884,12 +884,19 @@ async function doSignup(){
       toast('Mode developpement: compte local simule');
       return;
     }
-    const { error } = await _sb.auth.signUp({ email, password });
+    const { data: signUpData, error } = await _sb.auth.signUp({ email, password });
     if (error) throw error;
     // Insert a pending approval request so admin can approve
+    // Must include full_name and role to satisfy NOT NULL constraints
     try {
       await _sb.from('vetpro_access_requests').upsert(
-        [{ email: email.trim().toLowerCase(), status: 'pending', requested_at: new Date().toISOString() }],
+        [{
+          email: email.trim().toLowerCase(),
+          full_name: email.split('@')[0],
+          role: 'veterinaire',
+          status: 'pending',
+          requested_at: new Date().toISOString()
+        }],
         { onConflict: 'email' }
       );
     } catch(e) {}
