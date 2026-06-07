@@ -6684,9 +6684,8 @@ function setDrugSpFilter(el,sp){
   _drugSpFilter=sp;
   document.querySelectorAll('#drug-sp-chips .fchip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');
-  renderDrugs(_drugGroupFilter,document.getElementById('drug-search')?.value||'');
+  renderDrugs(drugFilter,drugSearch);
 }
-let _drugGroupFilter='';
 function setDrugFilter(el,g){drugFilter=g;document.querySelectorAll('#page-meds .fchips:first-of-type .fchip').forEach(c=>c.classList.remove('on'));el.classList.add('on');renderDrugs(g,drugSearch);}
 function renderStockAlert() {
   const alert = document.getElementById('stock-alert');
