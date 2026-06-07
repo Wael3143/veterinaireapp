@@ -1388,6 +1388,18 @@ window.addEventListener('DOMContentLoaded', () => {
     <button class="btn btn-ai btn-sm" onclick="nav('ai')">🤖 Aide IA</button>
   </div>
 
+  <!-- ── CLIENT PREFILL BANNER ── -->
+  <div id="cas-client-prefill-bar" style="background:linear-gradient(135deg,#e8f5f0,#f0faf5);border:1.5px solid var(--mint);border-radius:16px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="font-size:18px">🔍</div>
+    <div style="flex:1;min-width:180px">
+      <div style="font-size:12px;font-weight:700;color:var(--forest);margin-bottom:4px">Récupérer un client existant</div>
+      <input id="cas-prefill-search" class="inp" placeholder="Tapez nom du client ou animal…" style="margin:0;font-size:13px" oninput="casFilterPrefill(this.value)"/>
+      <div id="cas-prefill-results" style="position:absolute;left:0;right:0;background:#fff;border:1.5px solid var(--sage);border-radius:10px;box-shadow:var(--sh2);z-index:60;overflow:hidden;margin-top:3px;display:none;max-height:220px;overflow-y:auto"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);white-space:nowrap">ou</div>
+    <button class="btn btn-ghost btn-sm" onclick="casClearPrefill()" style="white-space:nowrap">✏️ Saisie manuelle</button>
+  </div>
+
   <div class="urgbar urgbar-n" id="urgbar">
     <div>
       <div style="font-size:10px;font-weight:700;letter-spacing:1px;opacity:.65">SCORE D'URGENCE TEMPS RÉEL</div>
@@ -5263,32 +5275,67 @@ async function loadQRLib() {
 }
 
 async function openClientQR(clientName) {
+  // Delegate entirely to the robust hash-based implementation
+  if (typeof window.openClientQR === 'function' && window.openClientQR !== openClientQR) {
+    return window.openClientQR(clientName);
+  }
   _qrCurrentClient = clientName;
-  const client  = CLIENTS.find(c => c.fullName === clientName) || { fullName: clientName };
-  const animals = PATIENTS.filter(p => (p.owner||'').toLowerCase() === clientName.toLowerCase());
+  window._qrCurrentClient = clientName;
+  const matchOwner = (a, b) => (a||'').toLowerCase().trim() === (b||'').toLowerCase().trim();
+  const client  = (window.CLIENTS||CLIENTS||[]).find(c => matchOwner(c.fullName, clientName)) || { fullName: clientName };
+  const animals = (window.PATIENTS||PATIENTS||[]).filter(p => matchOwner(p.owner||p.ownerName||p.proprietaire||'', clientName));
 
-  document.getElementById('qr-client-name').textContent = '👤 ' + clientName;
-  document.getElementById('qr-client-animals').textContent = animals.map(a => (a.species==='chat'?'🐈':'🐕') + ' ' + a.name).join('  ') || 'Aucun animal';
+  const nameEl = document.getElementById('qr-client-name');
+  const animEl = document.getElementById('qr-client-animals');
+  if (nameEl) {
+    nameEl.innerHTML = `<span style="font-size:18px;font-weight:800;color:#1A4A2E">👤 ${clientName}</span>`;
+    if (client.phone) nameEl.innerHTML += `<br><span style="font-size:12px;color:#6b8f73;font-weight:500">📞 ${client.phone}</span>`;
+  }
+  if (animEl) {
+    const animalTags = animals.map(a => {
+      const icon = (a.species||a.espece||'').toLowerCase()==='chat'?'🐈':'🐕';
+      return `<span style="display:inline-flex;align-items:center;gap:4px;background:#e8f5f0;color:#1A4A2E;border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;margin:2px">${icon} ${a.name}</span>`;
+    }).join('');
+    animEl.innerHTML = animalTags || '<span style="color:#aaa;font-size:12px">Aucun animal enregistré</span>';
+  }
 
-  // Build portal HTML and create blob URL
-  const html  = buildPetPortalHTML(clientName);
-  const blob  = new Blob([html], { type: 'text/html' });
-  _qrPortalUrl = URL.createObjectURL(blob);
+  // Build shareable hash-based URL (scannable by phones, no blob restrictions)
+  const history  = (window.HISTORIQUE_DATA||[]).filter(h => matchOwner(h.client||'', clientName)).slice(0,10);
+  const vaccs    = (window.VACCINES||[]).filter(v => matchOwner(v.owner||'', clientName)).slice(0,10);
+  const reminders = (window.VACCINES||[]).filter(r => matchOwner(r.owner||'', clientName) && r.reminderDate >= new Date().toISOString().slice(0,10)).slice(0,6);
+  const hospCage = (window.CAGES||[]).find(c => c.statut === 'occupée' && animals.some(a => (c.animal||'').toLowerCase().includes((a.name||'').toLowerCase())));
+  const data = {
+    n: client.fullName, p: client.phone || '',
+    a: animals.map(a => ({ n: a.name, s: a.species||a.espece, r: a.race, ag: a.age, w: a.weight, sx: a.sexe })),
+    h: history.map(h => ({ an: h.animal, d: h.diagnostic, t: h.traitement, dt: h.date })),
+    v: vaccs.map(v => ({ an: v.animal, vc: v.vaccine, dt: v.date, rp: v.rappel })),
+    rm: reminders.map(r => ({ an: r.animal, vc: r.vaccine, dt: r.reminderDate })),
+    hosp: hospCage ? { cage: hospCage.id, an: hospCage.animal } : null,
+    ts: new Date().toLocaleDateString('fr-FR'),
+    clinic: (window.CLINIC_NAME || 'Cabinet Vétérinaire')
+  };
+  const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+  _qrPortalUrl = window.location.href.split('#')[0] + '#pet-portal/' + b64;
+  window._qrPortalUrl = _qrPortalUrl;
 
   openModal('modal-client-qr');
 
   // Draw QR
   await loadQRLib();
   const wrap = document.getElementById('qr-canvas-wrap');
-  wrap.innerHTML = '<div id="qr-render"></div>';
-  new QRCode(document.getElementById('qr-render'), {
-    text: _qrPortalUrl,
-    width: 240,
-    height: 240,
-    colorDark: '#1A4A2E',
-    colorLight: '#ffffff',
-    correctLevel: QRCode.CorrectLevel.M
-  });
+  if (wrap) {
+    wrap.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1A4A2E,#2d7a4a);border-radius:20px;padding:16px;display:inline-block;box-shadow:0 8px 32px rgba(26,74,46,.3)">
+        <div id="qr-render" style="background:#fff;border-radius:12px;padding:8px;display:inline-block"></div>
+        <div style="color:rgba(255,255,255,.8);font-size:10px;text-align:center;margin-top:8px;font-weight:600;letter-spacing:.5px">SCANNER POUR VOIR MA FICHE</div>
+      </div>`;
+    new QRCode(document.getElementById('qr-render'), {
+      text: _qrPortalUrl,
+      width: 220, height: 220,
+      colorDark: '#1A4A2E', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.L
+    });
+  }
 }
 
 function downloadClientQR() {
@@ -5323,8 +5370,11 @@ function printClientQR() {
 }
 
 function copyPetPortalLink() {
-  if (!_qrPortalUrl) { toast('QR non encore généré'); return; }
-  navigator.clipboard.writeText(_qrPortalUrl).then(() => toast('🔗 Lien copié dans le presse-papier'));
+  const url = window._qrPortalUrl || _qrPortalUrl;
+  if (!url) { toast('QR non encore généré'); return; }
+  navigator.clipboard?.writeText(url)
+    .then(() => toast('🔗 Lien copié — partageable par WhatsApp ou email'))
+    .catch(() => { window.open(url, '_blank'); });
 }
 function refreshPersistentViews(){
   ensureCaseFormEnhancements();
@@ -9558,6 +9608,116 @@ function saveNewCase() {
   toast('✅ Cas enregistré · ajouté à Historique + Finances');
   nav('historique');
 }
+
+// ── NOUVEAU CAS: prefill from existing client ──────────────────────────────
+function casFilterPrefill(q) {
+  const box = document.getElementById('cas-prefill-results');
+  if (!box) return;
+  const val = (q||'').trim().toLowerCase();
+  if (!val) { box.style.display='none'; return; }
+  // Search clients + patients
+  const clientHits = (window.CLIENTS||[]).filter(c =>
+    (c.fullName||'').toLowerCase().includes(val) || (c.phone||'').includes(val)
+  ).slice(0,6);
+  const animalHits = (window.PATIENTS||[]).filter(p =>
+    (p.name||'').toLowerCase().includes(val) && !clientHits.find(c => (c.fullName||'').toLowerCase() === (p.owner||'').toLowerCase())
+  ).slice(0,4);
+
+  const rows = [
+    ...clientHits.map(c => {
+      const animals = (window.PATIENTS||[]).filter(p => (p.owner||'').toLowerCase() === (c.fullName||'').toLowerCase());
+      const animalList = animals.map(a => (a.species||'').toLowerCase()==='chat'?'🐈':'🐕'+' '+a.name).join(', ') || 'Aucun animal';
+      return `<div onclick="casPrefillClient('${c.fullName.replace(/'/g,"\\'")}','${(c.phone||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f5f2;transition:.12s" onmouseover="this.style.background='#f0faf5'" onmouseout="this.style.background=''">
+        <div style="font-size:13px;font-weight:700;color:#1A4A2E">👤 ${c.fullName}</div>
+        <div style="font-size:11px;color:#6b8f73">${c.phone||''} · ${animalList}</div>
+      </div>`;
+    }),
+    ...animalHits.map(p => `<div onclick="casPrefillAnimal('${(p.owner||'').replace(/'/g,"\\'")}','${(p.name||'').replace(/'/g,"\\'")}','${(p.species||'').replace(/'/g,"\\'")}','${(p.race||'').replace(/'/g,"\\'")}','${(p.age||'').replace(/'/g,"\\'")}','${(p.weight||'').replace(/'/g,"\\'")}','${(p.sexe||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f5f2;transition:.12s" onmouseover="this.style.background='#f0faf5'" onmouseout="this.style.background=''">
+        <div style="font-size:13px;font-weight:700;color:#1A4A2E">${(p.species||'').toLowerCase()==='chat'?'🐈':'🐕'} ${p.name}</div>
+        <div style="font-size:11px;color:#6b8f73">${p.owner||''} · ${[p.race,p.age,p.weight].filter(Boolean).join(' · ')||'—'}</div>
+      </div>`)
+  ];
+
+  if (!rows.length) {
+    box.innerHTML = `<div style="padding:10px 14px;font-size:12px;color:#aaa">Aucun résultat pour "${q}"</div>`;
+  } else {
+    box.innerHTML = rows.join('');
+  }
+  box.style.display = 'block';
+  // Position relative to input
+  const inp = document.getElementById('cas-prefill-search');
+  if (inp) {
+    const rect = inp.getBoundingClientRect();
+    box.style.position = 'fixed';
+    box.style.top = (rect.bottom + 4) + 'px';
+    box.style.left = rect.left + 'px';
+    box.style.width = rect.width + 'px';
+  }
+}
+function casPrefillClient(fullName, phone) {
+  ensureCaseFormEnhancements();
+  const nameInp = document.getElementById('case-client-name');
+  const phoneInp = document.getElementById('case-client-phone');
+  if (nameInp) nameInp.value = fullName;
+  if (phoneInp) phoneInp.value = phone;
+  // Try to fill animal if this client has exactly one animal
+  const animals = (window.PATIENTS||[]).filter(p => (p.owner||'').toLowerCase() === fullName.toLowerCase());
+  if (animals.length === 1) {
+    casPrefillAnimal(fullName, animals[0].name, animals[0].species||'', animals[0].race||'', animals[0].age||'', animals[0].weight||'', animals[0].sexe||'');
+    return;
+  }
+  // If multiple animals, show a sub-picker
+  const box = document.getElementById('cas-prefill-results');
+  if (box && animals.length > 1) {
+    box.innerHTML = `<div style="padding:8px 14px;font-size:11px;font-weight:700;color:#1A4A2E;background:#f0faf5">Choisir l'animal :</div>` +
+      animals.map(a => `<div onclick="casPrefillAnimal('${fullName.replace(/'/g,"\\'")}','${(a.name||'').replace(/'/g,"\\'")}','${(a.species||'').replace(/'/g,"\\'")}','${(a.race||'').replace(/'/g,"\\'")}','${(a.age||'').replace(/'/g,"\\'")}','${(a.weight||'').replace(/'/g,"\\'")}','${(a.sexe||'').replace(/'/g,"\\'")}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f5f2" onmouseover="this.style.background='#f0faf5'" onmouseout="this.style.background=''">${(a.species||'').toLowerCase()==='chat'?'🐈':'🐕'} <strong>${a.name}</strong> · ${[a.race,a.age,a.weight].filter(Boolean).join(' · ')||'—'}</div>`).join('');
+    return;
+  }
+  document.getElementById('cas-prefill-results').style.display='none';
+  toast('✅ Client pré-rempli — ajoutez les détails de l\'animal');
+}
+function casPrefillAnimal(owner, animalName, species, race, age, weight, sexe) {
+  ensureCaseFormEnhancements();
+  if (document.getElementById('case-client-name')) document.getElementById('case-client-name').value = owner;
+  const client = (window.CLIENTS||[]).find(c => (c.fullName||'').toLowerCase() === owner.toLowerCase());
+  if (client && document.getElementById('case-client-phone')) document.getElementById('case-client-phone').value = client.phone||'';
+  if (document.getElementById('case-animal-name')) document.getElementById('case-animal-name').value = animalName;
+  const especeEl = document.getElementById('case-espece');
+  if (especeEl) { const sp = (species||'').toLowerCase(); especeEl.value = sp.includes('chat') ? 'Chat' : 'Chien'; }
+  if (document.getElementById('case-race')) document.getElementById('case-race').value = race||'';
+  if (document.getElementById('case-age'))  document.getElementById('case-age').value  = age||'';
+  if (document.getElementById('case-poids')) document.getElementById('case-poids').value = (weight||'').replace(/[^\d.]/g,'');
+  const sexeEl = document.getElementById('case-sexe');
+  if (sexeEl && sexe) {
+    const opts = Array.from(sexeEl.options).map(o=>o.value.toLowerCase());
+    const idx = opts.findIndex(o => o.includes((sexe||'').toLowerCase().slice(0,4)));
+    if (idx>=0) sexeEl.selectedIndex = idx;
+  }
+  // Show banner confirming
+  const bar = document.getElementById('cas-client-prefill-bar');
+  if (bar) bar.style.background = 'linear-gradient(135deg,#d4edda,#e8f5f0)';
+  const srch = document.getElementById('cas-prefill-search');
+  if (srch) srch.value = `${animalName} (${owner})`;
+  document.getElementById('cas-prefill-results').style.display='none';
+  toast(`✅ Pré-rempli : ${animalName} · ${owner}`);
+}
+function casClearPrefill() {
+  ensureCaseFormEnhancements();
+  ['case-client-name','case-client-phone','case-animal-name','case-race','case-age','case-poids'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value='';
+  });
+  const srch = document.getElementById('cas-prefill-search'); if (srch) srch.value='';
+  const box = document.getElementById('cas-prefill-results'); if (box) box.style.display='none';
+  const bar = document.getElementById('cas-client-prefill-bar');
+  if (bar) bar.style.background='linear-gradient(135deg,#e8f5f0,#f0faf5)';
+  toast('📝 Formulaire vierge — saisie manuelle');
+}
+// Close prefill dropdown on outside click
+document.addEventListener('click', function(e) {
+  const box = document.getElementById('cas-prefill-results');
+  const inp = document.getElementById('cas-prefill-search');
+  if (box && inp && !inp.contains(e.target) && !box.contains(e.target)) box.style.display='none';
+});
 
 function saveAdmission() {
   const cageId = document.getElementById('admit-cage-id')?.value;
@@ -23056,7 +23216,10 @@ function saveAdmission() {
     .notepad-fab{position:fixed;bottom:24px;left:24px;width:46px;height:46px;border-radius:14px;background:var(--ink);color:#fff;border:none;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(0,0,0,.25);z-index:54;transition:transform .15s}
     .notepad-fab:hover{transform:scale(1.1)}
     .notepad-panel{position:fixed;bottom:82px;left:24px;width:320px;background:#fff;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:54;display:none;flex-direction:column;overflow:hidden;border:1.5px solid var(--brd)}
-    @media(max-width:768px){.notepad-fab{bottom:80px;left:16px;width:42px;height:42px;font-size:18px;}.notepad-panel{bottom:132px;left:12px;right:12px;width:auto;}}
+    @media(max-width:768px){
+      .notepad-fab{bottom:128px;left:16px;width:42px;height:42px;font-size:18px;}
+      .notepad-panel{bottom:180px;left:12px;right:12px;width:auto;}
+    }
     .notepad-panel.open{display:flex}
     .notepad-head{background:var(--ink);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700}
     .notepad-ta{width:100%;min-height:180px;max-height:320px;border:none;padding:12px 14px;font-size:12.5px;line-height:1.6;resize:vertical;font-family:inherit;color:var(--ink);background:#fafdf9;outline:none}
@@ -23362,20 +23525,36 @@ window.fillCaseAnimalFromExisting = function(animalIdOrName) {
       const css = `
         *{box-sizing:border-box;-webkit-font-smoothing:antialiased}
         body{max-width:480px;margin:0 auto}
+        /* ── SCAN ENTRANCE ANIMATION ── */
+        @keyframes vpFadeUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes vpPawBounce{0%,100%{transform:scale(1) rotate(-4deg)}50%{transform:scale(1.18) rotate(4deg)}}
+        @keyframes vpPulseRing{0%{box-shadow:0 0 0 0 rgba(45,122,74,.45)}70%{box-shadow:0 0 0 18px rgba(45,122,74,0)}100%{box-shadow:0 0 0 0 rgba(45,122,74,0)}}
+        @keyframes vpShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+        .vp-animate{animation:vpFadeUp .55s cubic-bezier(.22,1,.36,1) both}
+        .vp-animate:nth-child(1){animation-delay:.05s}
+        .vp-animate:nth-child(2){animation-delay:.12s}
+        .vp-animate:nth-child(3){animation-delay:.19s}
+        .vp-animate:nth-child(4){animation-delay:.26s}
+        .vp-animate:nth-child(5){animation-delay:.33s}
         .hero{background:linear-gradient(160deg,#0d3322 0%,#1A4A2E 55%,#2d7a4a 100%);color:#fff;padding:36px 24px 80px;position:relative;overflow:hidden;text-align:center}
         .hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Ccircle cx='30' cy='30' r='20'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");background-size:60px}
-        .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:18px;backdrop-filter:blur(6px)}
-        .hero-paw{font-size:52px;margin-bottom:10px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3))}
-        .hero-name{font-size:28px;font-weight:800;margin:0 0 6px;letter-spacing:-.3px}
-        .hero-phone{font-size:13px;opacity:.7;margin:0}
+        .hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:100px;padding:5px 14px;font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;margin-bottom:18px;backdrop-filter:blur(6px);animation:vpFadeUp .5s ease both}
+        .hero-paw{font-size:52px;margin-bottom:10px;filter:drop-shadow(0 4px 12px rgba(0,0,0,.3));display:inline-block;animation:vpPawBounce 1.8s ease-in-out infinite,vpFadeUp .4s ease both}
+        .hero-name{font-size:28px;font-weight:800;margin:0 0 6px;letter-spacing:-.3px;animation:vpFadeUp .5s .1s ease both}
+        .hero-phone{font-size:13px;opacity:.7;margin:0;animation:vpFadeUp .5s .15s ease both}
         .hero-wave{position:absolute;bottom:-2px;left:0;right:0}
         .content{margin-top:-40px;padding:0 12px 40px;position:relative;z-index:2}
         .animal-row{display:flex;gap:10px;overflow-x:auto;padding:0 0 8px;scrollbar-width:none}
         .animal-row::-webkit-scrollbar{display:none}
-        .animal-card{flex:0 0 auto;background:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 4px 20px rgba(26,74,46,.1);border:1.5px solid #e4f0e8;min-width:130px;text-align:center}
-        .animal-icon{font-size:32px;margin-bottom:6px}
-        .animal-name{font-size:14px;font-weight:800;color:#1A4A2E;margin-bottom:2px}
+        .animal-card{flex:0 0 auto;background:#fff;border-radius:18px;padding:16px 18px;box-shadow:0 4px 20px rgba(26,74,46,.1);border:1.5px solid #e4f0e8;min-width:150px;text-align:center;animation:vpPulseRing 2s ease-out}
+        .animal-icon{font-size:34px;margin-bottom:6px}
+        .animal-name{font-size:14px;font-weight:800;color:#1A4A2E;margin-bottom:6px}
         .animal-meta{font-size:11px;color:#6b8f73;line-height:1.5}
+        .animal-pills{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-top:8px}
+        .animal-pill{background:#e8f5f0;color:#1A4A2E;border-radius:20px;padding:3px 9px;font-size:10px;font-weight:700}
+        .animal-pill.weight{background:#fff3e0;color:#e65100}
+        .animal-pill.age{background:#e8eaf6;color:#283593}
+        .animal-pill.sex{background:#fce4ec;color:#880e4f}
         .sec{background:#fff;border-radius:18px;padding:18px;margin-bottom:12px;box-shadow:0 2px 12px rgba(26,74,46,.07);border:1px solid #e8f2eb}
         .sec-hdr{display:flex;align-items:center;gap:8px;margin-bottom:14px}
         .sec-icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
@@ -23400,6 +23579,11 @@ window.fillCaseAnimalFromExisting = function(animalIdOrName) {
         .footer-logo{font-size:22px;font-weight:800;color:#1A4A2E;margin-bottom:4px}
         .footer-sub{font-size:11px;color:#8aab95;line-height:1.6}
         .pill{display:inline-block;background:#e8f5f0;color:#1A4A2E;border-radius:20px;padding:2px 9px;font-size:10.5px;font-weight:700;margin:1px}
+        /* shimmer splash on load */
+        .scan-splash{position:fixed;inset:0;background:linear-gradient(135deg,#0d3322,#1A4A2E);display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:9999;animation:splashOut .6s .9s ease forwards}
+        @keyframes splashOut{to{opacity:0;pointer-events:none;visibility:hidden}}
+        .scan-splash-paw{font-size:72px;animation:vpPawBounce 1s ease-in-out infinite}
+        .scan-splash-txt{color:rgba(255,255,255,.7);font-size:13px;font-weight:600;margin-top:12px;letter-spacing:.5px}
       `;
       const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
       document.title = `${d.n} — Fiche Vétérinaire · VetPro`;
@@ -23413,8 +23597,13 @@ window.fillCaseAnimalFromExisting = function(animalIdOrName) {
 
       const animalCards = (d.a||[]).length ? (d.a||[]).map(a => {
         const icon = (a.s||'').toLowerCase()==='chat'?'🐈':'🐕';
-        const meta = [a.r, a.ag, a.w, a.sx].filter(Boolean).join(' · ');
-        return `<div class="animal-card"><div class="animal-icon">${icon}</div><div class="animal-name">${a.n}</div><div class="animal-meta">${meta||'—'}</div></div>`;
+        const pills = [
+          a.ag ? `<span class="animal-pill age">🗓 ${a.ag}</span>` : '',
+          a.w  ? `<span class="animal-pill weight">⚖️ ${a.w}</span>` : '',
+          a.sx ? `<span class="animal-pill sex">${a.sx}</span>` : '',
+          a.r  ? `<span class="animal-pill">${a.r}</span>` : '',
+        ].filter(Boolean).join('');
+        return `<div class="animal-card"><div class="animal-icon">${icon}</div><div class="animal-name">${a.n}</div>${pills ? `<div class="animal-pills">${pills}</div>` : '<div class="animal-meta">—</div>'}</div>`;
       }).join('') : `<div class="animal-card" style="min-width:100%;color:#aaa;font-size:12px;text-align:center;padding:18px">Aucun animal enregistré</div>`;
 
       const histItems = (d.h||[]).length ? (d.h||[]).map(h => `
@@ -23444,6 +23633,7 @@ window.fillCaseAnimalFromExisting = function(animalIdOrName) {
         </div>` : '';
 
       document.body.innerHTML = `
+        <div class="scan-splash"><div class="scan-splash-paw">🐾</div><div class="scan-splash-txt">Chargement de votre fiche…</div></div>
         <div class="hero">
           <div class="hero-badge">🩺 VetPro · Fiche Patient</div>
           <div class="hero-paw">🐾</div>
@@ -23453,20 +23643,20 @@ window.fillCaseAnimalFromExisting = function(animalIdOrName) {
         </div>
         <div class="content">
           ${hospBlock}
-          <div class="sec" style="padding:14px 14px 6px">
+          <div class="sec vp-animate" style="padding:14px 14px 6px">
             <div class="sec-hdr"><div class="sec-icon" style="background:#e8f5f0">🐾</div><div class="sec-title">Mes animaux (${(d.a||[]).length})</div></div>
             <div class="animal-row">${animalCards}</div>
           </div>
-          <div class="sec">
+          <div class="sec vp-animate">
             <div class="sec-hdr"><div class="sec-icon" style="background:#eef4ff">📋</div><div class="sec-title">Historique clinique</div></div>
             ${histItems}
           </div>
-          <div class="sec">
+          <div class="sec vp-animate">
             <div class="sec-hdr"><div class="sec-icon" style="background:#f0fff4">💉</div><div class="sec-title">Vaccinations</div></div>
             ${vaccItems}
           </div>
           ${reminderBlock}
-          <div class="footer">
+          <div class="footer vp-animate">
             <div class="footer-logo">🐾 VetPro</div>
             <div class="footer-sub">${d.clinic||'Cabinet Vétérinaire'}<br>Généré le ${d.ts} · <strong>Confidentiel</strong><br><span style="font-size:10px;opacity:.6">Ce document est à usage personnel — ne pas partager</span></div>
           </div>
