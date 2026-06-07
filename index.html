@@ -43,6 +43,13 @@
 {"@context":"https://schema.org","@type":"SoftwareApplication","name":"VetPro","applicationCategory":"BusinessApplication","operatingSystem":"Web","description":"Logiciel de gestion de clinique vétérinaire tout-en-un avec IA diagnostique","url":"https://vetpro.ink","offers":{"@type":"Offer","price":"0","priceCurrency":"DZD"},"author":{"@type":"Organization","name":"VetPro","url":"https://vetpro.ink"}}
 </script>
 
+<!-- ── SUPABASE CONFIG — must be first so _sb is available to all subsequent scripts ── -->
+<script>
+  var SUPA_URL = 'https://smzmuqgbtsjgetxbmdgq.supabase.co';
+  var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtem11cWdidHNqZ2V0eGJtZGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4ODQ3MDMsImV4cCI6MjA5MjQ2MDcwM30.VbXf1Yy1zzdrSJAYGZlMq-molDWpOqgmMdGUxgWHjGg';
+  var _sb = null; // will be set after supabase-js CDN loads (see below)
+</script>
+
 <!-- Performance: preconnect to critical origins before any request fires -->
 <link rel="preconnect" href="https://smzmuqgbtsjgetxbmdgq.supabase.co" crossorigin>
 <link rel="dns-prefetch" href="https://smzmuqgbtsjgetxbmdgq.supabase.co">
@@ -639,6 +646,12 @@ html{height:100dvh;overflow:hidden}
   <!-- Pinned to exact version — avoids surprise breaking changes from floating @2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    // Initialize _sb now that the CDN library is loaded
+    if (typeof supabase !== 'undefined') {
+      _sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+    }
+  </script>
+  <script>
 // ══════════════════════════════════════════════════════════════
 // AUTH — Supabase Login / Logout
 // ══════════════════════════════════════════════════════════════
@@ -758,6 +771,7 @@ function ensureAuthEnhancements(){
         <input class="login-input" type="password" id="signup-password-confirm" placeholder="Retapez le mot de passe" autocomplete="new-password"/>
       </div>
       <button class="login-btn" onclick="doSignup()">Creer un compte</button>
+      <button class="login-btn" style="margin-top:10px;background:linear-gradient(135deg,#ffffff,#e9f2eb);color:#0b2e1f" onclick="doGoogleAuth()">Continuer avec Google</button>
       <div style="text-align:center;margin-top:10px"><button type="button" onclick="showAuthMode('login')" style="background:none;border:none;color:#fff;cursor:pointer;text-decoration:underline">J ai deja un compte</button></div>
     </div>
     <div id="auth-forgot-panel" style="display:none">
@@ -961,18 +975,6 @@ async function doLogout() {
   try { showAuthMode('login'); } catch(e) {}
   toast('Déconnecté avec succès');
 }
-function showLoginError(msg) {
-  const el = document.getElementById('login-error');
-  if (el) { el.textContent = 'Erreur: ' + msg; el.style.display = 'block'; }
-}
-function toggleLoginPwd() {
-  const inp = document.getElementById('login-password');
-  const eye = document.getElementById('pwd-eye');
-  if (!inp) return;
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-  if (eye) eye.textContent = inp.type === 'password' ? 'Voir' : 'Masquer';
-}
-
 // Run on page load
 window.addEventListener('DOMContentLoaded', () => {
   ensureAuthEnhancements();
@@ -981,12 +983,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 </script>
-  <script>
-    // ── SUPABASE CONFIG ──────────────────────────────────────────────────────────
-    var SUPA_URL = 'https://smzmuqgbtsjgetxbmdgq.supabase.co';
-    var SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtem11cWdidHNqZ2V0eGJtZGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY4ODQ3MDMsImV4cCI6MjA5MjQ2MDcwM30.VbXf1Yy1zzdrSJAYGZlMq-molDWpOqgmMdGUxgWHjGg';
-    var _sb = (typeof supabase !== 'undefined') ? supabase.createClient(SUPA_URL, SUPA_KEY) : null;
-  </script>
 </head>
 <body>
 
@@ -10711,23 +10707,6 @@ function saveAdmission() {
       showLoginError(err.message || 'Erreur de connexion');
     } finally {
       if (btn) { btn.disabled = false; btn.innerHTML = 'Accéder à la clinique'; }
-    }
-  };
-
-  window.doGoogleAuth = async function(){
-    try {
-      if (!_sb || SUPA_URL === 'VOTRE_SUPABASE_URL') {
-        showLoginError('Google Sign-In nécessite Supabase configuré.');
-        return;
-      }
-      const redirectTo = window.location.origin + window.location.pathname;
-      const { error } = await _sb.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo }
-      });
-      if (error) throw error;
-    } catch (err) {
-      showLoginError(err.message || 'Connexion Google impossible');
     }
   };
 
