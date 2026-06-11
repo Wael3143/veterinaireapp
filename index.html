@@ -1052,6 +1052,9 @@ window.addEventListener('DOMContentLoaded', () => {
     <div class="sb-item" onclick="nav('nutrition')"><div class="sb-ico-wrap">🥩</div><span>Nutrition</span></div>
     <div class="sb-item" onclick="nav('preop')"><div class="sb-ico-wrap">✅</div><span>Checklist Pré-op</span></div>
     <div class="sb-item" onclick="nav('ophtalmologie')"><div class="sb-ico-wrap">👁️</div><span>Ophtalmologie</span></div>
+    <div class="sb-item" onclick="nav('dose')"><div class="sb-ico-wrap">💊</div><span>Calc. Dose Rapide</span></div>
+    <div class="sb-item" onclick="nav('chrono')"><div class="sb-ico-wrap">⏱️</div><span>Chrono. Chirurgical</span></div>
+    <div class="sb-item" onclick="nav('photos')"><div class="sb-ico-wrap">📸</div><span>Photos Patients</span></div>
   </div>
 
   <div class="sb-section">
@@ -1213,10 +1216,13 @@ window.addEventListener('DOMContentLoaded', () => {
   </div>
 
   <!-- Quick actions -->
-  <div class="g3" style="margin-top:16px">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:16px">
     <button class="btn btn-p btn-full btn-lg" onclick="nav('cas')">➕ Nouveau cas clinique</button>
     <button class="btn btn-ai btn-full btn-lg" onclick="nav('ai')">🤖 Assistant IA</button>
     <button class="btn btn-gold btn-full btn-lg" onclick="nav('cages')">🏥 Gérer les cages</button>
+    <button class="btn btn-ghost btn-full btn-lg" onclick="nav('dose')">💊 Calculer une dose</button>
+    <button class="btn btn-ghost btn-full btn-lg" onclick="nav('chrono')">⏱️ Chrono chirurgical</button>
+    <button class="btn btn-ghost btn-full btn-lg" onclick="nav('photos')">📸 Photos patients</button>
   </div>
 </div>
 
@@ -3665,6 +3671,253 @@ Voici les données à convertir :
   </div>
 </div>
 
+
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: CALCULATEUR DE DOSE
+══════════════════════════════════════════════════════════════ -->
+<div id="page-dose" class="page">
+  <div class="page-hero">
+    <div class="tag">💊 Posologie · Calcul automatique selon le poids</div>
+    <h2>Calculateur de Dose Rapide</h2>
+    <p>Sélectionnez un médicament — entrez le poids — dose calculée instantanément</p>
+  </div>
+
+  <div style="background:#f0faf5;border-radius:10px;padding:10px 16px;margin-bottom:14px;font-size:12px;color:var(--forest);display:flex;align-items:center;gap:10px">
+    <span style="font-size:18px">💡</span>
+    <span><strong>Comment utiliser :</strong> ① Cherchez un médicament ou cliquez dans la grille ci-dessous → ② Entrez le poids → ③ La dose est calculée instantanément</span>
+  </div>
+  <div class="g2" style="margin-bottom:18px">
+    <div class="card">
+      <div class="card-title">🔍 Recherche médicament</div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="lbl">Nom / molécule</label>
+        <input class="inp" id="dose-search" placeholder="Ex: Shotapen, Méloxicam, Keta..." oninput="doseSearch(this.value)" autocomplete="off"/>
+        <div id="dose-drug-drop" style="display:none;border:1.5px solid var(--sage);border-radius:10px;margin-top:4px;overflow:hidden;max-height:220px;overflow-y:auto;background:#fff;box-shadow:var(--sh2)"></div>
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="lbl">Espèce</label>
+        <select class="sel" id="dose-species" onchange="doseCalc()">
+          <option value="chien">Chien</option>
+          <option value="chat">Chat</option>
+          <option value="bovin">Bovin</option>
+          <option value="ovin">Ovin</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="row2" style="margin-bottom:10px">
+        <div class="fg">
+          <label class="lbl">Poids (kg)</label>
+          <input class="inp" id="dose-weight" type="number" step="0.1" min="0.1" placeholder="Ex: 12.5" oninput="doseCalc()"/>
+        </div>
+        <div class="fg">
+          <label class="lbl">Concentration (mg/mL)</label>
+          <input class="inp" id="dose-conc" type="number" step="0.1" min="0" placeholder="Ex: 150" oninput="doseCalc()"/>
+        </div>
+      </div>
+      <div class="fg">
+        <label class="lbl">Voie d'administration</label>
+        <select class="sel" id="dose-route">
+          <option>IM</option><option>SC</option><option>IV</option><option>PO</option><option>Topique</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost btn-full" style="margin-top:10px;font-size:12px" onclick="doseClearForm()">🔄 Réinitialiser</button>
+    </div>
+
+    <div>
+      <!-- Result card -->
+      <div id="dose-result-card" style="background:linear-gradient(135deg,var(--forest),#1a3c2a);border-radius:var(--r2);padding:22px;color:#fff;margin-bottom:16px;min-height:180px;display:flex;flex-direction:column;justify-content:center">
+        <div style="font-size:11px;opacity:.6;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Dose calculée</div>
+        <div id="dose-result-main" style="font-size:36px;font-weight:800;font-family:'DM Serif Display',serif;line-height:1.1">—</div>
+        <div id="dose-result-sub" style="font-size:13px;opacity:.75;margin-top:8px">Entrez un médicament et un poids</div>
+        <div id="dose-result-volume" style="font-size:20px;font-weight:700;margin-top:10px;color:#86efac"></div>
+      </div>
+
+      <div class="card" id="dose-info-card" style="display:none">
+        <div class="card-title" id="dose-drug-name-display"></div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px" id="dose-posologie-raw"></div>
+        <div id="dose-warnings" style="font-size:12px"></div>
+        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-sm btn-ghost" onclick="doseAddToOrdo()">📝 Ajouter à l'ordonnance</button>
+          <button class="btn btn-sm btn-ghost" onclick="doseCopy()">📋 Copier</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick dose grid -->
+  <div class="card">
+    <div class="card-title">⚡ Accès rapide — Doses courantes</div>
+    <div class="fchips" style="margin-bottom:10px">
+      <button class="fchip on" onclick="doseQuickFilter('',this)">Tous</button>
+      <button class="fchip" onclick="doseQuickFilter('Antibiotiques',this)">Antibiotiques</button>
+      <button class="fchip" onclick="doseQuickFilter('AINS',this)">AINS</button>
+      <button class="fchip" onclick="doseQuickFilter('Antiparasitaires',this)">Antiparasitaires</button>
+      <button class="fchip" onclick="doseQuickFilter('Anesthésiques',this)">Anesthésiques</button>
+      <button class="fchip" onclick="doseQuickFilter('Corticoïdes',this)">Corticoïdes</button>
+    </div>
+    <div id="dose-quick-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: CHRONOMETRE CHIRURGICAL
+══════════════════════════════════════════════════════════════ -->
+<div id="page-chrono" class="page">
+  <div class="page-hero">
+    <div class="tag">⏱️ Chronomètre · Phases chirurgicales</div>
+    <h2>Chronomètre Chirurgical</h2>
+    <p>Anesthésie · Chirurgie · Réveil · Log automatique des événements</p>
+  </div>
+
+  <div class="g2">
+    <div>
+      <!-- Main timer -->
+      <div style="background:linear-gradient(135deg,#0f1923,#1a2c3f);border-radius:var(--r2);padding:28px;text-align:center;margin-bottom:16px">
+        <div id="chrono-phase-label" style="font-size:11px;text-transform:uppercase;letter-spacing:2px;color:#4ADE80;margin-bottom:8px">En attente</div>
+        <div id="chrono-display" style="font-size:60px;font-weight:800;font-family:'DM Serif Display',serif;color:#fff;font-variant-numeric:tabular-nums;line-height:1">00:00:00</div>
+        <div id="chrono-total-label" style="font-size:12px;color:rgba(255,255,255,.45);margin-top:6px">Durée totale: 00:00:00</div>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;flex-wrap:wrap">
+          <button class="btn" id="chrono-btn-start" onclick="chronoStart()" style="background:#22c55e;color:#fff;font-weight:700;min-width:100px">▶ Démarrer</button>
+          <button class="btn btn-ghost" id="chrono-btn-pause" onclick="chronoPause()" style="display:none">⏸ Pause</button>
+          <button class="btn btn-ghost" onclick="chronoMark()" style="border-color:#f59e0b;color:#f59e0b">🔖 Marquer</button>
+          <button class="btn btn-ghost" onclick="chronoReset()" style="border-color:#ef4444;color:#ef4444">⏹ Reset</button>
+        </div>
+      </div>
+
+      <!-- Phases -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div class="card-title" style="margin:0">🏁 Phases</div>
+          <span style="font-size:10.5px;color:var(--muted)">Cliquez pour démarrer automatiquement</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="btn btn-ghost btn-full" onclick="chronoPhase('Prémed.')" id="phase-btn-0">💉 Prémédication</button>
+          <button class="btn btn-ghost btn-full" onclick="chronoPhase('Induction')" id="phase-btn-1">💤 Induction</button>
+          <button class="btn btn-ghost btn-full" onclick="chronoPhase('Intubation')" id="phase-btn-2">🌬 Intubation</button>
+          <button class="btn btn-ghost btn-full" onclick="chronoPhase('Chirurgie')" id="phase-btn-3">🔪 Chirurgie</button>
+          <button class="btn btn-ghost btn-full" onclick="chronoPhase('Suture')" id="phase-btn-4">🧵 Suture</button>
+          <button class="btn btn-ghost btn-full" onclick="chronoPhase('Réveil')" id="phase-btn-5">☀️ Réveil</button>
+        </div>
+      </div>
+
+      <!-- Save -->
+      <div class="card" style="margin-top:16px">
+        <div class="card-title">💾 Sauvegarder la session</div>
+        <div class="fg" style="margin-bottom:8px">
+          <label class="lbl">Patient</label>
+          <input class="inp" id="chrono-patient" placeholder="Nom animal · Propriétaire"/>
+        </div>
+        <div class="fg" style="margin-bottom:8px">
+          <label class="lbl">Type d'intervention</label>
+          <input class="inp" id="chrono-type" placeholder="Ex: OVH, Castration, Laparotomie..."/>
+        </div>
+        <button class="btn btn-p btn-full" onclick="chronoSave()">💾 Enregistrer dans l'historique</button>
+      </div>
+    </div>
+
+    <!-- Event log -->
+    <div class="card">
+      <div class="card-title">📝 Journal des événements</div>
+      <div id="chrono-log" style="font-size:12.5px;max-height:520px;overflow-y:auto">
+        <div class="chrono-log-empty" style="color:var(--muted);text-align:center;padding:30px">Démarrez le chronomètre pour enregistrer les événements</div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <input class="inp" id="chrono-note-inp" placeholder="Note libre..." style="flex:1" onkeydown="if(event.key==='Enter')chronoAddNote()"/>
+        <button class="btn btn-ghost" onclick="chronoAddNote()">+ Note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PAGE: PHOTOS PATIENT
+══════════════════════════════════════════════════════════════ -->
+<div id="page-photos" class="page">
+  <div class="page-hero">
+    <div class="tag">📸 Dossier photo · Suivi visuel des patients</div>
+    <h2>Photos Patients</h2>
+    <p>Ajoutez, organisez et comparez des photos cliniques par patient</p>
+  </div>
+
+  <div class="g2" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-title">➕ Ajouter des photos</div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="lbl">Patient</label>
+        <input class="inp" id="photo-patient-search" placeholder="Tapez nom animal ou propriétaire..." oninput="photoSearchPatient(this.value)" autocomplete="off"/>
+        <div id="photo-patient-drop" style="display:none;border:1.5px solid var(--sage);border-radius:10px;margin-top:4px;overflow:hidden;max-height:200px;overflow-y:auto;background:#fff;box-shadow:var(--sh2)"></div>
+        <div id="photo-selected-patient" style="display:none;margin-top:6px;font-size:12px;color:var(--forest);font-weight:600;padding:6px 10px;background:#e8f5f0;border-radius:8px"></div>
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="lbl">Catégorie</label>
+        <select class="sel" id="photo-category">
+          <option value="general">Général</option>
+          <option value="lesion">Lésion / Plaie</option>
+          <option value="oeil">Ophtalmologie</option>
+          <option value="peau">Dermatologie</option>
+          <option value="radio">Radiographie</option>
+          <option value="postop">Post-opératoire</option>
+          <option value="avant">Avant traitement</option>
+          <option value="apres">Après traitement</option>
+        </select>
+      </div>
+      <div class="fg" style="margin-bottom:10px">
+        <label class="lbl">Note (optionnel)</label>
+        <input class="inp" id="photo-note" placeholder="Ex: Lésion flanc droit J1, cicatrisation J7..."/>
+      </div>
+
+      <!-- Drop zone -->
+      <div id="photo-drop-zone" onclick="document.getElementById('photo-file-input').click()"
+        style="border:2px dashed var(--sage);border-radius:14px;padding:30px;text-align:center;cursor:pointer;transition:.2s;background:#f8fdf9"
+        ondragover="event.preventDefault();this.style.background='#e8f5f0'"
+        ondragleave="this.style.background='#f8fdf9'"
+        ondrop="photoHandleDrop(event)">
+        <div style="font-size:32px;margin-bottom:8px">📸</div>
+        <div style="font-size:13px;font-weight:600;color:var(--forest)">Cliquez ou glissez des photos ici</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG, WEBP · Max 5 MB par photo</div>
+      </div>
+      <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none" onchange="photoHandleFiles(this.files)"/>
+
+      <div id="photo-preview-strip" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"></div>
+      <button class="btn btn-p btn-full" style="margin-top:10px" onclick="photoSave()">💾 Enregistrer</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔍 Parcourir par patient</div>
+      <input class="inp" id="photo-browse-search" placeholder="Filtrer patients..." oninput="photoBrowseFilter(this.value)" style="margin-bottom:12px"/>
+      <div id="photo-patient-list" style="max-height:480px;overflow-y:auto">
+        <div style="color:var(--muted);text-align:center;padding:24px;font-size:12px">
+          <div style="font-size:28px;margin-bottom:8px">📂</div>
+          Les patients avec photos apparaîtront ici
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery -->
+  <div class="card" id="photo-gallery-card" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div class="card-title" id="photo-gallery-title" style="margin:0">🖼️ Galerie</div>
+      <div style="display:flex;gap:8px">
+        <select class="sel" id="photo-filter-cat" style="width:auto;padding:5px 10px;font-size:11px" onchange="photoRenderGallery()">
+          <option value="">Toutes catégories</option>
+          <option value="lesion">Lésion</option>
+          <option value="oeil">Ophtalmologie</option>
+          <option value="peau">Dermatologie</option>
+          <option value="radio">Radiographie</option>
+          <option value="postop">Post-op</option>
+          <option value="avant">Avant</option>
+          <option value="apres">Après</option>
+        </select>
+      </div>
+    </div>
+    <div id="photo-gallery-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px"></div>
+  </div>
+
+
+</div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /shell -->
@@ -3729,6 +3982,7 @@ Voici les données à convertir :
     </div>
     <div id="oph-race-body"></div>
   </div>
+
 </div>
 
 <script>
@@ -4349,7 +4603,8 @@ const TITLES={
   rdv:'Rendez-vous',finances:'Finances',
   references:'Références Cliniques',support:'Support & Feedback',
   statistics:'Statistiques & Analytics',ordonnances:'Ordonnances',
-  maladies:'Maladies · Chiens & Chats · Algérie',settings:'Paramètres',vaccinations:'Vaccinations & Rappels',labo:'Examens de Laboratoire',urgences:'Protocoles d\'Urgence',nutrition:'Nutrition & Besoins Énergétiques',preop:'Checklist Pré-Opératoire',ophtalmologie:'Ophtalmologie Canine · ENSV-OPH 2026'
+  maladies:'Maladies · Chiens & Chats · Algérie',settings:'Paramètres',vaccinations:'Vaccinations & Rappels',labo:'Examens de Laboratoire',urgences:'Protocoles d\'Urgence',nutrition:'Nutrition & Besoins Énergétiques',preop:'Checklist Pré-Opératoire',ophtalmologie:'Ophtalmologie Canine · ENSV-OPH 2026',
+  dose:'Calculateur de Dose Rapide',chrono:'Chronomètre Chirurgical',photos:'Photos Patients'
 };
 
 function nav(id){
@@ -4384,6 +4639,8 @@ function nav(id){
   if(id==='preop'){renderChecklist();}
   if(id==='ophtalmologie'){renderOphAffections('');}
   if(id==='urgences'){setUrg(document.querySelector('#page-urgences .fchip'),'choc');}
+  if(id==='dose'){if(typeof doseQuickFilter==='function')doseQuickFilter('');}
+  if(id==='photos'){if(typeof photoBrowseFilter==='function')photoBrowseFilter('');}
 }
 
 // ── MODALS ──
@@ -25168,6 +25425,522 @@ window.fillCaseAnimalFromExisting = function(animalIdOrName) {
   });
 })();
 </script>
+
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  CALCULATEUR DE DOSE RAPIDE
+// ═══════════════════════════════════════════════════════════
+(function(){
+  var _selectedDrug = null;
+
+  // ── Dose search ──
+  window.doseSearch = function(q){
+    var drop = document.getElementById('dose-drug-drop');
+    if (!q || q.length < 2) { drop.style.display = 'none'; return; }
+    var val = q.toLowerCase();
+    var hits = (typeof DRUGS !== 'undefined' ? DRUGS : []).filter(function(d){
+      return d.n.toLowerCase().includes(val) || (d.m||'').toLowerCase().includes(val) || (d.g||'').toLowerCase().includes(val);
+    }).slice(0, 10);
+    if (!hits.length) { drop.style.display = 'none'; return; }
+    drop.innerHTML = hits.map(function(d){
+      return '<div onclick="doseSelectDrug(\''+d.id+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0faf5;display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background=\'#f0faf5\'" onmouseout="this.style.background=\'\'"><div><div style="font-size:13px;font-weight:700;color:#1A4A2E">'+d.n+'</div><div style="font-size:11px;color:#6b8f73">'+d.m+' · '+d.g+'</div></div><span style="font-size:10px;background:#e8f5f0;color:var(--forest);padding:2px 8px;border-radius:20px">'+d.f+'</span></div>';
+    }).join('');
+    drop.style.display = 'block';
+  };
+
+  window.doseSelectDrug = function(id){
+    var drug = (typeof DRUGS !== 'undefined' ? DRUGS : []).find(function(d){ return d.id === id; });
+    if (!drug) return;
+    _selectedDrug = drug;
+    document.getElementById('dose-search').value = drug.n;
+    document.getElementById('dose-drug-drop').style.display = 'none';
+    // auto-set route from drug
+    var routeSel = document.getElementById('dose-route');
+    if (drug.v && routeSel) {
+      var routes = drug.v.split('/');
+      Array.from(routeSel.options).forEach(function(opt){
+        if (routes.some(function(r){ return opt.value.toLowerCase() === r.toLowerCase().trim(); })) {
+          routeSel.value = opt.value;
+        }
+      });
+    }
+    // show info card
+    var info = document.getElementById('dose-info-card');
+    if (info) {
+      info.style.display = 'block';
+      document.getElementById('dose-drug-name-display').textContent = '💊 ' + drug.n + ' — ' + drug.m;
+      document.getElementById('dose-posologie-raw').textContent = 'Posologie: ' + (drug.poso || 'Non spécifiée');
+      var warn = document.getElementById('dose-warnings');
+      var parts = [];
+      if (drug.ci) parts.push('<div style="color:#dc2626;margin-bottom:4px">⚠️ CI: '+drug.ci+'</div>');
+      if (drug.eff) parts.push('<div style="color:#d97706;margin-bottom:4px">⚡ Effets: '+drug.eff+'</div>');
+      warn.innerHTML = parts.join('');
+    }
+    doseCalc();
+  };
+
+  window.doseCalc = function(){
+    if (!_selectedDrug) return;
+    var weight = parseFloat(document.getElementById('dose-weight')?.value || '0');
+    var conc = parseFloat(document.getElementById('dose-conc')?.value || '0');
+    var species = document.getElementById('dose-species')?.value || 'chien';
+    var poso = _selectedDrug.poso || '';
+    var mainEl = document.getElementById('dose-result-main');
+    var subEl = document.getElementById('dose-result-sub');
+    var volEl = document.getElementById('dose-result-volume');
+
+    // Parse mg/kg from poso string
+    // Patterns: "1 mL/10 kg", "5–20 mg/kg", "0.1–0.2 mg/kg", "15–25 mg/kg"
+    var mgKgMatch = poso.match(/([\d.]+)(?:–|-)?([\d.]+)?\s*mg\/kg/i);
+    var mlKgMatch = poso.match(/([\d.]+)(?:–|-)?([\d.]+)?\s*mL\/(\d+)\s*kg/i);
+
+    if (!weight || weight <= 0) {
+      mainEl.textContent = '—';
+      subEl.textContent = 'Entrez un poids';
+      volEl.textContent = '';
+      return;
+    }
+
+    // Species-specific poso: check if poso has 🐕 / 🐈 markers
+    var activePosoStr = poso;
+    if ((poso.includes('🐕') || poso.includes('🐈')) && species) {
+      var dogMatch = poso.match(/🐕[^|🐈]*/);
+      var catMatch = poso.match(/🐈[^|🐕]*/);
+      if (species === 'chat' && catMatch) activePosoStr = catMatch[0];
+      else if (species === 'chien' && dogMatch) activePosoStr = dogMatch[0];
+      mgKgMatch = activePosoStr.match(/([\d.]+)(?:–|-)?([\d.]+)?\s*mg\/kg/i);
+      mlKgMatch = activePosoStr.match(/([\d.]+)(?:–|-)?([\d.]+)?\s*mL\/(\d+)\s*kg/i);
+    }
+
+    if (mlKgMatch) {
+      var mlLow = parseFloat(mlKgMatch[1]);
+      var mlHigh = mlKgMatch[2] ? parseFloat(mlKgMatch[2]) : mlLow;
+      var perKg = parseFloat(mlKgMatch[3] || '10');
+      var volLow = (mlLow / perKg * weight).toFixed(2);
+      var volHigh = (mlHigh / perKg * weight).toFixed(2);
+      mainEl.textContent = volLow === volHigh ? volLow + ' mL' : volLow + '–' + volHigh + ' mL';
+      subEl.textContent = mlLow + ' mL/' + perKg + ' kg × ' + weight + ' kg';
+      volEl.textContent = '';
+    } else if (mgKgMatch) {
+      var low = parseFloat(mgKgMatch[1]);
+      var high = mgKgMatch[2] ? parseFloat(mgKgMatch[2]) : low;
+      var doseLow = (low * weight).toFixed(1);
+      var doseHigh = (high * weight).toFixed(1);
+      mainEl.textContent = doseLow === doseHigh ? doseLow + ' mg' : doseLow + '–' + doseHigh + ' mg';
+      subEl.textContent = low + (high !== low ? '–' + high : '') + ' mg/kg × ' + weight + ' kg';
+      if (conc > 0) {
+        var vlLow = (parseFloat(doseLow) / conc).toFixed(2);
+        var vlHigh = (parseFloat(doseHigh) / conc).toFixed(2);
+        volEl.textContent = '→ ' + (vlLow === vlHigh ? vlLow : vlLow + '–' + vlHigh) + ' mL (' + conc + ' mg/mL)';
+      } else {
+        volEl.textContent = 'Entrez la concentration pour calculer le volume';
+      }
+    } else {
+      mainEl.textContent = '—';
+      subEl.textContent = activePosoStr.slice(0, 80);
+      volEl.textContent = 'Posologie sans mg/kg explicite';
+    }
+  };
+
+  window.doseQuickFilter = function(group, el){
+    if (el) {
+      document.querySelectorAll('#page-dose .fchip').forEach(function(c){ c.classList.remove('on'); });
+      el.classList.add('on');
+    }
+    var drugs = (typeof DRUGS !== 'undefined' ? DRUGS : []);
+    var filtered = group ? drugs.filter(function(d){ return d.g === group; }) : drugs;
+    var grid = document.getElementById('dose-quick-grid');
+    if (!grid) return;
+    if (!filtered.length) {
+      grid.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:12px;grid-column:1/-1">Aucun médicament dans cette catégorie</div>';
+      return;
+    }
+    grid.innerHTML = filtered.map(function(d){
+      var poso = (d.poso || '').slice(0, 60);
+      return '<div onclick="doseSelectDrug(\''+d.id+'\')" style="background:#f8fdf9;border:1.5px solid var(--mint);border-radius:12px;padding:12px;cursor:pointer;transition:.15s" onmouseover="this.style.background=\'#e8f5f0\'" onmouseout="this.style.background=\'#f8fdf9\'"><div style="font-weight:700;font-size:13px;color:var(--forest);margin-bottom:3px">'+d.n+'</div><div style="font-size:10.5px;color:var(--muted)">'+d.m+'</div><div style="font-size:10px;color:#6b8f73;margin-top:4px;font-style:italic">'+poso+'</div></div>';
+    }).join('');
+  };
+
+  window.doseClearForm = function(){
+    _selectedDrug = null;
+    var s = document.getElementById('dose-search'); if(s) s.value = '';
+    var w = document.getElementById('dose-weight'); if(w) w.value = '';
+    var c = document.getElementById('dose-conc'); if(c) c.value = '';
+    var drop = document.getElementById('dose-drug-drop'); if(drop) drop.style.display = 'none';
+    var info = document.getElementById('dose-info-card'); if(info) info.style.display = 'none';
+    var mainEl = document.getElementById('dose-result-main'); if(mainEl) mainEl.textContent = '—';
+    var subEl = document.getElementById('dose-result-sub'); if(subEl) subEl.textContent = 'Entrez un médicament et un poids';
+    var volEl = document.getElementById('dose-result-volume'); if(volEl) volEl.textContent = '';
+    document.querySelectorAll('#page-dose .fchip').forEach(function(c){ c.classList.remove('on'); });
+    var first = document.querySelector('#page-dose .fchip'); if(first) first.classList.add('on');
+    doseQuickFilter('');
+    toast('🔄 Réinitialisé');
+  };
+
+  window.doseCopy = function(){
+    if (!_selectedDrug) return;
+    var main = document.getElementById('dose-result-main')?.textContent || '—';
+    var vol = document.getElementById('dose-result-volume')?.textContent || '';
+    var weight = document.getElementById('dose-weight')?.value || '?';
+    var text = _selectedDrug.n + ' (' + _selectedDrug.m + ') — ' + weight + ' kg → ' + main + (vol ? ' ' + vol : '');
+    navigator.clipboard?.writeText(text).then(function(){ toast('📋 Copié !'); });
+  };
+
+  window.doseAddToOrdo = function(){
+    if (!_selectedDrug) return;
+    var main = document.getElementById('dose-result-main')?.textContent || '—';
+    var weight = document.getElementById('dose-weight')?.value || '?';
+    var route = document.getElementById('dose-route')?.value || '';
+    var line = _selectedDrug.n + ' ' + main + ' ' + route + ' — ' + ((_selectedDrug.poso||'').split('·').slice(1).join(' · ').trim() || '');
+    // Navigate to ordonnances and pre-fill
+    nav('ordonnances');
+    setTimeout(function(){
+      var ta = document.querySelector('#page-ordonnances textarea');
+      if (ta) { ta.value = (ta.value ? ta.value + '\n' : '') + line.trim(); ta.focus(); }
+    }, 300);
+    toast('📝 Ajouté à l\'ordonnance');
+  };
+
+  // ── Init: populate quick grid on load ──
+  document.addEventListener('DOMContentLoaded', function(){
+    if (typeof doseQuickFilter === 'function') doseQuickFilter('');
+  });
+
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  CHRONOMETRE CHIRURGICAL
+// ═══════════════════════════════════════════════════════════
+(function(){
+  var _startTime = null;
+  var _elapsed = 0;
+  var _timer = null;
+  var _running = false;
+  var _currentPhase = 'En attente';
+  var _phaseStart = 0;
+  var _log = [];
+  var _totalStart = null;
+
+  function fmt(ms){
+    var s = Math.floor(ms / 1000);
+    var h = Math.floor(s / 3600);
+    var m = Math.floor((s % 3600) / 60);
+    var sec = s % 60;
+    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+  }
+
+  function tick(){
+    var now = Date.now();
+    var total = _elapsed + (now - _startTime);
+    document.getElementById('chrono-display').textContent = fmt(total);
+    if (_totalStart) document.getElementById('chrono-total-label').textContent = 'Durée totale: ' + fmt(now - _totalStart);
+  }
+
+  function addLog(type, text, color){
+    var now = Date.now();
+    var elapsed = _elapsed + (_startTime ? (now - _startTime) : 0);
+    var entry = { time: fmt(elapsed), type: type, text: text, ts: now };
+    _log.push(entry);
+    var log = document.getElementById('chrono-log');
+    if (!log) return;
+    var first = log.querySelector('.chrono-log-empty');
+    if (first) first.remove();
+    var div = document.createElement('div');
+    div.style.cssText = 'padding:8px 12px;border-left:3px solid '+(color||'var(--sage)')+';margin-bottom:6px;background:#f8fdf9;border-radius:0 8px 8px 0';
+    div.innerHTML = '<span style="font-family:monospace;font-size:11px;color:var(--muted);margin-right:8px">'+entry.time+'</span><strong>'+text+'</strong>';
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  window.chronoStart = function(){
+    if (_running) return;
+    if (!_totalStart) _totalStart = Date.now();
+    _startTime = Date.now();
+    _running = true;
+    _timer = setInterval(tick, 250);
+    document.getElementById('chrono-btn-start').style.display = 'none';
+    document.getElementById('chrono-btn-pause').style.display = '';
+    addLog('start', '▶ Démarré', '#22c55e');
+    var logEl = document.getElementById('chrono-log');
+    var empty = logEl?.querySelector('.chrono-log-empty');
+    if (empty) empty.remove();
+  };
+
+  window.chronoPause = function(){
+    if (!_running) { chronoStart(); return; }
+    _elapsed += Date.now() - _startTime;
+    clearInterval(_timer);
+    _running = false;
+    document.getElementById('chrono-btn-start').style.display = '';
+    document.getElementById('chrono-btn-start').textContent = '▶ Reprendre';
+    document.getElementById('chrono-btn-pause').style.display = 'none';
+    addLog('pause', '⏸ Pause', '#f59e0b');
+  };
+
+  window.chronoReset = function(){
+    clearInterval(_timer);
+    _elapsed = 0; _startTime = null; _running = false; _totalStart = null;
+    _log = []; _currentPhase = 'En attente';
+    document.getElementById('chrono-display').textContent = '00:00:00';
+    document.getElementById('chrono-total-label').textContent = 'Durée totale: 00:00:00';
+    document.getElementById('chrono-phase-label').textContent = 'En attente';
+    document.getElementById('chrono-btn-start').style.display = '';
+    document.getElementById('chrono-btn-start').textContent = '▶ Démarrer';
+    document.getElementById('chrono-btn-pause').style.display = 'none';
+    var log = document.getElementById('chrono-log');
+    if (log) log.innerHTML = '<div class="chrono-log-empty" style="color:var(--muted);text-align:center;padding:30px">Démarrez le chronomètre pour enregistrer les événements</div>';
+    // reset phase buttons
+    for (var i=0;i<6;i++){var b=document.getElementById('phase-btn-'+i);if(b){b.style.background='';b.style.color='';}}
+  };
+
+  window.chronoMark = function(){
+    addLog('mark', '🔖 Marqueur', '#6366f1');
+  };
+
+  window.chronoPhase = function(phase){
+    _currentPhase = phase;
+    document.getElementById('chrono-phase-label').textContent = phase.toUpperCase();
+    // Highlight active phase button
+    var labels = ['Prémed.','Induction','Intubation','Chirurgie','Suture','Réveil'];
+    for (var i=0;i<labels.length;i++){
+      var b = document.getElementById('phase-btn-'+i);
+      if (b) {
+        if (labels[i] === phase) { b.style.background='var(--forest)'; b.style.color='#fff'; }
+        else { b.style.background=''; b.style.color=''; }
+      }
+    }
+    var colors = {'Prémed.':'#6366f1','Induction':'#8b5cf6','Intubation':'#06b6d4','Chirurgie':'#ef4444','Suture':'#f59e0b','Réveil':'#22c55e'};
+    addLog('phase', '🏁 Phase: '+phase, colors[phase]||'var(--sage)');
+    if (!_running) chronoStart();
+  };
+
+  window.chronoAddNote = function(){
+    var inp = document.getElementById('chrono-note-inp');
+    if (!inp || !inp.value.trim()) return;
+    addLog('note', '📝 '+inp.value.trim(), '#64748b');
+    inp.value = '';
+  };
+
+  window.chronoSave = function(){
+    var patient = document.getElementById('chrono-patient')?.value?.trim() || 'Patient non précisé';
+    var type = document.getElementById('chrono-type')?.value?.trim() || 'Chirurgie';
+    var elapsed = _elapsed + (_startTime && _running ? Date.now()-_startTime : 0);
+    var logText = _log.map(function(e){ return '['+e.time+'] '+e.text; }).join('\n');
+    var entry = {
+      id: 'h' + Date.now(),
+      animal: patient,
+      espece: 'chien',
+      client: '',
+      date: (function(){ var d=new Date(); return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear(); })(),
+      diagnostic: type + ' — Durée: ' + fmt(elapsed),
+      traitements: logText ? [logText] : [],
+      montant: 0, paiement: 'paye', urgence: 'normal',
+      notes: 'Session chrono · ' + fmt(elapsed)
+    };
+    if (typeof HISTORIQUE_DATA !== 'undefined') {
+      HISTORIQUE_DATA.unshift(entry);
+      if (typeof renderHistoriqueTable === 'function') renderHistoriqueTable();
+    }
+    toast('✅ Session enregistrée dans l\'historique · ' + fmt(elapsed));
+  };
+})();
+
+// ═══════════════════════════════════════════════════════════
+//  PHOTOS PATIENTS
+// ═══════════════════════════════════════════════════════════
+(function(){
+  var _pendingPhotos = [];
+  var _photoPatientId = null;
+  var _photoPatientName = '';
+  var _galleryPatientId = null;
+
+  function getPhotoDb(){
+    try { return JSON.parse(localStorage.getItem('vp_photos') || '{}'); } catch(e){ return {}; }
+  }
+  function savePhotoDb(db){
+    try { localStorage.setItem('vp_photos', JSON.stringify(db)); } catch(e){ toast('⚠️ Photos: stockage plein'); }
+  }
+
+  window.photoSearchPatient = function(q){
+    var drop = document.getElementById('photo-patient-drop');
+    if (!q || q.length < 2) { drop.style.display = 'none'; return; }
+    var val = q.toLowerCase();
+    var patients = (typeof PATIENTS !== 'undefined' ? PATIENTS : []);
+    var hits = patients.filter(function(p){
+      return (p.name||'').toLowerCase().includes(val) || (p.owner||'').toLowerCase().includes(val);
+    }).slice(0, 8);
+    if (!hits.length) { drop.style.display = 'none'; return; }
+    drop.innerHTML = hits.map(function(p){
+      var icon = (p.species||'').toLowerCase().includes('chat') ? '🐈' : '🐕';
+      return '<div onclick="photoSelectPatient(\''+p.id+'\',\''+((p.name||'').replace(/'/g,"\\'"))+'\',\''+((p.owner||'').replace(/'/g,"\\'"))+'\')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0faf5" onmouseover="this.style.background=\'#f0faf5\'" onmouseout="this.style.background=\'\'"><span style="font-size:16px">'+icon+'</span> <strong>'+p.name+'</strong> <span style="color:var(--muted);font-size:11px">· '+p.owner+'</span></div>';
+    }).join('');
+    drop.style.display = 'block';
+  };
+
+  window.photoSelectPatient = function(id, name, owner){
+    _photoPatientId = id;
+    _photoPatientName = name + ' · ' + owner;
+    document.getElementById('photo-patient-search').value = name;
+    document.getElementById('photo-patient-drop').style.display = 'none';
+    var sel = document.getElementById('photo-selected-patient');
+    if (sel) { sel.style.display = 'block'; sel.textContent = '✅ ' + name + ' (' + owner + ')'; }
+  };
+
+  window.photoHandleFiles = function(files){
+    Array.from(files).forEach(function(f){
+      if (f.size > 5 * 1024 * 1024) { toast('⚠️ ' + f.name + ' trop lourd (max 5 MB)'); return; }
+      var reader = new FileReader();
+      reader.onload = function(e){
+        _pendingPhotos.push({ data: e.target.result, name: f.name });
+        photoRenderPreview();
+      };
+      reader.readAsDataURL(f);
+    });
+  };
+
+  window.photoHandleDrop = function(event){
+    event.preventDefault();
+    document.getElementById('photo-drop-zone').style.background = '#f8fdf9';
+    photoHandleFiles(event.dataTransfer.files);
+  };
+
+  function photoRenderPreview(){
+    var strip = document.getElementById('photo-preview-strip');
+    if (!strip) return;
+    strip.innerHTML = _pendingPhotos.map(function(p, i){
+      return '<div style="position:relative;display:inline-block"><img src="'+p.data+'" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:2px solid var(--mint)"/><button onclick="photoRemovePending('+i+')" style="position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:18px;height:18px;font-size:10px;cursor:pointer;line-height:18px">×</button></div>';
+    }).join('');
+  }
+
+  window.photoRemovePending = function(i){
+    _pendingPhotos.splice(i, 1);
+    photoRenderPreview();
+  };
+
+  window.photoSave = function(){
+    if (!_photoPatientId) { toast('⚠️ Sélectionnez un patient d\'abord'); return; }
+    if (!_pendingPhotos.length) { toast('⚠️ Ajoutez au moins une photo'); return; }
+    var cat = document.getElementById('photo-category')?.value || 'general';
+    var note = document.getElementById('photo-note')?.value?.trim() || '';
+    var db = getPhotoDb();
+    if (!db[_photoPatientId]) db[_photoPatientId] = [];
+    var now = new Date();
+    var dateStr = String(now.getDate()).padStart(2,'0') + '/' + String(now.getMonth()+1).padStart(2,'0') + '/' + now.getFullYear();
+    _pendingPhotos.forEach(function(p){
+      db[_photoPatientId].push({
+        id: 'ph' + now.getTime() + Math.random().toString(36).slice(2),
+        data: p.data,
+        cat: cat,
+        note: note,
+        date: dateStr,
+        patientName: _photoPatientName
+      });
+    });
+    savePhotoDb(db);
+    _pendingPhotos = [];
+    photoRenderPreview();
+    document.getElementById('photo-note').value = '';
+    toast('✅ ' + db[_photoPatientId].length + ' photo(s) enregistrée(s)');
+    photoBrowseFilter('');
+  };
+
+  window.photoBrowseFilter = function(q){
+    var db = getPhotoDb();
+    var list = document.getElementById('photo-patient-list');
+    if (!list) return;
+    var patients = (typeof PATIENTS !== 'undefined' ? PATIENTS : []);
+    var entries = Object.keys(db).filter(function(pid){
+      if (!db[pid].length) return false;
+      var p = patients.find(function(pt){ return pt.id === pid; });
+      var name = p ? (p.name + ' ' + p.owner).toLowerCase() : pid;
+      return !q || name.includes(q.toLowerCase());
+    });
+    if (!entries.length) { list.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;font-size:12px">Aucune photo enregistrée</div>'; return; }
+    list.innerHTML = entries.map(function(pid){
+      var photos = db[pid];
+      var p = patients.find(function(pt){ return pt.id === pid; });
+      var name = p ? p.name : photos[0]?.patientName || pid;
+      var owner = p ? p.owner : '';
+      var icon = p ? ((p.species||'').toLowerCase().includes('chat') ? '🐈' : '🐕') : '🐾';
+      var thumb = photos[photos.length-1]?.data || '';
+      return '<div onclick="photoOpenGallery(\''+pid+'\')" style="display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;margin-bottom:6px;border:1.5px solid var(--mint);transition:.15s" onmouseover="this.style.background=\'#e8f5f0\'" onmouseout="this.style.background=\'\'">'+(thumb ? '<img src="'+thumb+'" style="width:44px;height:44px;object-fit:cover;border-radius:8px"/>' : '<div style="width:44px;height:44px;background:#e8f5f0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">'+icon+'</div>')+'<div><div style="font-weight:700;font-size:13px">'+icon+' '+name+'</div><div style="font-size:11px;color:var(--muted)">'+owner+' · '+photos.length+' photo(s)</div></div></div>';
+    }).join('');
+  };
+
+  window.photoOpenGallery = function(patientId){
+    _galleryPatientId = patientId;
+    var patients = (typeof PATIENTS !== 'undefined' ? PATIENTS : []);
+    var p = patients.find(function(pt){ return pt.id === patientId; });
+    var db = getPhotoDb();
+    var photos = db[patientId] || [];
+    var name = p ? (p.name + ' · ' + p.owner) : (photos[0]?.patientName || patientId);
+    document.getElementById('photo-gallery-title').textContent = '🖼️ ' + name + ' — ' + photos.length + ' photo(s)';
+    document.getElementById('photo-gallery-card').style.display = 'block';
+    document.getElementById('photo-filter-cat').value = '';
+    photoRenderGallery();
+    document.getElementById('photo-gallery-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  window.photoRenderGallery = function(){
+    if (!_galleryPatientId) return;
+    var db = getPhotoDb();
+    var photos = db[_galleryPatientId] || [];
+    var catFilter = document.getElementById('photo-filter-cat')?.value || '';
+    var filtered = catFilter ? photos.filter(function(ph){ return ph.cat === catFilter; }) : photos;
+    var grid = document.getElementById('photo-gallery-grid');
+    if (!grid) return;
+    var catLabels = { general:'Général', lesion:'Lésion', oeil:'Ophtalmologie', peau:'Dermatologie', radio:'Radio', postop:'Post-op', avant:'Avant', apres:'Après' };
+    grid.innerHTML = filtered.map(function(ph){
+      return '<div style="position:relative;border-radius:10px;overflow:hidden;aspect-ratio:1;cursor:pointer;box-shadow:var(--sh1)" onclick="photoLightbox(\''+ph.id+'\',\''+_galleryPatientId+'\')">'
+        + '<img src="'+ph.data+'" style="width:100%;height:100%;object-fit:cover"/>'
+        + '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:6px 8px">'
+        + '<div style="color:#fff;font-size:10px;font-weight:600">'+(catLabels[ph.cat]||ph.cat)+'</div>'
+        + '<div style="color:rgba(255,255,255,.7);font-size:9px">'+ph.date+'</div>'
+        + '</div>'
+        + '<button onclick="event.stopPropagation();photoDelete(\''+ph.id+'\',\''+_galleryPatientId+'\')" style="position:absolute;top:4px;right:4px;background:rgba(239,68,68,.85);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:22px">×</button>'
+        + '</div>';
+    }).join('') || '<div style="color:var(--muted);text-align:center;padding:20px;grid-column:1/-1">Aucune photo dans cette catégorie</div>';
+  };
+
+  window.photoLightbox = function(photoId, patientId){
+    var db = getPhotoDb();
+    var photos = db[patientId] || [];
+    var ph = photos.find(function(p){ return p.id === photoId; });
+    if (!ph) return;
+    var lb = document.getElementById('photo-lightbox');
+    document.getElementById('photo-lightbox-img').src = ph.data;
+    document.getElementById('photo-lightbox-caption').textContent = (ph.note || '') + (ph.note ? ' · ' : '') + ph.date;
+    lb.style.display = 'flex';
+  };
+
+  window.photoCloseLightbox = function(e){
+    if (e.target === document.getElementById('photo-lightbox')) {
+      document.getElementById('photo-lightbox').style.display = 'none';
+    }
+  };
+
+  window.photoDelete = function(photoId, patientId){
+    var db = getPhotoDb();
+    if (!db[patientId]) return;
+    db[patientId] = db[patientId].filter(function(p){ return p.id !== photoId; });
+    savePhotoDb(db);
+    photoRenderGallery();
+    photoBrowseFilter(document.getElementById('photo-browse-search')?.value || '');
+    toast('🗑️ Photo supprimée');
+  };
+
+})();
+
+</script>
+<!-- Photo lightbox at body level -->
+  <div id="photo-lightbox" onclick="photoCloseLightbox(event)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;align-items:center;justify-content:center;flex-direction:column">
+    <img id="photo-lightbox-img" style="max-width:90vw;max-height:80vh;border-radius:10px;object-fit:contain"/>
+    <div id="photo-lightbox-caption" style="color:#fff;font-size:13px;margin-top:12px;opacity:.8"></div>
+    <button onclick="document.getElementById('photo-lightbox').style.display='none'" style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;border-radius:50%;width:36px;height:36px;line-height:36px">×</button>
+  </div>
+
+
 
 
 
