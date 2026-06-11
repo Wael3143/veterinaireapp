@@ -4459,6 +4459,10 @@ let defaultStateCache = null;
 function deepClone(v){return JSON.parse(JSON.stringify(v));}
 function setCurrentUserContext(user){
   currentUserStorageKey = user?.id || user?.email || 'guest';
+  // Notify settings system of user change so it loads the right settings
+  setTimeout(function(){
+    if (typeof window.__vpOnUserChange === 'function') window.__vpOnUserChange();
+  }, 100);
 }
 function getUserStateStorageKey(){
   return 'veterinapp-state:' + currentUserStorageKey;
@@ -11180,6 +11184,61 @@ function saveAdmission() {
   window.getSettings = getSettings;
   window.saveSettings = saveSettings;
 
+  // ── USER-SCOPED SETTINGS OVERRIDE ──────────────────────────────────────
+  // Replace shared 'vetpro-settings' key with per-user key so each
+  // authenticated user has completely independent settings.
+  (function patchUserScopedSettings(){
+    function getUserSettingsKey(){
+      const uid = (typeof currentUserStorageKey !== 'undefined' ? currentUserStorageKey : null)
+                  || window.__vetproCurrentSessionUser?.id
+                  || window.__vetproCurrentSessionUser?.email
+                  || 'guest';
+      return 'vetpro-settings:' + uid;
+    }
+
+    const DEFAULTS = {
+      vetFirstName: '', vetLastName: '', title: 'Médecin vétérinaire',
+      orderNumber: '', email: '', phone: '',
+      clinicName: '', clinicAddress: '', clinicPhone: '', clinicHours: '08h00 - 18h00',
+      footerText: '',
+      notifications: { reminders: true, stock: true, digest: false, hospitalization: true, references: false },
+      display: { language: 'fr', theme: '#1A4A2E', compact: false, reducedMotion: false }
+    };
+
+    function getSettingsScoped(){
+      try {
+        const key = getUserSettingsKey();
+        // Also try legacy shared key as fallback on first use
+        const raw = localStorage.getItem(key) || localStorage.getItem('vetpro-settings') || 'null';
+        const saved = JSON.parse(raw);
+        return {
+          ...DEFAULTS, ...(saved || {}),
+          notifications: { ...DEFAULTS.notifications, ...(saved?.notifications || {}) },
+          display: { ...DEFAULTS.display, ...(saved?.display || {}) }
+        };
+      } catch(e) { return { ...DEFAULTS, notifications: {...DEFAULTS.notifications}, display: {...DEFAULTS.display} }; }
+    }
+
+    function saveSettingsScoped(next){
+      try {
+        const key = getUserSettingsKey();
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch(e) {}
+    }
+
+    window.getSettings = getSettingsScoped;
+    window.saveSettings = saveSettingsScoped;
+
+    // When user logs in/out, the key changes — bind a hook
+    window.__vpOnUserChange = function(){
+      // Re-apply settings UI if settings page is open
+      if (document.getElementById('page-settings')?.classList.contains('active')) {
+        if (typeof window.vpSyncSettingsToUI === 'function') window.vpSyncSettingsToUI();
+      }
+    };
+  })();
+  // ── END USER-SCOPED SETTINGS OVERRIDE ──────────────────────────────────
+
   function renameBranding(){
     document.title = 'VetPro - Plateforme vétérinaire';
     const replacements = [
@@ -14991,6 +15050,12 @@ function saveAdmission() {
         refreshUserBranding();
         hideApprovalsForNonAdmin();
         installTomorrowNotifications();
+        // Re-sync settings UI to the newly logged-in user's saved data
+        if (typeof window.__vpOnUserChange === 'function') window.__vpOnUserChange();
+        if (typeof window.vpSyncSettingsToUI === 'function' &&
+            document.getElementById('page-settings')?.classList.contains('active')){
+          window.vpSyncSettingsToUI();
+        }
       }, 0);
     });
   }
@@ -24302,6 +24367,283 @@ function saveAdmission() {
   schedule('initial');
   setTimeout(() => schedule('initial-late'), 800);
   setTimeout(() => schedule('initial-later'), 1800);
+})();
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     UNIFIED SETTINGS SYSTEM — single source of truth for all
+     settings read/write operations on the settings page.
+     Uses label-based lookup so it is robust to DOM reordering.
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  'use strict';
+
+  // ── Label-based field finder ────────────────────────────────────────────
+  function findFieldByLabel(page, labelText){
+    const labels = page.querySelectorAll('label, .lbl');
+    for (const lbl of labels){
+      if ((lbl.textContent || '').trim().toLowerCase().includes(labelText.toLowerCase())){
+        const fg = lbl.closest('.fg') || lbl.closest('.row2') || lbl.closest('.row3') || lbl.parentElement;
+        if (fg){
+          const el = fg.querySelector('input.inp, textarea.tex, select.sel');
+          if (el) return el;
+        }
+      }
+    }
+    return null;
+  }
+
+  // ── Read all settings fields from UI ───────────────────────────────────
+  function vpReadSettingsFromUI(){
+    const page = document.getElementById('page-settings');
+    if (!page || typeof getSettings !== 'function') return null;
+    const s = getSettings();
+    const f = (lbl) => findFieldByLabel(page, lbl);
+
+    // Profile
+    s.vetFirstName  = f('Prénom')?.value?.trim()           ?? s.vetFirstName;
+    s.vetLastName   = f('Nom')?.value?.trim()              ?? s.vetLastName;
+    s.title         = f('Titre')?.value?.trim()            ?? s.title;
+    s.orderNumber   = f('Ordre')?.value?.trim()            ?? s.orderNumber;
+    s.email         = f('Email')?.value?.trim()            ?? s.email;
+    s.phone         = f('Téléphone')?.value?.trim()        ?? s.phone;
+    // Clinic (use more specific labels to avoid collision with profile phone)
+    s.clinicName    = f('Nom de la clinique')?.value?.trim()    ?? f('Nom clinique')?.value?.trim()    ?? s.clinicName;
+    s.clinicAddress = f('Adresse')?.value?.trim()               ?? s.clinicAddress;
+    s.clinicPhone   = f('Téléphone clinique')?.value?.trim()    ?? s.clinicPhone;
+    s.clinicHours   = f('Horaires')?.value?.trim()              ?? s.clinicHours;
+    s.footerText    = f('Pied de page')?.value?.trim()          ?? s.footerText;
+
+    // Toggles (by strong label text in toggle-info)
+    s.notifications = s.notifications || {};
+    page.querySelectorAll('.toggle-wrap').forEach(tw => {
+      const lbl = (tw.querySelector('.toggle-info strong')?.textContent || '').trim();
+      const val = tw.querySelector('.toggle-switch')?.classList.contains('on');
+      if (lbl.toLowerCase().includes('rappel'))         s.notifications.reminders       = val;
+      else if (lbl.toLowerCase().includes('stock'))     s.notifications.stock           = val;
+      else if (lbl.toLowerCase().includes('journalier')) s.notifications.digest         = val;
+      else if (lbl.toLowerCase().includes('hospital'))  s.notifications.hospitalization  = val;
+      else if (lbl.toLowerCase().includes('référence')) s.notifications.references       = val;
+      else if (lbl.toLowerCase().includes('compact'))  { s.display = s.display||{}; s.display.compact = val; }
+      else if (lbl.toLowerCase().includes('animation')) { s.display = s.display||{}; s.display.reducedMotion = val; }
+    });
+
+    // Theme
+    const selectedSwatch = page.querySelector('.color-swatch.selected');
+    if (selectedSwatch){
+      s.display = s.display || {};
+      s.display.theme = selectedSwatch.getAttribute('data-theme') || selectedSwatch.style.backgroundColor || selectedSwatch.style.background || s.display.theme;
+    }
+
+    // Language
+    const langSel = document.getElementById('vp-settings-language');
+    if (langSel) { s.display = s.display || {}; s.display.language = langSel.value || 'fr'; }
+
+    return s;
+  }
+
+  // ── Populate UI fields from saved settings ──────────────────────────────
+  function vpSyncSettingsToUI(){
+    const page = document.getElementById('page-settings');
+    if (!page || typeof getSettings !== 'function') return;
+    const s = getSettings();
+    const set = (lbl, val) => { const el = findFieldByLabel(page, lbl); if (el && val !== undefined && val !== null) el.value = val; };
+
+    // Profile
+    set('Prénom',  s.vetFirstName  || '');
+    set('Nom',     s.vetLastName   || '');
+    set('Titre',   s.title         || '');
+    set('Ordre',   s.orderNumber   || '');
+    set('Email',   s.email         || '');
+    // Phone: be careful — there are two phone fields. Set the profile phone on the first one.
+    const allPhoneFields = Array.from(page.querySelectorAll('.fg')).filter(fg =>
+      (fg.querySelector('.lbl')?.textContent || '').trim().toLowerCase() === 'téléphone'
+    );
+    if (allPhoneFields[0]) { const el = allPhoneFields[0].querySelector('input.inp'); if (el) el.value = s.phone || ''; }
+
+    // Clinic
+    set('Nom de la clinique', s.clinicName    || '');
+    set('Adresse',            s.clinicAddress || '');
+    set('Téléphone clinique', s.clinicPhone   || '');
+    set('Horaires',           s.clinicHours   || '');
+    set('Pied de page',       s.footerText    || '');
+
+    // Toggles
+    const notifMap = {
+      'rappel':      !!s.notifications?.reminders,
+      'stock':       !!s.notifications?.stock,
+      'journalier':  !!s.notifications?.digest,
+      'hospital':    !!s.notifications?.hospitalization,
+      'référence':   !!s.notifications?.references,
+      'compact':     !!s.display?.compact,
+      'animation':   !!s.display?.reducedMotion,
+    };
+    page.querySelectorAll('.toggle-wrap').forEach(tw => {
+      const lbl = (tw.querySelector('.toggle-info strong')?.textContent || '').trim().toLowerCase();
+      const sw = tw.querySelector('.toggle-switch');
+      if (!sw) return;
+      for (const [key, val] of Object.entries(notifMap)){
+        if (lbl.includes(key)){ sw.classList.toggle('on', val); break; }
+      }
+    });
+
+    // Theme swatches — store data-theme attribute for reliable reading
+    const theme = s.display?.theme || '#1A4A2E';
+    page.querySelectorAll('.color-swatch').forEach(swatch => {
+      const bg = swatch.getAttribute('data-theme') || swatch.style.backgroundColor || swatch.style.background || '';
+      const normBg = bg.replace(/\s+/g,'').toLowerCase();
+      const normTheme = theme.replace(/\s+/g,'').toLowerCase();
+      swatch.classList.toggle('selected', normBg === normTheme || normBg.includes(normTheme.replace('#','')) );
+    });
+
+    // Language
+    const langSel = document.getElementById('vp-settings-language');
+    if (langSel) langSel.value = s.display?.language || 'fr';
+  }
+
+  // ── Save settings from UI ───────────────────────────────────────────────
+  function vpSaveSettingsFromUI(){
+    if (typeof getSettings !== 'function' || typeof saveSettings !== 'function') return;
+    const next = vpReadSettingsFromUI();
+    if (!next) return;
+    saveSettings(next);
+
+    // Apply theme immediately
+    if (typeof applyUltraTheme === 'function') applyUltraTheme();
+    else {
+      const palettes = {
+        '#1A4A2E': { forest:'#1A4A2E', sage:'#4A7C59', mint:'#A8D5B5' },
+        '#1565C0': { forest:'#1565C0', sage:'#4F8EDC', mint:'#B9D9FF' },
+        '#7C3AED': { forest:'#7C3AED', sage:'#9E6CF4', mint:'#DEC9FF' },
+        '#B45309': { forest:'#B45309', sage:'#D97706', mint:'#FCD9A7' },
+        '#B91C1C': { forest:'#B91C1C', sage:'#DC2626', mint:'#FECACA' },
+      };
+      const p = palettes[next.display?.theme] || palettes['#1A4A2E'];
+      Object.entries(p).forEach(([k,v]) => document.documentElement.style.setProperty('--'+k, v));
+    }
+
+    document.body.classList.toggle('vetpro-compact-mode', !!next.display?.compact);
+    document.body.classList.toggle('vetpro-reduced-motion', !!next.display?.reducedMotion);
+
+    // Apply identity (name in sidebar/topbar)
+    if (typeof applyUltraIdentity === 'function') applyUltraIdentity();
+
+    // Apply language
+    const lang = next.display?.language || 'fr';
+    if (typeof applyLanguage === 'function') applyLanguage(lang);
+
+    // Persist to Supabase
+    if (typeof window.vpPersistUserSettings === 'function'){
+      window.__vpSettingsSaveQuiet = true;
+      try {
+        window.vpPersistUserSettings({
+          language: lang,
+          clinic: {
+            first_name: next.vetFirstName, last_name: next.vetLastName,
+            title: next.title, order_number: next.orderNumber,
+            email: next.email, phone: next.phone,
+            clinic_name: next.clinicName, clinic_address: next.clinicAddress,
+            clinic_phone: next.clinicPhone, clinic_hours: next.clinicHours,
+            footer: next.footerText
+          },
+          notifications: next.notifications
+        }).catch(() => {}).finally(() => { window.__vpSettingsSaveQuiet = false; });
+      } catch(e) { window.__vpSettingsSaveQuiet = false; }
+    }
+
+    // Persist app state
+    if (typeof persistAppState === 'function') persistAppState();
+    if (typeof window.__vpRepaintDashboard === 'function') window.__vpRepaintDashboard();
+
+    if (typeof showToast === 'function') showToast('Paramètres sauvegardés ✅');
+    else if (typeof toast === 'function') toast('Paramètres sauvegardés ✅');
+  }
+
+  // ── Add data-theme attributes to color swatches (makes reading reliable) ─
+  function tagSwatches(){
+    document.querySelectorAll('.color-swatch').forEach(swatch => {
+      if (!swatch.getAttribute('data-theme')){
+        const bg = (swatch.style.background || swatch.style.backgroundColor || '').trim();
+        if (bg) swatch.setAttribute('data-theme', bg);
+      }
+    });
+  }
+
+  // ── Wire save button ─────────────────────────────────────────────────────
+  function wireUnifiedSaveButton(){
+    const page = document.getElementById('page-settings');
+    if (!page || page.__vpUnifiedSettingsWired) return;
+    page.__vpUnifiedSettingsWired = true;
+    tagSwatches();
+
+    // Take over the save button — remove all previous handlers
+    const saveBtn = document.getElementById('vp-settings-save-btn') || page.querySelector('button.btn.btn-p');
+    if (saveBtn){
+      const newBtn = saveBtn.cloneNode(true);
+      saveBtn.parentNode.replaceChild(newBtn, saveBtn);
+      newBtn.onclick = vpSaveSettingsFromUI;
+      if (newBtn.id !== 'vp-settings-save-btn') newBtn.id = 'vp-settings-save-btn';
+    }
+
+    // Populate fields on first wire
+    vpSyncSettingsToUI();
+  }
+
+  // ── Expose globally ──────────────────────────────────────────────────────
+  window.vpSyncSettingsToUI  = vpSyncSettingsToUI;
+  window.vpReadSettingsFromUI = vpReadSettingsFromUI;
+  window.vpSaveSettingsFromUI = vpSaveSettingsFromUI;
+
+  // ── Intercept nav() to sync settings when navigating to settings page ────
+  document.addEventListener('DOMContentLoaded', function(){
+    // Patch nav() after all scripts have loaded
+    setTimeout(function(){
+      tagSwatches();
+      const origNav = window.nav;
+      if (typeof origNav === 'function' && !window.__vpUnifiedNavPatched){
+        window.__vpUnifiedNavPatched = true;
+        window.nav = function(id){
+          origNav(id);
+          if (id === 'settings'){
+            // Small delay to let page become active
+            setTimeout(function(){
+              wireUnifiedSaveButton();
+              vpSyncSettingsToUI();
+            }, 60);
+          }
+        };
+      }
+      // If settings page is already active on load
+      if (document.getElementById('page-settings')?.classList.contains('active')){
+        wireUnifiedSaveButton();
+        vpSyncSettingsToUI();
+      }
+    }, 1200);
+  });
+
+  // ── Re-populate settings when user logs in (auth state change) ───────────
+  (function watchAuthForSettings(){
+    const CHECK_INTERVAL = 300;
+    let lastUid = null;
+    let checks = 0;
+    const interval = setInterval(function(){
+      checks++;
+      const user = window.__vetproCurrentSessionUser;
+      const uid = user?.id || user?.email || null;
+      if (uid !== lastUid){
+        lastUid = uid;
+        // User changed — re-sync settings UI if on settings page
+        setTimeout(function(){
+          if (document.getElementById('page-settings')?.classList.contains('active')){
+            vpSyncSettingsToUI();
+          }
+        }, 200);
+      }
+      if (checks > 60) clearInterval(interval); // stop after 18s
+    }, CHECK_INTERVAL);
+  })();
+
 })();
 </script>
 </body>
