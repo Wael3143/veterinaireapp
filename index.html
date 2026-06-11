@@ -2731,6 +2731,7 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
         <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Collez ce prompt dans ChatGPT, joignez votre fichier Excel (ou copiez-collez son contenu), puis copiez la réponse JSON dans l'étape 2.</div>
         <textarea id="import-prompt-text" readonly rows="12" class="tex" style="font-family:monospace;font-size:11px;background:#F8F9FA;user-select:all;-webkit-user-select:all">Tu es un convertisseur de données vétérinaires. Convertis les données reçues en JSON valide UNIQUEMENT. Commence OBLIGATOIREMENT par { et termine par }. Zéro texte avant ou après. Zéro balises ```json. Zéro commentaires. Zéro explications.
+IMPORTANT : écris les emails et téléphones en texte brut uniquement (ex: samira.kaci@yahoo.fr) — JAMAIS en markdown [email](mailto:email). JAMAIS de liens cliquables.
 
 Format JSON STRICT :
 {
@@ -7195,7 +7196,6 @@ function renderDrugs(g,s){
           <div style="font-size:11px;color:var(--muted);line-height:1.5">${(d.poso||'').substring(0,65)}…</div>
         </div>
         <div style="text-align:right;flex-shrink:0;margin-left:10px">
-          <div style="font-weight:800;color:var(--forest);font-size:13.5px">${d.p.toLocaleString()} DA</div>
           <div class="${sc(d)}" style="font-size:10px;margin-top:4px">${sl(d)}</div>
           <div class="stock-bar" style="width:70px;margin-left:auto"><div class="stock-bar-fill pbar-fill" style="width:${pct(d)}%;background:${d.s===0?'var(--danger)':d.s<=d.smin?'var(--warning)':'var(--sage)'}"></div></div>
         </div>
@@ -7213,12 +7213,9 @@ function showDrug(id){
       <span class="drug-group" style="background:${d.c}18;color:${d.c};border:1px solid ${d.c}40;border-radius:20px;padding:3px 12px">${d.g}</span>
       <span class="drug-group" style="background:var(--surface2);color:var(--muted);border:1px solid var(--brd);border-radius:20px;padding:3px 12px">${d.f} · Voie: ${d.v}</span>
       ${d.sp&&d.sp!=='both'?`<span style="background:${espBg[d.sp]||'#F0FDF4'};color:${espFg[d.sp]||'#166534'};border:1px solid ${(espFg[d.sp]||'#166534')}40;border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700">${espLabel[d.sp]||d.sp}</span>`:''}
-      <span style="background:${d.s===0?'#FDEDEC':d.s<=d.smin?'#FEF9E7':'#D5F5E3'};color:${d.s===0?'var(--danger)':d.s<=d.smin?'var(--warning)':'var(--forest)'};border-radius:20px;padding:3px 12px;font-size:10.5px;font-weight:700">${d.s===0?'❌ Rupture':d.s<=d.smin?`⚠️ Stock faible: ${d.s}`:`✅ Stock: ${d.s}`} · ${d.p.toLocaleString()} DA</span>
-      <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();editDrugPrice('${d.id}')" style="font-size:10.5px;padding:3px 12px">✏️ Modifier prix</button>
+      <span style="background:${d.s===0?'#FDEDEC':d.s<=d.smin?'#FEF9E7':'#D5F5E3'};color:${d.s===0?'var(--danger)':d.s<=d.smin?'var(--warning)':'var(--forest)'};border-radius:20px;padding:3px 12px;font-size:10.5px;font-weight:700">${d.s===0?'❌ Rupture':d.s<=d.smin?`⚠️ Stock faible: ${d.s}`:`✅ Stock: ${d.s}`}</span>
     </div>
-    <div style="background:#FEF9E7;border:1px solid #F39C12;border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11.5px;color:#784212">
-      💡 <strong>Prix indicatif</strong> basé sur le marché vétérinaire algérien 2025-2026 (Vetoquinol DZ, Boehringer DZ, Biopharm, Sevana, MSD). Cliquez sur "Modifier prix" pour ajuster selon votre fournisseur.
-    </div>
+    
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
       <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;padding-bottom:5px;border-bottom:2px solid var(--brd)">✅ Indications</div><div style="font-size:12.5px;line-height:1.7">${d.ind.split(' · ').map(i=>`<div style="display:flex;gap:6px"><span style="color:var(--sage);flex-shrink:0">•</span>${i}</div>`).join('')}</div></div>
       <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;padding-bottom:5px;border-bottom:2px solid var(--brd)">⛔ Contre-indications</div><div style="font-size:12.5px;line-height:1.7">${d.ci.split(' · ').map(i=>`<div style="display:flex;gap:6px"><span style="color:var(--danger);flex-shrink:0">•</span><span style="color:${i.includes('⛔')||i.includes('⚠️')?'var(--danger)':''}">${i}</span></div>`).join('')}</div></div>
@@ -7259,7 +7256,6 @@ function showDrug(id){
     </div>
     <div style="display:flex;gap:9px">
       <button class="btn btn-ai" onclick="closeModal('modal-drug');askAI('Indications, contre-indications et posologie complète de ${d.n} (${d.m}) en médecine vétérinaire Algérie ?');nav('ai')">🤖 Question IA</button>
-      <button class="btn btn-ghost" onclick="event.stopPropagation();editDrugPrice('${d.id}')">✏️ Modifier</button>
     </div>`;
   openModal('modal-drug');
   // Auto-focus poids
@@ -8843,6 +8839,8 @@ function parseImportJson() {
                     .replace(/[–—]/g, '-')
                     .replace(/[…]/g, '...')
                     .replace(/\t/g, ' ');
+  // Strip markdown links [text](url) -> text
+  cleaned = cleaned.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
   // Remove BOM if present
   if (cleaned.charCodeAt(0) === 0xFEFF) cleaned = cleaned.slice(1);
   try {
