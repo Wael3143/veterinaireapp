@@ -1426,7 +1426,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🐾 Patient</div>
         <div class="row3">
-          <div class="fg"><label class="lbl">Espèce *</label><select class="sel"><option>Chien</option><option>Chat</option><option>Bovin</option><option>Ovin</option><option>Caprin</option><option>Cheval</option><option>Oiseau</option><option>Volaille</option><option>Lapin</option><option>Porc</option><option>Reptile</option><option>Hamster/Cobaye</option><option>Autre</option></select></div>
+          <div class="fg"><label class="lbl">Espèce *</label><select class="sel"><option value="Chien">Chien</option><option value="Chat">Chat</option><option value="Bovin">Bovin</option><option value="Ovin">Ovin</option><option value="Caprin">Caprin</option><option value="Cheval">Cheval</option><option value="Oiseau">Oiseau</option><option value="Volaille">Volaille</option><option value="Lapin">Lapin</option><option value="Porc">Porc</option><option value="Reptile">Reptile</option><option value="Hamster/Cobaye">Hamster/Cobaye</option><option value="Autre">Autre</option></select></div>
           <div class="fg"><label class="lbl">Race</label><input class="inp" placeholder="Ex: Berger allemand"/></div>
           <div class="fg"><label class="lbl">Robe / Couleur</label><input class="inp" placeholder="Ex: fauve et noir"/></div>
         </div>
@@ -2726,46 +2726,42 @@ window.addEventListener('DOMContentLoaded', () => {
       <!-- Step 1: ChatGPT prompt -->
       <div class="card" style="margin:0">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <strong style="color:var(--ink);font-size:13px">📝 Étape 1 — Prompt à copier dans ChatGPT</strong>
-          <button class="btn btn-sm btn-p" onclick="copyImportPrompt()">📋 Copier le prompt</button>
+          <strong style="color:var(--ink);font-size:13px">📝 Étape 1 — Copiez ce prompt dans ChatGPT</strong>
+          <button class="btn btn-sm btn-p" onclick="copyImportPrompt()" id="copy-prompt-btn">📋 Copier le prompt</button>
         </div>
-        <textarea id="import-prompt-text" readonly rows="10" class="tex" style="font-family:monospace;font-size:11.5px;background:#F8F9FA">Tu es un convertisseur de données vétérinaires. Tu reçois des données Excel/texte et tu renvoies UNIQUEMENT du JSON valide. AUCUN texte avant ou après le JSON. PAS de ```json```, PAS de commentaires, PAS d'explications. JUSTE le JSON brut.
+        <div style="font-size:11.5px;color:var(--muted);margin-bottom:8px">Collez ce prompt dans ChatGPT, joignez votre fichier Excel (ou copiez-collez son contenu), puis copiez la réponse JSON dans l'étape 2.</div>
+        <textarea id="import-prompt-text" readonly rows="12" class="tex" style="font-family:monospace;font-size:11px;background:#F8F9FA;user-select:all;-webkit-user-select:all">Tu es un convertisseur de données vétérinaires. Convertis les données reçues en JSON valide UNIQUEMENT. Commence OBLIGATOIREMENT par { et termine par }. Zéro texte avant ou après. Zéro balises ```json. Zéro commentaires. Zéro explications.
 
-IMPORTANT : Ta réponse DOIT commencer par { et finir par }. Rien d'autre.
-
-Format JSON EXACT à respecter :
-
+Format JSON STRICT :
 {
   "clients": [
-    {"fullName": "Nom Prénom", "phone": "0550 000 000", "email": "client@mail.com", "address": "Adresse"}
+    {"fullName": "Nom Prénom", "phone": "0550 000 000", "email": "", "address": ""}
   ],
   "patients": [
-    {"name": "Nom animal", "species": "Chien|Chat|NAC", "race": "Race", "age": "3 ans", "weight": "18 kg", "sexe": "Mâle|Femelle", "owner": "Nom Prénom du propriétaire", "phone": "0550 000 000", "email": "", "nextRdv": "JJ/MM"}
+    {"name": "Nom animal", "species": "Chien", "race": "Race", "age": "3 ans", "weight": "18 kg", "sexe": "Mâle", "owner": "Nom propriétaire", "phone": "0550 000 000", "email": ""}
   ],
   "historique": [
-    {"animal": "Nom", "espece": "chien|chat", "race": "", "age": "", "poids": "", "client": "Nom propriétaire", "tel": "", "date": "JJ/MM/AAAA", "diagnostic": "Texte diagnostic", "traitement": "Texte traitement", "montant": 5000, "paiement": "paye|partiel|impaye", "rdv": "JJ/MM/AAAA ou A planifier"}
+    {"animal": "Nom", "espece": "chien", "race": "", "age": "", "poids": "", "client": "Nom propriétaire", "tel": "", "date": "JJ/MM/AAAA", "diagnostic": "Texte", "traitement": "Texte", "montant": 5000, "paiement": "paye"}
   ],
   "vaccHistory": [
-    {"animal": "Nom animal", "owner": "Propriétaire", "species": "Chien|Chat", "vaccine": "CHPPiL + Rage", "lot": "", "vet": "Dr. Nom", "date": "AAAA-MM-JJ", "rappel": "AAAA-MM-JJ"}
+    {"animal": "Nom animal", "owner": "Propriétaire", "species": "Chien", "vaccine": "CHPPiL + Rage", "lot": "", "vet": "Dr. Nom", "date": "AAAA-MM-JJ", "rappel": "AAAA-MM-JJ"}
   ],
   "appointments": [
-    {"patientName": "Nom animal", "owner": "Propriétaire", "date": "AAAA-MM-JJ", "time": "HH:MM", "type": "Consultation|Vaccination|Contrôle", "motif": "Raison du RDV"}
+    {"patientName": "Nom animal", "owner": "Propriétaire", "date": "AAAA-MM-JJ", "time": "09:00", "type": "Consultation", "motif": "Raison"}
   ]
 }
 
-Règles STRICTES :
-- Utilise UNIQUEMENT des guillemets droits " (jamais de guillemets courbes ou typographiques)
-- Si une info manque, mets "" (chaîne vide) ou null, jamais d'inventions
-- Dates clientes : JJ/MM/AAAA — Dates techniques : AAAA-MM-JJ
-- Téléphones algériens : 0550, 0661, 0770, 0555, 0699 etc.
-- Espèces : "Chien", "Chat" ou "NAC" uniquement
-- montant est un NOMBRE (pas une chaîne) : 5000 et non "5000"
-- paiement : "paye", "partiel" ou "impaye" uniquement
-- NE METS PAS de virgule après le dernier élément d'un tableau ou objet
-- RAPPEL : ta réponse est du JSON pur. Commence par { et finis par }. Pas de texte autour.
+Règles :
+- Guillemets droits " uniquement (jamais " " ou autres)
+- Info manquante = "" ou null (jamais inventée)
+- species : "Chien", "Chat", "Bovin", "Ovin", "Caprin", "Cheval", "Lapin", "Oiseau" ou "Autre"
+- espece (historique) : minuscule — "chien", "chat", etc.
+- paiement : "paye", "partiel" ou "impaye"
+- montant : nombre entier (5000 et non "5000")
+- Dates appointments/vaccHistory : AAAA-MM-JJ — Dates historique : JJ/MM/AAAA
 
 Voici les données à convertir :
-[COLLEZ ICI LE CONTENU DE VOTRE EXCEL OU JOIGNEZ LE FICHIER]</textarea>
+[COLLEZ ICI LE CONTENU DE VOTRE EXCEL OU DÉCRIVEZ VOS DONNÉES]</textarea>
       </div>
 
       <!-- Step 2: Paste JSON -->
@@ -4446,7 +4442,7 @@ function sendWhatsApp(phone, clientName, animal, motif) {
   const animalStr = animal ? ` concernant ${animal}` : '';
   const motifStr = motif ? ` (${motif})` : '';
   const msg = encodeURIComponent(
-    `Bonjour ${clientName || ''},\n\nCeci est un rappel de la part de votre vétérinaire VétérinApp Pro pour votre rendez-vous${animalStr}${motifStr}.\n\nMerci de confirmer votre présence ou de nous contacter pour reporter.\n\nCordialement,\nDr. Kherbache Wail`
+    `Bonjour ${clientName || ''},\n\nCeci est un rappel de la part de votre vétérinaire VétérinApp Pro pour votre rendez-vous${animalStr}${motifStr}.\n\nMerci de confirmer votre présence ou de nous contacter pour reporter.\n\nCordialement,\n${(function(){const _s=typeof getSettings==='function'?getSettings():{};const _n=[_s.vetFirstName,_s.vetLastName].filter(Boolean).join(' ').trim();return _n?'Dr. '+_n:(_s.clinicName||'VetPro');})()}`
   );
   window.open(`https://wa.me/${num}?text=${msg}`, '_blank');
 }
@@ -5295,7 +5291,7 @@ function renderRdvPage(){
             <div style="flex:1;min-width:0">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
                 <span style="font-weight:700;font-size:13.5px">${a.time}</span>
-                <span style="font-weight:700;font-size:13.5px">${a.animal}</span>
+                <span style="font-weight:700;font-size:13.5px">${a.animal || a.patientName || '—'}</span>
                 <span class="bdg ${meta.badge}" style="font-size:10px">${meta.label}</span>
               </div>
               <div style="font-size:12.5px;color:var(--ink);margin-bottom:2px">👤 ${a.owner || '—'}</div>
@@ -8421,7 +8417,7 @@ function showOrdo(num) {
     <div style="max-width:680px;margin:0 auto">
       <div style="text-align:center;border-bottom:2.5px solid var(--ink);padding-bottom:16px;margin-bottom:16px">
         <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink);font-weight:700">🐾 VétérinApp Pro</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:4px">Cabinet Vétérinaire · Dr. Kherbache Wail</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Cabinet Vétérinaire · ${(function(){const _s=typeof getSettings==='function'?getSettings():{};const _n=[_s.vetFirstName,_s.vetLastName].filter(Boolean).join(' ').trim();return _n?'Dr. '+_n:'Dr.';})()}</div>
         <div style="font-size:11px;color:var(--muted)">ENSV Algérie · Tél: 0550 000 000</div>
         <div style="font-size:11px;color:var(--muted)">N° Ordre: DZ-VET-2026-004782</div>
       </div>
@@ -8446,7 +8442,7 @@ function showOrdo(num) {
         <div style="display:flex;justify-content:space-between;margin-top:18px;align-items:flex-end">
           <div style="font-size:11px">Cachet clinique :</div>
           <div style="text-align:right">
-            <div style="font-weight:700;color:var(--ink);font-size:13px">Dr. Kherbache Wail</div>
+            <div style="font-weight:700;color:var(--ink);font-size:13px">${(function(){const _s=typeof getSettings==='function'?getSettings():{};const _n=[_s.vetFirstName,_s.vetLastName].filter(Boolean).join(' ').trim();return _n?'Dr. '+_n:'Dr.';})()}</div>
             <div style="font-size:11px;color:var(--muted)">Vétérinaire · N° DZ-VET-2026-004782</div>
             <div style="border-top:1px solid var(--ink);width:180px;margin-top:20px;margin-left:auto"></div>
             <div style="font-size:10px;color:var(--muted);margin-top:4px">Signature</div>
@@ -8480,8 +8476,19 @@ function printOrdo() {
       @media print{body{margin:20px}}
     </style></head><body>`);
   if (o) {
+    const _s = typeof getSettings === 'function' ? getSettings() : {};
+    const _fn = (_s.vetFirstName||'').trim();
+    const _ln = (_s.vetLastName||'').trim();
+    const _vetName = (_fn||_ln) ? ('Dr. '+(_fn+' '+_ln).trim()) : 'Dr.';
+    const _ordNum = _s.orderNumber || '';
+    const _clinicName = _s.clinicName || 'Cabinet Vétérinaire';
+    const _clinicAddr = _s.clinicAddress || '';
+    const _clinicPhone = _s.clinicPhone || _s.phone || '';
+    const _footer = _s.footerText || '';
+    const _headerLine2 = [_clinicName, _clinicAddr].filter(Boolean).join(' · ');
+    const _headerLine3 = [_clinicPhone ? 'Tél: '+_clinicPhone : '', _ordNum ? 'N° Ordre: '+_ordNum : ''].filter(Boolean).join(' · ');
     printWin.document.write(`
-      <div class="header"><h1>🐾 VétérinApp Pro</h1><div>Cabinet Vétérinaire · Dr. Kherbache Wail</div><div>ENSV Algérie · Tél: 0550 000 000 · N° Ordre: DZ-VET-2026-004782</div></div>
+      <div class="header"><h1>🐾 VétérinApp Pro</h1><div>${_headerLine2}</div><div>${_headerLine3}</div></div>
       <div class="grid">
         <div><strong>Patient :</strong> ${o.animal} ${o.race}, ${o.age}</div><div><strong>N° Ordonnance :</strong> ${o.num}</div>
         <div><strong>Propriétaire :</strong> ${o.proprietaire}</div><div><strong>Date :</strong> ${o.date}</div>
@@ -8489,8 +8496,8 @@ function printOrdo() {
       </div>
       <div class="rx">℞</div>
       ${o.meds.map((m,i)=>`<div class="med-line"><div class="med-num">${i+1}.</div><div><div class="med-name">${m.n}</div><div class="med-dose">${m.d}</div></div><div class="med-qty">Qté: ${m.q}</div></div>`).join('')}
-      <div class="footer">⚠️ <strong>Contrôle :</strong> ${o.controle}</div>
-      <div class="sig"><div class="sig-name">Dr. Kherbache Wail</div><div style="font-size:11px;color:#666">Vétérinaire · ENSV Algérie</div><div class="sig-line"></div><div style="font-size:10px;color:#888">Signature & Cachet</div></div>
+      <div class="footer">⚠️ <strong>Contrôle :</strong> ${o.controle}${_footer?'<br>'+_footer:''}</div>
+      <div class="sig"><div class="sig-name">${_vetName}</div><div style="font-size:11px;color:#666">${_s.title||'Médecin vétérinaire'}${_clinicName?' · '+_clinicName:''}</div><div class="sig-line"></div><div style="font-size:10px;color:#888">Signature & Cachet</div></div>
     `);
   }
   printWin.document.write('</body></html>');
@@ -8802,17 +8809,23 @@ function openImportModal() {
 }
 
 function copyImportPrompt() {
-  const text = document.getElementById('import-prompt-text')?.value;
-  if (!text) return;
-  navigator.clipboard.writeText(text).then(() => {
-    toast('✅ Prompt copié — ouvrez ChatGPT et collez avec votre Excel');
-  }).catch(() => {
-    // Fallback: select text
-    const ta = document.getElementById('import-prompt-text');
-    ta.select();
-    document.execCommand('copy');
-    toast('✅ Prompt copié');
-  });
+  const ta = document.getElementById('import-prompt-text');
+  if (!ta) return;
+  const text = ta.value;
+  const btn = document.getElementById('copy-prompt-btn');
+  const markCopied = () => {
+    if (btn) { btn.textContent = '✅ Copié !'; btn.style.background = '#1A4A2E'; setTimeout(() => { btn.textContent = '📋 Copier le prompt'; btn.style.background = ''; }, 2500); }
+    toast('✅ Prompt copié — collez-le dans ChatGPT avec votre fichier');
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(markCopied).catch(() => {
+      ta.select(); ta.setSelectionRange(0, 99999);
+      try { document.execCommand('copy'); markCopied(); } catch(e) { toast('⚠️ Sélectionnez le texte manuellement et copiez-le'); }
+    });
+  } else {
+    ta.select(); ta.setSelectionRange(0, 99999);
+    try { document.execCommand('copy'); markCopied(); } catch(e) { toast('⚠️ Sélectionnez le texte manuellement et copiez-le'); }
+  }
 }
 
 function parseImportJson() {
@@ -8999,16 +9012,20 @@ function executeImport() {
         const patient = (typeof PATIENTS !== 'undefined' ? PATIENTS : []).find(p =>
           p.name?.toLowerCase() === a.patientName?.toLowerCase()
         );
+        const animalDisplay = typeof displayAnimalName === 'function'
+          ? displayAnimalName(a.patientName, patient?.species || a.species || 'Chien')
+          : a.patientName;
         APPOINTMENTS.unshift({
           id: 'apt-imp-' + Date.now() + '-' + Math.random().toString(36).slice(2,7),
           patientId: patient?.id || '',
-          patientName: a.patientName,
+          animal: animalDisplay,
           owner: a.owner || patient?.owner || '',
+          phone: a.phone || patient?.phone || '',
           date: parseDateToISO(a.date) || a.date,
           time: a.time || '09:00',
           type: a.type || 'Consultation',
           motif: a.motif || '',
-          status: 'planned',
+          status: 'confirmed',
         });
         imported.rdv++;
       });
@@ -10287,12 +10304,25 @@ function showHistDetail(id) {
     </div>
     <div style="display:flex;gap:9px;flex-wrap:wrap">
       <button class="btn btn-p" onclick="toast('Fiche PDF générée ✅')">📄 Exporter fiche</button>
-      <button class="btn btn-ghost" onclick="sendWhatsApp('${(client.phone||'').replace(/'/g,"\\'")}','${(client.fullName||'').replace(/'/g,"\\'")}','${(h.animal||'').replace(/'/g,"\\'")}','Rappel RDV')">📱 WhatsApp rappel</button>
+      <button class="btn btn-ghost" onclick="sendWhatsApp('${(h.tel||'').replace(/'/g,"\\'")}','${(h.client||'').replace(/'/g,"\\'")}','${(h.animal||'').replace(/'/g,"\\'")}','Rappel RDV')">📱 WhatsApp rappel</button>
       ${h.ordonnance ? `<button class="btn btn-ghost" onclick="showOrdo('${h.ordonnance}');nav('ordonnances')">📝 Voir ordonnance</button>` : ''}
+      <button class="btn btn-ghost" style="color:var(--danger);border-color:var(--danger)" onclick="deleteHistCase('${h.id}')">🗑️ Supprimer</button>
       <button class="btn btn-ghost" onclick="document.getElementById('hist-detail').style.display='none'">✕ Fermer</button>
     </div>`;
   detail.style.display = 'block';
   detail.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function deleteHistCase(id) {
+  if (!confirm('Supprimer ce cas clinique ? Cette action est irréversible.')) return;
+  const idx = HISTORIQUE_DATA.findIndex(x => x.id === id);
+  if (idx >= 0) {
+    HISTORIQUE_DATA.splice(idx, 1);
+    if (typeof persistAppState === 'function') persistAppState();
+    document.getElementById('hist-detail').style.display = 'none';
+    renderHist(document.getElementById('hist-search')?.value || '');
+    if (typeof toast === 'function') toast('Cas supprimé ✅');
+  }
 }
 
 function filterHist(q) {
@@ -11735,13 +11765,29 @@ function saveAdmission() {
   };
 
   window.saveAppointment = function(){
-    const patientId = document.getElementById('rdv-animal')?.value;
-    const patient = getPatientById(patientId);
+    let patientId = document.getElementById('rdv-animal')?.value;
     const date = document.getElementById('rdv-date')?.value;
     const time = document.getElementById('rdv-time')?.value;
     const type = document.getElementById('rdv-type')?.value || 'Consultation';
     const motif = document.getElementById('rdv-motif')?.value?.trim();
-    if (!patient || !date || !time || !motif) { toast('Animal, date, heure et motif sont requis'); return; }
+
+    let patient;
+    if (patientId === 'nouveau') {
+      const ncName   = document.getElementById('rdv-nc-name')?.value?.trim();
+      const ncPhone  = document.getElementById('rdv-nc-phone')?.value?.trim() || '';
+      const ncAnimal = document.getElementById('rdv-nc-animal')?.value?.trim();
+      const ncSpecies = document.getElementById('rdv-nc-species')?.value || 'Chien';
+      if (!ncName || !ncAnimal) { if (typeof toast === 'function') toast('Nom client et animal requis'); return; }
+      const clientId = 'cl-' + Date.now();
+      CLIENTS.push({ id: clientId, fullName: ncName, phone: ncPhone, email: '', address: '', pets: 1, lastVisit: '', debt: 0 });
+      patientId = 'p-' + Date.now();
+      patient = { id: patientId, name: ncAnimal, species: ncSpecies, race: '', age: '', weight: '', sexe: '', owner: ncName, phone: ncPhone, email: '', nextRdv: '' };
+      PATIENTS.push(patient);
+    } else {
+      patient = getPatientById(patientId);
+    }
+
+    if (!patient || !date || !time || !motif) { if (typeof toast === 'function') toast('Animal, date, heure et motif sont requis'); return; }
     APPOINTMENTS.push({
       id: 'rdv-' + Date.now(),
       date,
@@ -11757,8 +11803,9 @@ function saveAdmission() {
     upsertClientFromPatient(patient);
     persistAppState();
     renderRdvPage();
-    renderClientsPage();
+    if (typeof renderClientsPage === 'function') renderClientsPage();
     closeModal('modal-rdv');
+    if (typeof updateSidebarBadges === 'function') updateSidebarBadges();
     toast('Rendez-vous enregistré');
   };
 
@@ -15112,6 +15159,26 @@ function saveAdmission() {
       }, 100);
     }
     if (typeof ensureCaseFormEnhancements === 'function') ensureCaseFormEnhancements();
+    // Always re-assign case-espece in case ensureCaseFormEnhancements was guarded
+    setTimeout(function(){
+      const pg = document.getElementById('page-cas');
+      if (!pg || document.getElementById('case-espece')) return;
+      const pc = pg.querySelector('.card');
+      if (!pc) return;
+      const rows = pc.querySelectorAll('.row3');
+      if (rows[0]) {
+        const els = rows[0].querySelectorAll('select, input');
+        if (els[0] && !els[0].id) els[0].id = 'case-espece';
+        if (els[1] && !els[1].id) els[1].id = 'case-race';
+        if (els[2] && !els[2].id) els[2].id = 'case-color';
+      }
+      if (rows[1]) {
+        const els2 = rows[1].querySelectorAll('input, select');
+        if (els2[0] && !els2[0].id) els2[0].id = 'case-age';
+        if (els2[1] && !els2[1].id) els2[1].id = 'case-poids';
+        if (els2[2] && !els2[2].id) els2[2].id = 'case-sexe';
+      }
+    }, 0);
   }
 
   function keepDrugToolbarOnlyOnMeds(){
@@ -15526,7 +15593,16 @@ function saveAdmission() {
   function showFirstLoginChoicesUltra(){
     const user = window.__vetproCurrentSessionUser || null;
     const key = `vetpro-first-login-choice:${user?.id || user?.email || 'guest'}`;
-    if (!user?.email || localStorage.getItem(key) === 'done' || document.getElementById('vetpro-first-login-ultra')) return;
+    // Also check legacy key variants that may have been set
+    const legacyKeyById = user?.id ? `vetpro-first-login-choice:${user.id}` : null;
+    const legacyKeyByEmail = user?.email ? `vetpro-first-login-choice:${user.email}` : null;
+    const alreadyDone = localStorage.getItem(key) === 'done' ||
+      (legacyKeyById && localStorage.getItem(legacyKeyById) === 'done') ||
+      (legacyKeyByEmail && localStorage.getItem(legacyKeyByEmail) === 'done') ||
+      localStorage.getItem('vetpro-first-login-choice:guest') === 'done';
+    // Also skip if user already has clinical data (returning user)
+    const hasData = (window.HISTORIQUE_DATA?.length > 0) || (window.CLIENTS?.length > 5) || (window.PATIENTS?.length > 5);
+    if (!user?.email || alreadyDone || hasData || document.getElementById('vetpro-first-login-ultra')) return;
     var h = new Date().getHours();
     var timeWord = h<5?'Bonne nuit':h<12?'Bonjour':h<18?'Bon après-midi':'Bonsoir';
     var displayName = '';
@@ -15579,11 +15655,17 @@ function saveAdmission() {
       /* Re-render dashboard to update KPI cards */
       try { if (typeof nav === 'function') nav('dashboard'); } catch(e){}
       localStorage.setItem(key, 'done');
+      if (legacyKeyById) localStorage.setItem(legacyKeyById, 'done');
+      if (legacyKeyByEmail) localStorage.setItem(legacyKeyByEmail, 'done');
+      localStorage.setItem('vetpro-first-login-choice:guest', 'done');
       overlay.remove();
       toast('Espace démarré à zéro ✅');
     });
     overlay.querySelector('#vetpro-import-data-ultra').addEventListener('click', function(){
       localStorage.setItem(key, 'done');
+      if (legacyKeyById) localStorage.setItem(legacyKeyById, 'done');
+      if (legacyKeyByEmail) localStorage.setItem(legacyKeyByEmail, 'done');
+      localStorage.setItem('vetpro-first-login-choice:guest', 'done');
       overlay.remove();
       if (typeof openModal === 'function') openModal('modal-import');
     });
@@ -15602,9 +15684,14 @@ function saveAdmission() {
   }
 
   /* Show first-login modal only once on page load — never on tab navigation */
+  var __vpFirstLoginShown = false;
   function runUltraFixesWithLogin(){
     runUltraFixes();
-    showFirstLoginChoicesUltra();
+    if (!__vpFirstLoginShown) {
+      __vpFirstLoginShown = true;
+      // Delay slightly so auth/data state is settled
+      setTimeout(showFirstLoginChoicesUltra, 800);
+    }
   }
 
   document.addEventListener('DOMContentLoaded', runUltraFixesWithLogin);
