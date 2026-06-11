@@ -1426,7 +1426,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <div class="card" style="margin-bottom:16px">
         <div class="card-title">🐾 Patient</div>
         <div class="row3">
-          <div class="fg"><label class="lbl">Espèce *</label><select class="sel"><option value="Chien">Chien</option><option value="Chat">Chat</option><option value="Bovin">Bovin</option><option value="Ovin">Ovin</option><option value="Caprin">Caprin</option><option value="Cheval">Cheval</option><option value="Oiseau">Oiseau</option><option value="Volaille">Volaille</option><option value="Lapin">Lapin</option><option value="Porc">Porc</option><option value="Reptile">Reptile</option><option value="Hamster/Cobaye">Hamster/Cobaye</option><option value="Autre">Autre</option></select></div>
+          <div class="fg"><label class="lbl">Espèce *</label><select class="sel" id="case-espece"><option value="Chien">Chien</option><option value="Chat">Chat</option><option value="Bovin">Bovin</option><option value="Ovin">Ovin</option><option value="Caprin">Caprin</option><option value="Cheval">Cheval</option><option value="Oiseau">Oiseau</option><option value="Volaille">Volaille</option><option value="Lapin">Lapin</option><option value="Porc">Porc</option><option value="Reptile">Reptile</option><option value="Hamster/Cobaye">Hamster/Cobaye</option><option value="Autre">Autre</option></select></div>
           <div class="fg"><label class="lbl">Race</label><input class="inp" placeholder="Ex: Berger allemand"/></div>
           <div class="fg"><label class="lbl">Robe / Couleur</label><input class="inp" placeholder="Ex: fauve et noir"/></div>
         </div>
@@ -2262,7 +2262,7 @@ window.addEventListener('DOMContentLoaded', () => {
       <h2 style="font-family:'DM Serif Display',serif;font-size:22px;color:var(--ink)">⚙️ Paramètres</h2>
       <p style="color:var(--muted);font-size:12.5px;margin-top:3px">Profil · Clinique · Notifications · Affichage · Sécurité</p>
     </div>
-    <button class="btn btn-p" id="vp-settings-save-btn" onclick="window.vpSaveSettings && window.vpSaveSettings()">💾 Sauvegarder</button>
+    <button class="btn btn-p" id="vp-settings-save-btn" onclick="(window.vpSaveSettingsFromUI || window.vpSaveSettings || window.saveVetProSettings || function(){})();">💾 Sauvegarder</button>
   </div>
 
   <div class="g2">
@@ -2275,13 +2275,13 @@ window.addEventListener('DOMContentLoaded', () => {
           <div style="flex:1">
             <div style="font-size:11px;color:var(--muted);margin-bottom:8px">Cliquez sur l'avatar pour changer la photo de profil</div>
             <div class="row2">
-              <div class="fg"><label class="lbl">Prénom</label><input class="inp" value="" placeholder="Votre prénom"/></div>
-              <div class="fg"><label class="lbl">Nom</label><input class="inp" value="" placeholder="Votre nom"/></div>
+              <div class="fg"><label class="lbl">Prénom</label><input class="inp" id="settings-vet-firstname" value="" placeholder="Votre prénom"/></div>
+              <div class="fg"><label class="lbl">Nom</label><input class="inp" id="settings-vet-lastname" value="" placeholder="Votre nom"/></div>
             </div>
           </div>
         </div>
-        <div class="fg"><label class="lbl">Titre / Grade</label><input class="inp" value="" placeholder="Médecin vétérinaire"/></div>
-        <div class="fg"><label class="lbl">N° Ordre national</label><input class="inp" value="" placeholder="À compléter"/></div>
+        <div class="fg"><label class="lbl">Titre / Grade</label><input class="inp" id="settings-vet-title" value="" placeholder="Médecin vétérinaire"/></div>
+        <div class="fg"><label class="lbl">N° Ordre national</label><input class="inp" id="settings-vet-order" value="" placeholder="À compléter"/></div>
         <div class="row2">
           <div class="fg"><label class="lbl">Email</label><input class="inp" type="email" value="" placeholder="votre@email.com"/></div>
           <div class="fg"><label class="lbl">Téléphone</label><input class="inp" value="" placeholder="0550 000 000"/></div>
@@ -4744,19 +4744,15 @@ function ensureCaseFormEnhancements(){
       <div class="fg"><label class="lbl">Téléphone client</label><input class="inp" id="case-client-phone" placeholder="0550 000 000"/></div>
     </div>
   `);
-  const patientRows = refs.patientCard.querySelectorAll('.row3');
-  if (patientRows[0]) {
-    const inputs = patientRows[0].querySelectorAll('select, input');
-    if (inputs[0]) inputs[0].id = 'case-espece';
-    if (inputs[1]) inputs[1].id = 'case-race';
-    if (inputs[2]) inputs[2].id = 'case-color';
-  }
-  if (patientRows[1]) {
-    const inputs = patientRows[1].querySelectorAll('input, select');
-    if (inputs[0]) inputs[0].id = 'case-age';
-    if (inputs[1]) inputs[1].id = 'case-poids';
-    if (inputs[2]) inputs[2].id = 'case-sexe';
-  }
+  // case-espece already has id in HTML; assign other patient fields by label
+  const _pg = document.getElementById('page-cas');
+  const _findByLbl = (lbl) => { if (!_pg) return null; for (const l of _pg.querySelectorAll('.lbl')) { if ((l.textContent||"").trim().toLowerCase().includes(lbl.toLowerCase())) { const fg=l.closest('.fg')||l.parentElement; if(fg){const el=fg.querySelector('input.inp,select.sel'); if(el) return el;} } } return null; };
+  const _setId = (lbl, id) => { if (document.getElementById(id)) return; const el = _findByLbl(lbl); if (el) el.id = id; };
+  _setId('Race', 'case-race');
+  _setId('Robe', 'case-color');
+  _setId('Âge', 'case-age');
+  _setId('Poids', 'case-poids');
+  _setId('Sexe', 'case-sexe');
   const historyChecks = refs.historyCard.querySelectorAll('input[type="checkbox"]');
   if (historyChecks[0]) historyChecks[0].id = 'case-vaccins';
   if (historyChecks[1]) historyChecks[1].id = 'case-vermifuge';
@@ -8419,7 +8415,7 @@ function showOrdo(num) {
         <div style="font-family:'DM Serif Display',serif;font-size:20px;color:var(--ink);font-weight:700">🐾 VétérinApp Pro</div>
         <div style="font-size:12px;color:var(--muted);margin-top:4px">Cabinet Vétérinaire · ${(function(){const _s=typeof getSettings==='function'?getSettings():{};const _n=[_s.vetFirstName,_s.vetLastName].filter(Boolean).join(' ').trim();return _n?'Dr. '+_n:'Dr.';})()}</div>
         <div style="font-size:11px;color:var(--muted)">ENSV Algérie · Tél: 0550 000 000</div>
-        <div style="font-size:11px;color:var(--muted)">N° Ordre: DZ-VET-2026-004782</div>
+        <div style="font-size:11px;color:var(--muted)">${(function(){const _s=typeof getSettings==='function'?getSettings():{};return _s.orderNumber?'N° Ordre: '+_s.orderNumber:'';})()} · ${(function(){const _s=typeof getSettings==='function'?getSettings():{};return _s.clinicPhone?'Tél: '+_s.clinicPhone:'';})()} </div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;font-size:12.5px">
         <div><strong>Patient :</strong> ${o.animal} ${o.race}, ${o.age}</div>
@@ -8443,7 +8439,7 @@ function showOrdo(num) {
           <div style="font-size:11px">Cachet clinique :</div>
           <div style="text-align:right">
             <div style="font-weight:700;color:var(--ink);font-size:13px">${(function(){const _s=typeof getSettings==='function'?getSettings():{};const _n=[_s.vetFirstName,_s.vetLastName].filter(Boolean).join(' ').trim();return _n?'Dr. '+_n:'Dr.';})()}</div>
-            <div style="font-size:11px;color:var(--muted)">Vétérinaire · N° DZ-VET-2026-004782</div>
+            <div style="font-size:11px;color:var(--muted)">${(function(){const _s=typeof getSettings==='function'?getSettings():{};return (_s.title||'Vétérinaire')+(_s.orderNumber?' · N° '+_s.orderNumber:'');})()} </div>
             <div style="border-top:1px solid var(--ink);width:180px;margin-top:20px;margin-left:auto"></div>
             <div style="font-size:10px;color:var(--muted);margin-top:4px">Signature</div>
           </div>
@@ -11868,23 +11864,23 @@ function saveAdmission() {
 
   function loadSettingsIntoForm(){
     const s = getSettings();
-    const mappings = {
-      '#page-settings input[value="Wail"]': s.vetFirstName,
-      '#page-settings input[value="Kherbache"]': s.vetLastName,
-      '#page-settings input[value="Docteur Vétérinaire · ENSV Algérie"]': s.title,
-      '#page-settings input[value="DZ-VET-2026-004782"]': s.orderNumber,
-      '#page-settings input[type="email"][value="contact@vetpro.local"]': s.email
-    };
-    Object.entries(mappings).forEach(([selector, value]) => {
-      const el = document.querySelector(selector);
-      if (el) el.value = value;
-    });
-    const telInputs = document.querySelectorAll('#page-settings input');
-    if (telInputs[5]) telInputs[5].value = s.phone;
-    if (telInputs[6]) telInputs[6].value = s.clinicName;
-    if (telInputs[7]) telInputs[7].value = s.clinicAddress;
-    if (telInputs[8]) telInputs[8].value = s.clinicPhone;
-    if (telInputs[9]) telInputs[9].value = s.clinicHours;
+    // Use IDs for key fields (robust, survives value changes)
+    const setById = (id, val) => { const el = document.getElementById(id); if (el && val != null) el.value = val; };
+    setById('settings-vet-firstname', s.vetFirstName || '');
+    setById('settings-vet-lastname',  s.vetLastName  || '');
+    setById('settings-vet-title',     s.title        || '');
+    setById('settings-vet-order',     s.orderNumber  || '');
+    const emailEl = document.querySelector('#page-settings input[type="email"]');
+    if (emailEl) emailEl.value = s.email || '';
+    // Remaining fields by label helper
+    const pg = document.getElementById('page-settings');
+    const findByLbl = (lbl) => { if (!pg) return null; for (const l of pg.querySelectorAll('label,.lbl')) { if ((l.textContent||"").trim().toLowerCase().includes(lbl.toLowerCase())) { const fg=l.closest('.fg')||l.parentElement; if(fg){const el=fg.querySelector('input.inp,textarea.tex'); if(el) return el;} } } return null; };
+    const setByLbl = (lbl, val) => { const el = findByLbl(lbl); if (el && val != null) el.value = val; };
+    setByLbl('Téléphone',           s.phone || '');
+    setByLbl('Nom de la clinique', s.clinicName    || '');
+    setByLbl('Adresse',            s.clinicAddress || '');
+    setByLbl('Téléphone clinique',  s.clinicPhone   || '');
+    setByLbl('Horaires',           s.clinicHours   || '');
     const footer = document.querySelector('#page-settings textarea');
     if (footer) footer.value = s.footerText;
     const lang = document.querySelector('#page-settings select.sel');
@@ -11900,10 +11896,10 @@ function saveAdmission() {
     const toggles = document.querySelectorAll('#page-settings .toggle-switch');
     const footer = document.querySelector('#page-settings textarea');
     const next = getSettings();
-    next.vetFirstName = inputs[0]?.value?.trim() || next.vetFirstName;
-    next.vetLastName = inputs[1]?.value?.trim() || next.vetLastName;
-    next.title = inputs[2]?.value?.trim() || next.title;
-    next.orderNumber = inputs[3]?.value?.trim() || next.orderNumber;
+    next.vetFirstName = (document.getElementById('settings-vet-firstname') || inputs[0])?.value?.trim() || next.vetFirstName;
+    next.vetLastName = (document.getElementById('settings-vet-lastname') || inputs[1])?.value?.trim() || next.vetLastName;
+    next.title = (document.getElementById('settings-vet-title') || inputs[2])?.value?.trim() || next.title;
+    next.orderNumber = (document.getElementById('settings-vet-order') || inputs[3])?.value?.trim() || next.orderNumber;
     next.email = inputs[4]?.value?.trim() || next.email;
     next.phone = inputs[5]?.value?.trim() || next.phone;
     next.clinicName = inputs[6]?.value?.trim() || next.clinicName;
@@ -15225,22 +15221,12 @@ function saveAdmission() {
     // Always re-assign case-espece in case ensureCaseFormEnhancements was guarded
     setTimeout(function(){
       const pg = document.getElementById('page-cas');
-      if (!pg || document.getElementById('case-espece')) return;
-      const pc = pg.querySelector('.card');
-      if (!pc) return;
-      const rows = pc.querySelectorAll('.row3');
-      if (rows[0]) {
-        const els = rows[0].querySelectorAll('select, input');
-        if (els[0] && !els[0].id) els[0].id = 'case-espece';
-        if (els[1] && !els[1].id) els[1].id = 'case-race';
-        if (els[2] && !els[2].id) els[2].id = 'case-color';
-      }
-      if (rows[1]) {
-        const els2 = rows[1].querySelectorAll('input, select');
-        if (els2[0] && !els2[0].id) els2[0].id = 'case-age';
-        if (els2[1] && !els2[1].id) els2[1].id = 'case-poids';
-        if (els2[2] && !els2[2].id) els2[2].id = 'case-sexe';
-      }
+      if (!pg) return;
+      // case-espece is now in HTML; assign other IDs only if not already set
+      const _lf = (lbl) => { for (const l of pg.querySelectorAll('.lbl')) { if ((l.textContent||"").trim().toLowerCase().includes(lbl.toLowerCase())) { const fg=l.closest('.fg')||l.parentElement; if(fg){const el=fg.querySelector('input.inp,select.sel'); if(el) return el;} } } return null; };
+      const _si = (lbl, id) => { if (!document.getElementById(id)) { const el=_lf(lbl); if(el) el.id=id; } };
+      _si('Race', 'case-race'); _si('Robe', 'case-color');
+      _si('Âge', 'case-age'); _si('Poids', 'case-poids'); _si('Sexe', 'case-sexe');
     }, 0);
   }
 
@@ -15467,10 +15453,10 @@ function saveAdmission() {
     if (!page) return;
     const s = getSettings();
     const fields = settingsFields();
-    if (fields[0]) fields[0].value = s.vetFirstName || '';
-    if (fields[1]) fields[1].value = s.vetLastName || '';
-    if (fields[2]) fields[2].value = s.title || '';
-    if (fields[3]) fields[3].value = s.orderNumber || '';
+    (document.getElementById('settings-vet-firstname')||fields[0]) && ((document.getElementById('settings-vet-firstname')||fields[0]).value = s.vetFirstName || '');
+    (document.getElementById('settings-vet-lastname')||fields[1]) && ((document.getElementById('settings-vet-lastname')||fields[1]).value = s.vetLastName || '');
+    (document.getElementById('settings-vet-title')||fields[2]) && ((document.getElementById('settings-vet-title')||fields[2]).value = s.title || '');
+    (document.getElementById('settings-vet-order')||fields[3]) && ((document.getElementById('settings-vet-order')||fields[3]).value = s.orderNumber || '');
     if (fields[4]) fields[4].value = s.email || '';
     if (fields[5]) fields[5].value = s.phone || '';
     if (fields[7]) fields[7].value = s.clinicName || '';
@@ -15506,10 +15492,10 @@ function saveAdmission() {
     const langSelect = page.querySelector('.settings-section .sel:last-of-type') || page.querySelector('select.sel');
     const selectedSwatch = page.querySelector('.color-swatch.selected');
     const next = getSettings();
-    next.vetFirstName = fields[0]?.value?.trim() || '';
-    next.vetLastName = fields[1]?.value?.trim() || '';
-    next.title = fields[2]?.value?.trim() || next.title || '';
-    next.orderNumber = fields[3]?.value?.trim() || next.orderNumber || '';
+    next.vetFirstName = (document.getElementById('settings-vet-firstname') || fields[0])?.value?.trim() || '';
+    next.vetLastName = (document.getElementById('settings-vet-lastname') || fields[1])?.value?.trim() || '';
+    next.title = (document.getElementById('settings-vet-title') || fields[2])?.value?.trim() || next.title || '';
+    next.orderNumber = (document.getElementById('settings-vet-order') || fields[3])?.value?.trim() || next.orderNumber || '';
     next.email = fields[4]?.value?.trim() || '';
     next.phone = fields[5]?.value?.trim() || '';
     next.clinicName = fields[7]?.value?.trim() || '';
